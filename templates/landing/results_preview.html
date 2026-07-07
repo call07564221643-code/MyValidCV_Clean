@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+
+{% block title %}MyValidCV - Analysis Results{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    
+    <!-- Header -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="display-5 fw-bold mb-2">Your CV Analysis Report</h2>
+            <p class="text-muted">Detailed ATS matching breakdown</p>
+        </div>
+    </div>
+
+    <!-- Overall Score Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-lg border-0 rounded-4 bg-gradient">
+                <div class="card-body p-5 text-center">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <div class="score-circle mx-auto" style="width: 150px; height: 150px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);">
+                                <div class="text-center">
+                                    <div style="font-size: 48px; font-weight: bold; color: white;">{{ analysis.overall_score }}</div>
+                                    <div style="font-size: 14px; color: rgba(255,255,255,0.9);">/ 100</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8 text-start ps-md-4 mt-4 mt-md-0">
+                            <h4 class="fw-bold text-dark mb-3">
+                                {% if analysis.overall_score >= 80 %}
+                                    Excellent Match! 🎉
+                                {% elif analysis.overall_score >= 65 %}
+                                    Good Match! ✅
+                                {% elif analysis.overall_score >= 50 %}
+                                    Moderate Match 📊
+                                {% else %}
+                                    Limited Match ⚠️
+                                {% endif %}
+                            </h4>
+                            <p class="text-muted mb-3">{{ recommendation }}</p>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Your CV Confidence</small>
+                                    <strong class="text-success">{{ analysis.cv_confidence }}%</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Job Description Clarity</small>
+                                    <strong class="text-info">{{ analysis.job_confidence }}%</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Scores -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-primary fw-bold mb-3">ATS Score</h6>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-primary" style="width: {{ analysis.ats_score }}%;"></div>
+                    </div>
+                    <small class="text-muted">{{ analysis.ats_score }} / 100</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-success fw-bold mb-3">Skills Match</h6>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: {{ analysis.skills_score }}%;"></div>
+                    </div>
+                    <small class="text-muted">{{ analysis.skills_score }} / 100</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-info fw-bold mb-3">Keywords Match</h6>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-info" style="width: {{ analysis.keywords_score }}%;"></div>
+                    </div>
+                    <small class="text-muted">{{ analysis.keywords_score }} / 100</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-warning fw-bold mb-3">Experience Score</h6>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-warning" style="width: {{ analysis.experience_score }}%;"></div>
+                    </div>
+                    <small class="text-muted">{{ analysis.experience_score }} / 100</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-danger fw-bold mb-3">Qualification Score</h6>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-danger" style="width: {{ analysis.qualification_score }}%;"></div>
+                    </div>
+                    <small class="text-muted">{{ analysis.qualification_score }} / 100</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-secondary fw-bold mb-3">Format Score</h6>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-secondary" style="width: {{ analysis.format_score }}%;"></div>
+                    </div>
+                    <small class="text-muted">{{ analysis.format_score }} / 100</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skills Section -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="card-title text-success fw-bold mb-3">✓ Matched Skills ({{ analysis.matched_skills|length }})</h6>
+                    {% if analysis.matched_skills %}
+                        <div class="flex-wrap" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            {% for skill in analysis.matched_skills %}
+                                <span class="badge bg-success">{{ skill }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">No matched skills</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="card-title text-danger fw-bold mb-3">✗ Missing Skills ({{ analysis.missing_skills|length }})</h6>
+                    {% if analysis.missing_skills %}
+                        <div class="flex-wrap" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            {% for skill in analysis.missing_skills|slice:":10" %}
+                                <span class="badge bg-danger">{{ skill }}</span>
+                            {% endfor %}
+                            {% if analysis.missing_skills|length > 10 %}
+                                <span class="badge bg-light text-dark">+{{ analysis.missing_skills|length|add:"-10" }} more</span>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <small class="text-success">You have all the required skills! 🎉</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keywords Section -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="card-title text-info fw-bold mb-3">✓ Matched Keywords ({{ analysis.matched_keywords|length }})</h6>
+                    {% if analysis.matched_keywords %}
+                        <div class="flex-wrap" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            {% for keyword in analysis.matched_keywords %}
+                                <span class="badge bg-info">{{ keyword }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">No matched keywords</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="card-title text-warning fw-bold mb-3">✗ Missing Keywords ({{ analysis.missing_keywords|length }})</h6>
+                    {% if analysis.missing_keywords %}
+                        <div class="flex-wrap" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            {% for keyword in analysis.missing_keywords|slice:":10" %}
+                                <span class="badge bg-warning text-dark">{{ keyword }}</span>
+                            {% endfor %}
+                            {% if analysis.missing_keywords|length > 10 %}
+                                <span class="badge bg-light text-dark">+{{ analysis.missing_keywords|length|add:"-10" }} more</span>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <small class="text-success">All key terms are present! 🎉</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Experience & Qualifications -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="card-title fw-bold mb-3">📋 Your Experience</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <strong>Years of Experience:</strong> 
+                            <span class="badge bg-primary">{{ analysis.cv_experience_years }}+ years</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Has Education:</strong> 
+                            {% if analysis.cv_has_education %}
+                                <span class="badge bg-success">✓ Yes</span>
+                            {% else %}
+                                <span class="badge bg-secondary">✗ No</span>
+                            {% endif %}
+                        </li>
+                        <li>
+                            <strong>Has Certifications:</strong>
+                            {% if analysis.cv_has_certifications %}
+                                <span class="badge bg-success">✓ Yes</span>
+                            {% else %}
+                                <span class="badge bg-secondary">✗ No</span>
+                            {% endif %}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="card-title fw-bold mb-3">🎓 Qualifications Found</h6>
+                    {% if analysis.cv_qualifications %}
+                        <div class="flex-wrap" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            {% for qual in analysis.cv_qualifications %}
+                                <span class="badge bg-success">{{ qual }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">No specific qualifications identified</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    {% if not is_authenticated %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-primary rounded-4 p-4 border-0" role="alert">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h5 class="fw-bold mb-2">Want to save and compare analyses?</h5>
+                        <p class="text-primary mb-0">Create a free account to track your job applications and analyze multiple positions.</p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <a href="{% url 'register' %}" class="btn btn-primary btn-sm">Create Free Account</a>
+                        <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm">Already have an account?</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex gap-2 justify-content-center">
+                <a href="{% url 'home' %}" class="btn btn-primary">
+                    Analyze Another Job
+                </a>
+                <button class="btn btn-outline-secondary" onclick="window.print()">
+                    🖨️ Print Report
+                </button>
+                {% if is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">
+                        Go to Dashboard
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

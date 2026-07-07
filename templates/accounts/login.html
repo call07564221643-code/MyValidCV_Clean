@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - MyValidCV{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-body p-5">
+                    <h2 class="fw-bold mb-1 text-center">Welcome Back</h2>
+                    <p class="text-muted text-center mb-4">Log in to your account</p>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        {% for field in form %}
+                            <div class="mb-3">
+                                {{ field.label_tag }}
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ field.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100 fw-semibold mt-4">
+                            Log In
+                        </button>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <p class="text-center text-muted mb-0">
+                        Don't have an account? 
+                        <a href="{% url 'register' %}" class="fw-bold text-decoration-none">Sign up</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    input[type="text"],
+    input[type="password"] {
+        border-radius: 8px !important;
+        border: 1px solid #dee2e6 !important;
+        padding: 10px 12px !important;
+    }
+    
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+    }
+</style>
+{% endblock %}
