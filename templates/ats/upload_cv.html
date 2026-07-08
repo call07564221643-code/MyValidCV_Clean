@@ -1,32 +1,128 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-5">
 
-            <h2 class="mb-4">Upload Your CV</h2>
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <span class="badge bg-primary mb-3">AI Career Intelligence Platform</span>
+                <h1 class="display-5 fw-bold mb-3">
+                    Improve your CV. Match better jobs. Apply with confidence.
+                </h1>
+                <p class="lead text-muted mb-4">
+                    MVCV helps candidates compare their CV against job roles, identify missing skills,
+                    and understand how strong their application really is.
+                </p>
 
-            <form method="POST" enctype="multipart/form-data">
-                {% csrf_token %}
-
-                <div class="mb-3">
-                    {{ form.title.label_tag }}
-                    {{ form.title }}
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="{% url 'upload_cv' %}" class="btn btn-primary btn-lg">
+                        Upload CV
+                    </a>
+                    <a href="{% url 'register' %}" class="btn btn-outline-primary btn-lg">
+                        Create Account
+                    </a>
                 </div>
+            </div>
 
-                <div class="mb-4">
-                    {{ form.file.label_tag }}
-                    {{ form.file }}
+            <div class="col-lg-6">
+                <div class="card shadow border-0 rounded-4">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold">Example ATS Report</h5>
+                        <hr>
+                        <p class="mb-2">Overall Match</p>
+                        <div class="progress mb-3">
+                            <div class="progress-bar bg-success" style="width: 82%;">82%</div>
+                        </div>
+                        <p><strong>Matched Skills:</strong> Python, Django, SQL, Communication</p>
+                        <p><strong>Missing Skills:</strong> PostgreSQL, API Testing</p>
+                        <p class="text-muted mb-0">
+                            Recommendation: improve your CV summary and add truthful evidence for missing skills.
+                        </p>
+                    </div>
                 </div>
-
-                <button type="submit" class="btn btn-primary">
-                    Upload CV
-                </button>
-
-            </form>
-
+            </div>
         </div>
     </div>
-</div>
+</section>
+
+<section class="py-5">
+    <div class="container text-center">
+        <h2 class="fw-bold mb-4">How MVCV Works</h2>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4">
+                    <div class="card-body">
+                        <h5>1. Upload CV</h5>
+                        <p class="text-muted">Store your CV securely inside your account.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4">
+                    <div class="card-body">
+                        <h5>2. Paste Job Role</h5>
+                        <p class="text-muted">Add a job description or job link for comparison.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4">
+                    <div class="card-body">
+                        <h5>3. Get ATS Report</h5>
+                        <p class="text-muted">See match score, missing skills, and improvement advice.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-6">
+                <h2 class="fw-bold">For Candidates</h2>
+                <p class="text-muted">
+                    Compare one CV against multiple job roles and discover where your strongest chance is.
+                </p>
+                <ul>
+                    <li>CV storage</li>
+                    <li>ATS compatibility score</li>
+                    <li>Matched and missing skills</li>
+                    <li>Career improvement recommendations</li>
+                </ul>
+            </div>
+
+            <div class="col-lg-6">
+                <h2 class="fw-bold">For Enterprises</h2>
+                <p class="text-muted">
+                    Future enterprise accounts will compare multiple CVs against job roles and produce shortlist reports.
+                </p>
+                <ul>
+                    <li>Bulk CV analysis</li>
+                    <li>Candidate ranking</li>
+                    <li>Role fit comparison</li>
+                    <li>Recruitment decision support</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 text-center">
+    <div class="container">
+        <h2 class="fw-bold">Start with your CV today</h2>
+        <p class="text-muted mb-4">
+            Upload your CV, compare it with a job role, and get a validation report in minutes.
+        </p>
+        <a href="{% url 'upload_cv' %}" class="btn btn-primary btn-lg">
+            Start ATS Analysis
+        </a>
+    </div>
+</section>
+
 {% endblock %}
