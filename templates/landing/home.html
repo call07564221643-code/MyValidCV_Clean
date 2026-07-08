@@ -1,203 +1,128 @@
-{% extends 'base.html' %}
-
-{% block title %}MyValidCV - Validate Your CV Against Job Descriptions{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
-<div class="container my-5">
-    <!-- Hero Section -->
-    <div class="row align-items-center mb-5">
-        <div class="col-lg-6 mb-4 mb-lg-0">
-            <h1 class="display-4 fw-bold text-primary mb-3">
-                AI Career Intelligence
-            </h1>
-            <p class="lead text-muted mb-4">
-                Get instant ATS-style CV validation against any job description. 
-                See exactly what skills match, what's missing, and your realistic match score.
-            </p>
-            <ul class="list-unstyled mb-4">
-                <li class="mb-2">✓ Instant CV validation</li>
-                <li class="mb-2">✓ ATS matching score</li>
-                <li class="mb-2">✓ Skill gap analysis</li>
-                <li class="mb-2">✓ No permanent storage</li>
-            </ul>
-        </div>
-        <div class="col-lg-6">
-            <div class="card shadow-lg border-0 rounded-4">
-                <div class="card-body p-4">
-                    <h5 class="card-title mb-4">Validate My CV</h5>
-                    
-                    <form id="analysisForm" method="post" action="{% url 'analyse' %}" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        
-                        <!-- CV Upload -->
-                        <div class="mb-3">
-                            <label for="cvFile" class="form-label fw-semibold">Upload Your CV</label>
-                            <div class="input-group">
-                                <input 
-                                    type="file" 
-                                    class="form-control" 
-                                    id="cvFile" 
-                                    name="cv_file"
-                                    accept=".pdf,.docx,.txt"
-                                    required
-                                >
-                                <span class="input-group-text bg-light text-muted">PDF, DOCX, TXT</span>
-                            </div>
-                            <small class="text-muted d-block mt-2">
-                                Max 10 MB • Not permanently stored
-                            </small>
+
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <span class="badge bg-primary mb-3">AI Career Intelligence Platform</span>
+                <h1 class="display-5 fw-bold mb-3">
+                    Improve your CV. Match better jobs. Apply with confidence.
+                </h1>
+                <p class="lead text-muted mb-4">
+                    MVCV helps candidates compare their CV against job roles, identify missing skills,
+                    and understand how strong their application really is.
+                </p>
+
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="{% url 'upload_cv' %}" class="btn btn-primary btn-lg">
+                        Upload CV
+                    </a>
+                    <a href="{% url 'register' %}" class="btn btn-outline-primary btn-lg">
+                        Create Account
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card shadow border-0 rounded-4">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold">Example ATS Report</h5>
+                        <hr>
+                        <p class="mb-2">Overall Match</p>
+                        <div class="progress mb-3">
+                            <div class="progress-bar bg-success" style="width: 82%;">82%</div>
                         </div>
-
-                        <!-- Job Description -->
-                        <div class="mb-4">
-                            <label for="jobDescription" class="form-label fw-semibold">Paste Job Description</label>
-                            <textarea 
-                                class="form-control" 
-                                id="jobDescription" 
-                                name="job_description"
-                                rows="8"
-                                placeholder="Paste the full job description here..."
-                                required
-                            ></textarea>
-                            <small class="text-muted d-block mt-2">
-                                Include responsibilities, requirements, and skills
-                            </small>
-                        </div>
-
-                        <!-- Submit Button -->
-                        <button 
-                            type="submit" 
-                            class="btn btn-primary btn-lg w-100 fw-semibold"
-                            id="submitBtn"
-                        >
-                            <span id="btnText">Validate My CV</span>
-                            <span id="btnSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
-                        </button>
-
-                        <!-- Error Alert -->
-                        <div id="errorAlert" class="alert alert-danger mt-3 d-none" role="alert">
-                            <span id="errorMessage"></span>
-                        </div>
-                    </form>
-
-                    <!-- Privacy Notice -->
-                    <div class="alert alert-info mt-4 small mb-0" role="alert">
-                        <strong>🔒 Privacy:</strong> Your CV and job description are processed instantly and not permanently stored.
+                        <p><strong>Matched Skills:</strong> Python, Django, SQL, Communication</p>
+                        <p><strong>Missing Skills:</strong> PostgreSQL, API Testing</p>
+                        <p class="text-muted mb-0">
+                            Recommendation: improve your CV summary and add truthful evidence for missing skills.
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</section>
 
-    <!-- Features Section -->
-    <div class="row mt-5 pt-5 border-top">
-        <div class="col-md-4 mb-4 text-center">
-            <div class="icon-box mb-3">
-                <div class="display-4 text-success">📊</div>
+<section class="py-5">
+    <div class="container text-center">
+        <h2 class="fw-bold mb-4">How MVCV Works</h2>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4">
+                    <div class="card-body">
+                        <h5>1. Upload CV</h5>
+                        <p class="text-muted">Store your CV securely inside your account.</p>
+                    </div>
+                </div>
             </div>
-            <h5 class="fw-bold">Instant Scores</h5>
-            <p class="text-muted">Get overall match score, skills match, keywords, and more in seconds</p>
-        </div>
-        <div class="col-md-4 mb-4 text-center">
-            <div class="icon-box mb-3">
-                <div class="display-4 text-info">🎯</div>
+
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4">
+                    <div class="card-body">
+                        <h5>2. Paste Job Role</h5>
+                        <p class="text-muted">Add a job description or job link for comparison.</p>
+                    </div>
+                </div>
             </div>
-            <h5 class="fw-bold">Gap Analysis</h5>
-            <p class="text-muted">See exactly which skills match and which ones you need to develop</p>
-        </div>
-        <div class="col-md-4 mb-4 text-center">
-            <div class="icon-box mb-3">
-                <div class="display-4 text-warning">🔍</div>
+
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4">
+                    <div class="card-body">
+                        <h5>3. Get ATS Report</h5>
+                        <p class="text-muted">See match score, missing skills, and improvement advice.</p>
+                    </div>
+                </div>
             </div>
-            <h5 class="fw-bold">ATS-Ready</h5>
-            <p class="text-muted">Mimic Applicant Tracking System logic to improve your chances</p>
         </div>
     </div>
+</section>
 
-    <!-- CTA Section -->
-    {% if not is_authenticated %}
-    <div class="row mt-5 pt-5">
-        <div class="col-12">
-            <div class="alert alert-light border border-primary rounded-4 p-4 text-center">
-                <h5 class="text-primary fw-bold mb-3">Save Your Analysis History</h5>
-                <p class="text-muted mb-3">
-                    Create an account to save and track your analysis history, 
-                    compare multiple jobs, and get personalized insights.
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-6">
+                <h2 class="fw-bold">For Candidates</h2>
+                <p class="text-muted">
+                    Compare one CV against multiple job roles and discover where your strongest chance is.
                 </p>
-                <a href="{% url 'register' %}" class="btn btn-primary">Create Free Account</a>
+                <ul>
+                    <li>CV storage</li>
+                    <li>ATS compatibility score</li>
+                    <li>Matched and missing skills</li>
+                    <li>Career improvement recommendations</li>
+                </ul>
+            </div>
+
+            <div class="col-lg-6">
+                <h2 class="fw-bold">For Enterprises</h2>
+                <p class="text-muted">
+                    Future enterprise accounts will compare multiple CVs against job roles and produce shortlist reports.
+                </p>
+                <ul>
+                    <li>Bulk CV analysis</li>
+                    <li>Candidate ranking</li>
+                    <li>Role fit comparison</li>
+                    <li>Recruitment decision support</li>
+                </ul>
             </div>
         </div>
     </div>
-    {% endif %}
-</div>
+</section>
 
-{% endblock %}
+<section class="py-5 text-center">
+    <div class="container">
+        <h2 class="fw-bold">Start with your CV today</h2>
+        <p class="text-muted mb-4">
+            Upload your CV, compare it with a job role, and get a validation report in minutes.
+        </p>
+        <a href="{% url 'upload_cv' %}" class="btn btn-primary btn-lg">
+            Start ATS Analysis
+        </a>
+    </div>
+</section>
 
-{% block extra_js %}
-<script>
-document.getElementById('analysisForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const submitBtn = document.getElementById('submitBtn');
-    const btnText = document.getElementById('btnText');
-    const btnSpinner = document.getElementById('btnSpinner');
-    const errorAlert = document.getElementById('errorAlert');
-    const cvFile = document.getElementById('cvFile');
-    const jobDesc = document.getElementById('jobDescription');
-    
-    // Clear previous errors
-    errorAlert.classList.add('d-none');
-    
-    // Validate inputs
-    if (!cvFile.files.length) {
-        showError('Please select a CV file');
-        return;
-    }
-    
-    if (!jobDesc.value.trim()) {
-        showError('Please paste a job description');
-        return;
-    }
-    
-    // Show loading state
-    submitBtn.disabled = true;
-    btnText.textContent = 'Processing...';
-    btnSpinner.classList.remove('d-none');
-    
-    // Submit form via AJAX
-    const formData = new FormData(this);
-    
-    fetch('{% url "analyse" %}', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.href = data.redirect_url;
-        } else {
-            showError(data.error);
-        }
-    })
-    .catch(error => {
-        showError('An error occurred. Please try again.');
-        console.error(error);
-    })
-    .finally(() => {
-        submitBtn.disabled = false;
-        btnText.textContent = 'Validate My CV';
-        btnSpinner.classList.add('d-none');
-    });
-});
-
-function showError(message) {
-    const errorAlert = document.getElementById('errorAlert');
-    const errorMessage = document.getElementById('errorMessage');
-    errorMessage.textContent = message;
-    errorAlert.classList.remove('d-none');
-}
-</script>
 {% endblock %}
