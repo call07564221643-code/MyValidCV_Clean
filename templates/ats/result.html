@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-5">
+
+            <h2 class="mb-4">ATS Analysis Result</h2>
+
+            <h4>{{ result.job_title }}</h4>
+
+            <hr>
+
+            <h3 class="text-primary">
+                Overall Match Score: {{ result.score }}%
+            </h3>
+
+            <div class="mt-4">
+                <h5>Matched Skills</h5>
+                <p>{{ result.matched_skills }}</p>
+            </div>
+
+            <div class="mt-4">
+                <h5>Missing Skills</h5>
+                <p>{{ result.missing_skills }}</p>
+            </div>
+
+            <div class="mt-4">
+                <h5>Recommendation</h5>
+                <p>{{ result.recommendation }}</p>
+            </div>
+
+            <a href="{% url 'ats_analyse' %}" class="btn btn-primary mt-3">
+                Analyse Another Role
+            </a>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

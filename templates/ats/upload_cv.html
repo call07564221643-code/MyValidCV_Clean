@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-5">
+
+            <h2 class="mb-4">Upload Your CV</h2>
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    {{ form.title.label_tag }}
+                    {{ form.title }}
+                </div>
+
+                <div class="mb-4">
+                    {{ form.file.label_tag }}
+                    {{ form.file }}
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Upload CV
+                </button>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
