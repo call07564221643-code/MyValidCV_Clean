@@ -10,22 +10,124 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils import timezone
 import json
+from datetime import timedelta
 
 from .services import ats_engine
+from accounts.models import UserProfile
+from ats.forms import ATSAnalysisForm
+from ats.models import ApplicationReminder, ATSResult, CV, GeneratedCV, JobRole
+from ats.views import (
+    build_generated_cv,
+    build_job_description,
+    calculate_score,
+    can_download_generated_cv,
+    extract_cv_text,
+    infer_company,
+    infer_deadline,
+    infer_job_title,
+    save_inline_cv,
+    score_breakdown,
+    validate_cv_for_analysis,
+)
 
 
 def home(request):
     """
-    Landing page: display CV upload form and job description textarea.
-    GET: Show landing page
+    Product entry page.
+    Guests see the same validation workspace shape with a registration CTA.
+    Logged-in users can start validation from the home page and submit into ATS analysis.
     """
-    if request.method == 'GET':
-        # Check if user is logged in
-        is_authenticated = request.user.is_authenticated
-        return render(request, 'landing/home.html', {
-            'is_authenticated': is_authenticated
+    context = {
+        'is_authenticated': request.user.is_authenticated,
+        'result': None,
+        'breakdown': None,
+        'can_download': False,
+    }
+
+    if request.user.is_authenticated:
+        profile, _created = UserProfile.objects.get_or_create(user=request.user)
+        selected_cv = request.GET.get("cv")
+        initial = {"cv": selected_cv} if selected_cv else {}
+        form = ATSAnalysisForm(request.user, request.POST or None, request.FILES or None, initial=initial)
+        context.update({
+            'profile': profile,
+            'form': form,
+            'has_cvs': CV.objects.filter(user=request.user).exists(),
+            'recent_results': ATSResult.objects.filter(user=request.user).select_related("cv", "job_role")[:8],
+            'saved_cvs': CV.objects.filter(user=request.user)[:6],
+            'generated_cvs': GeneratedCV.objects.filter(user=request.user).select_related("ats_result")[:6],
+            'reminders': ApplicationReminder.objects.filter(user=request.user, is_sent=False).select_related("job_role")[:4],
+            'is_enterprise': request.user.is_staff or profile.plan == "enterprise",
+            'can_download': can_download_generated_cv(request.user),
         })
+
+        if request.method == "POST":
+            if not profile.can_run_analysis():
+                messages.error(request, f"You have used today's {profile.get_analysis_limit()} analysis limit for your {profile.plan} plan.")
+            elif form.is_valid():
+                cv = save_inline_cv(request, form)
+                if cv is not None:
+                    job_description = build_job_description(form)
+                    if len(job_description.strip()) < 30:
+                        form.add_error(None, "The job description could not be read. Paste the job text directly and try again.")
+                    else:
+                        cv_text = extract_cv_text(cv)
+                        is_valid_cv, reason = validate_cv_for_analysis(cv_text)
+                        if not is_valid_cv:
+                            form.add_error(None, reason)
+                            return render(request, 'landing/home.html', context)
+
+                        job_title = infer_job_title(form, job_description)
+                        company = infer_company(form, job_description)
+                        deadline = infer_deadline(form, job_description)
+                        job_role = JobRole.objects.create(
+                            user=request.user,
+                            title=job_title,
+                            company=company,
+                            description=job_description,
+                            source_type=form.cleaned_data["source_type"],
+                            source_url=form.cleaned_data.get("job_url", ""),
+                            source_file=form.cleaned_data.get("job_file"),
+                            deadline=deadline,
+                        )
+                        score, matched, missing, recommendation = calculate_score(cv_text, job_description)
+                        metrics = score_breakdown(score, matched, missing)
+                        result = ATSResult.objects.create(
+                            user=request.user,
+                            cv=cv,
+                            job_role=job_role,
+                            job_title=job_title,
+                            job_description=job_description,
+                            score=score,
+                            matched_skills=", ".join(matched),
+                            missing_skills=", ".join(missing),
+                            recommendation=recommendation,
+                            metrics=metrics,
+                            status="completed",
+                        )
+                        GeneratedCV.objects.create(
+                            user=request.user,
+                            original_cv=cv,
+                            ats_result=result,
+                            title=f"{cv.title} tailored for {job_title}",
+                            content=build_generated_cv(cv, result, matched, missing),
+                        )
+                        if job_role.deadline:
+                            ApplicationReminder.objects.create(
+                                user=request.user,
+                                job_role=job_role,
+                                reminder_date=max(timezone.localdate(), job_role.deadline - timedelta(days=2)),
+                                note="Apply before the job deadline.",
+                            )
+                        profile.record_analysis()
+                        messages.success(request, "ATS analysis complete. A tailored CV draft was generated.")
+                        context["result"] = result
+                        context["breakdown"] = metrics
+
+    return render(request, 'landing/home.html', context)
 
 
 @require_http_methods(['POST'])
