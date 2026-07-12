@@ -51,10 +51,12 @@ def database_from_url(database_url):
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env_bool('DEBUG', True)
+DEBUG = env_bool('DEBUG', False)
 
-ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', '*')
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', '.herokuapp.com,localhost,127.0.0.1')
 HEROKU_APP_NAME = os.environ.get('HEROKU_APP_NAME', '')
+if '.herokuapp.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.herokuapp.com')
 if HEROKU_APP_NAME:
     ALLOWED_HOSTS.append(f'{HEROKU_APP_NAME}.herokuapp.com')
 
