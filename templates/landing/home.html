@@ -787,6 +787,76 @@
         color: var(--mvcv-navy);
     }
 
+    .mvcv-ai-trust {
+        max-width: 760px;
+        margin: 0.8rem auto 0;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.55rem;
+    }
+
+    .mvcv-ai-trust span {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        border: 1px solid var(--mvcv-line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.78);
+        color: var(--mvcv-muted);
+        font-size: 0.78rem;
+        font-weight: 620;
+        padding: 0.48rem 0.65rem;
+    }
+
+    .mvcv-ai-trust span::before {
+        content: "";
+        flex: 0 0 7px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--mvcv-navy);
+    }
+
+    .mvcv-ai-loading {
+        display: none;
+        max-width: 760px;
+        margin: 0.75rem auto 0;
+        border: 1px solid var(--mvcv-line);
+        border-radius: 14px;
+        background: var(--mvcv-navy-soft);
+        color: var(--mvcv-ink);
+        padding: 0.72rem 0.9rem;
+        font-size: 0.9rem;
+        font-weight: 650;
+    }
+
+    .mvcv-ai-loading.is-visible {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .mvcv-ai-loading::before {
+        content: "";
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid rgba(31, 51, 116, 0.18);
+        border-top-color: var(--mvcv-navy);
+        animation: mvcvSpin 0.75s linear infinite;
+    }
+
+    .mvcv-ai-form.is-submitting .mvcv-ai-voice {
+        pointer-events: none;
+        opacity: 0.72;
+    }
+
+    @keyframes mvcvSpin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
     @media (prefers-color-scheme: dark) {
         :root {
             color-scheme: dark;
@@ -903,6 +973,13 @@
             color: #dbe7ff;
         }
 
+        .mvcv-ai-trust span,
+        .mvcv-ai-loading {
+            background: #111c33;
+            border-color: var(--mvcv-line);
+            color: var(--mvcv-muted);
+        }
+
         .mvcv-card-visual,
         .mvcv-card-visual.alt,
         .mvcv-card-visual.third {
@@ -959,6 +1036,7 @@
 
         .mvcv-ai-upload-row,
         .mvcv-ai-feature-grid,
+        .mvcv-ai-trust,
         .mvcv-ai-result {
             grid-template-columns: 1fr;
         }
@@ -1173,6 +1251,9 @@
                             </div>
                         </div>
                     </div>
+                    <div class="mvcv-ai-loading" role="status" aria-live="polite">
+                        <span>Reading CV...</span>
+                    </div>
                 </form>
             {% else %}
                 <div class="mvcv-ai-form">
@@ -1185,6 +1266,11 @@
                     <div class="mvcv-ai-guest-box">Paste job description, URL, text, or ad.</div>
                 </div>
             {% endif %}
+            <div class="mvcv-ai-trust" aria-label="MyValidCV trust promises">
+                <span>CV used only for analysis</span>
+                <span>Never invent experience</span>
+                <span>Recruiter-focused feedback</span>
+            </div>
         </section>
 
         <div class="mvcv-ai-actions">
@@ -1282,6 +1368,7 @@
         const modeButton = document.querySelector('.mvcv-ai-mode');
         const modeMenu = document.querySelector('.mvcv-ai-mode-menu');
         const form = document.querySelector('.mvcv-ai-form');
+        const loading = document.querySelector('.mvcv-ai-loading');
         const actionLinks = document.querySelectorAll('.mvcv-ai-actions a');
         let selectedSource = 'text';
 
@@ -1346,6 +1433,18 @@
             form.addEventListener('submit', function () {
                 if (selectedSource === 'url' && jobText && jobUrl && !jobUrl.value.trim()) {
                     jobUrl.value = jobText.value.trim();
+                }
+                form.classList.add('is-submitting');
+                if (loading) {
+                    const loadingText = loading.querySelector('span');
+                    const steps = ['Reading CV...', 'Matching job requirements...', 'Preparing recruiter view...'];
+                    let index = 0;
+                    loading.classList.add('is-visible');
+                    if (loadingText) loadingText.textContent = steps[index];
+                    window.setInterval(function () {
+                        index = Math.min(index + 1, steps.length - 1);
+                        if (loadingText) loadingText.textContent = steps[index];
+                    }, 1100);
                 }
             });
         }

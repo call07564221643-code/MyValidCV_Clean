@@ -446,6 +446,9 @@ def analyse_cv(request):
             "is_enterprise": request.user.is_superuser or profile.plan == "enterprise",
         }
 
+    def render_home_workspace(form):
+        return render(request, "landing/home.html", workspace_context(form))
+
     if request.method == "POST":
         form = ATSAnalysisForm(request.user, request.POST, request.FILES)
         if not profile.can_run_analysis():
@@ -454,13 +457,13 @@ def analyse_cv(request):
         if form.is_valid():
             cv = save_inline_cv(request, form)
             if cv is None:
-                return render(request, "ats/analyse.html", workspace_context(form))
+                return render_home_workspace(form)
 
             job_description = build_job_description(form)
 
             if len(job_description.strip()) < 30:
                 form.add_error(None, "The job description could not be read. Paste the job text directly and try again.")
-                return render(request, "ats/analyse.html", workspace_context(form))
+                return render_home_workspace(form)
 
             job_title = infer_job_title(form, job_description)
             company = infer_company(form, job_description)
@@ -469,7 +472,7 @@ def analyse_cv(request):
             is_valid_cv, reason = validate_cv_for_analysis(cv_text)
             if not is_valid_cv:
                 form.add_error(None, reason)
-                return render(request, "ats/analyse.html", workspace_context(form))
+                return render_home_workspace(form)
 
             job_role = JobRole.objects.create(
                 user=request.user,
@@ -518,9 +521,7 @@ def analyse_cv(request):
 
             profile.record_analysis()
             messages.success(request, "ATS analysis complete. A tailored CV draft was generated.")
-            inline_result = result
-            breakdown = score_breakdown(score, matched, missing)
-            user_cvs = CV.objects.filter(user=request.user)
+            return redirect("ats_result", result_id=result.id)
     else:
         initial = {}
         selected_cv = request.GET.get("cv")
@@ -528,7 +529,7 @@ def analyse_cv(request):
             initial["cv"] = selected_cv
         form = ATSAnalysisForm(request.user, initial=initial)
 
-    return render(request, "ats/analyse.html", workspace_context(form))
+    return render_home_workspace(form)
 
 
 @login_required(login_url="login")
