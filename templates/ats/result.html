@@ -1,42 +1,433 @@
 {% extends "base.html" %}
 
+{% block title %}CV Readiness Report - MyValidCV{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --report-navy: #1f3374;
+        --report-soft: #eef3ff;
+        --report-bg: #f8fafc;
+        --report-card: #ffffff;
+        --report-ink: #0f172a;
+        --report-muted: #64748b;
+        --report-line: #e2e8f0;
+        --report-success: #15803d;
+        --report-warn: #b45309;
+        --report-risk: #b91c1c;
+    }
+
+    .report-shell {
+        min-height: calc(100vh - 84px);
+        background: linear-gradient(180deg, #ffffff 0%, var(--report-bg) 100%);
+        padding: 2.25rem 0 3rem;
+    }
+
+    .report-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1rem;
+        align-items: start;
+        margin-bottom: 1.25rem;
+    }
+
+    .report-kicker {
+        color: var(--report-navy);
+        font-size: 0.78rem;
+        font-weight: 760;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 0.45rem;
+    }
+
+    .report-hero h1 {
+        color: var(--report-ink);
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 690;
+        letter-spacing: -0.045em;
+        margin: 0 0 0.35rem;
+    }
+
+    .report-muted {
+        color: var(--report-muted);
+    }
+
+    .report-actions {
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+    }
+
+    .report-card {
+        background: var(--report-card);
+        border: 1px solid var(--report-line);
+        border-radius: 18px;
+        box-shadow: 0 18px 46px rgba(15, 23, 42, 0.07);
+    }
+
+    .report-card-pad {
+        padding: 1.15rem;
+    }
+
+    .readiness-card {
+        display: grid;
+        grid-template-columns: minmax(220px, 0.75fr) minmax(0, 1.25fr);
+        gap: 1.25rem;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+
+    .readiness-decision {
+        border-radius: 16px;
+        padding: 1.15rem;
+        background: var(--report-soft);
+        text-align: center;
+    }
+
+    .readiness-pill {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.85rem;
+        font-weight: 780;
+        margin-bottom: 0.85rem;
+    }
+
+    .readiness-pill.ready {
+        background: #dcfce7;
+        color: var(--report-success);
+    }
+
+    .readiness-pill.work {
+        background: #fef3c7;
+        color: var(--report-warn);
+    }
+
+    .readiness-pill.risk {
+        background: #fee2e2;
+        color: var(--report-risk);
+    }
+
+    .readiness-score {
+        color: var(--report-ink);
+        display: block;
+        font-size: 3.4rem;
+        font-weight: 780;
+        letter-spacing: -0.06em;
+        line-height: 1;
+    }
+
+    .readiness-decision small {
+        color: var(--report-muted);
+    }
+
+    .report-copy h2,
+    .report-panel h2 {
+        color: var(--report-ink);
+        font-size: 1.12rem;
+        font-weight: 740;
+        margin-bottom: 0.45rem;
+    }
+
+    .report-copy p,
+    .report-panel p {
+        color: var(--report-muted);
+        margin-bottom: 0;
+    }
+
+    .report-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .report-panel {
+        padding: 1.1rem;
+    }
+
+    .fix-list {
+        display: grid;
+        gap: 0.75rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .fix-list li {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 0.7rem;
+        color: var(--report-ink);
+    }
+
+    .fix-list span {
+        display: inline-grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--report-navy);
+        color: #ffffff;
+        font-size: 0.78rem;
+        font-weight: 760;
+    }
+
+    .signal-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .signal-card {
+        border: 1px solid var(--report-line);
+        border-radius: 14px;
+        padding: 0.85rem;
+        background: #ffffff;
+    }
+
+    .signal-card strong {
+        color: var(--report-ink);
+        display: block;
+        font-size: 1.35rem;
+        line-height: 1;
+    }
+
+    .signal-card span {
+        color: var(--report-muted);
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 650;
+        margin-top: 0.35rem;
+    }
+
+    .skill-box {
+        border: 1px solid var(--report-line);
+        border-radius: 14px;
+        padding: 0.95rem;
+        background: #ffffff;
+        height: 100%;
+    }
+
+    .skill-box strong {
+        color: var(--report-ink);
+        display: block;
+        margin-bottom: 0.35rem;
+    }
+
+    .skill-box p {
+        color: var(--report-muted);
+        margin: 0;
+    }
+
+    .skill-box.good {
+        border-color: #bbf7d0;
+    }
+
+    .skill-box.risk {
+        border-color: #fecaca;
+    }
+
+    .draft-output {
+        max-height: 520px;
+        overflow: auto;
+        white-space: pre-wrap;
+        border: 1px solid var(--report-line);
+        border-radius: 14px;
+        background: #fbfdff;
+        color: var(--report-ink);
+        padding: 1rem;
+        margin: 0;
+        font-size: 0.92rem;
+    }
+
+    .value-note {
+        border: 1px solid var(--report-line);
+        border-radius: 14px;
+        background: var(--report-soft);
+        color: var(--report-ink);
+        padding: 0.9rem;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --report-navy: #9fb8ff;
+            --report-soft: #20335f;
+            --report-bg: #0f172a;
+            --report-card: #111c33;
+            --report-ink: #f8fafc;
+            --report-muted: #cbd5e1;
+            --report-line: #273449;
+            --report-success: #bbf7d0;
+            --report-warn: #fde68a;
+            --report-risk: #fecaca;
+        }
+
+        .report-shell {
+            background: linear-gradient(180deg, #0b1224 0%, var(--report-bg) 100%);
+        }
+
+        .signal-card,
+        .skill-box,
+        .draft-output {
+            background: #0b1224;
+        }
+
+        .fix-list span {
+            color: #0f172a;
+        }
+
+        .readiness-pill.ready,
+        .readiness-pill.work,
+        .readiness-pill.risk {
+            background: #20335f;
+        }
+    }
+
+    @media (max-width: 991px) {
+        .report-hero,
+        .readiness-card,
+        .report-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .report-actions {
+            justify-content: flex-start;
+        }
+
+        .signal-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 575px) {
+        .report-shell {
+            padding-top: 1.2rem;
+        }
+
+        .signal-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
+<section class="report-shell">
+    <div class="container">
+        <div class="report-hero">
+            <div>
+                <div class="report-kicker">CV readiness report</div>
+                <h1>{{ result.job_title }}</h1>
+                <p class="report-muted mb-0">
+                    CV: {{ result.cv.title }}
+                    {% if result.job_role.company %} · {{ result.job_role.company }}{% endif %}
+                    {% if result.job_role.deadline %} · Deadline {{ result.job_role.deadline|date:"M d, Y" }}{% endif %}
+                </p>
+            </div>
+            <div class="report-actions">
+                <a href="{% url 'home' %}?cv={{ result.cv.id }}#composer" class="btn btn-primary">Validate another job</a>
+                {% if result.generated_cv and can_download %}
+                    <a href="{% url 'download_generated_cv' result.id %}" class="btn btn-outline-primary">Download suggested CV</a>
+                {% elif result.generated_cv %}
+                    <a href="#suggestedCv" class="btn btn-outline-primary">Preview suggested CV</a>
+                {% endif %}
+            </div>
+        </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-5">
+        <div class="report-card report-card-pad readiness-card">
+            <div class="readiness-decision">
+                <span class="readiness-pill {{ report_insights.readiness_class }}">{{ report_insights.readiness_label }}</span>
+                <strong class="readiness-score">{{ breakdown.total }}%</strong>
+                <small>ATS signal, not the whole hiring decision</small>
+            </div>
+            <div class="report-copy">
+                <h2>What recruiters are likely to see</h2>
+                <p>{{ report_insights.recruiter_view }}</p>
+                <hr>
+                <h2>Why this CV may be weak for this role</h2>
+                <p>{{ report_insights.weakness_summary }}</p>
+            </div>
+        </div>
 
-            <h2 class="mb-4">ATS Analysis Result</h2>
-
-            <h4>{{ result.job_title }}</h4>
-
-            <hr>
-
-            <h3 class="text-primary">
-                Overall Match Score: {{ result.score }}%
-            </h3>
-
-            <div class="mt-4">
-                <h5>Matched Skills</h5>
-                <p>{{ result.matched_skills }}</p>
+        <div class="report-grid">
+            <div class="report-card report-panel">
+                <h2>Biggest impact fixes before applying</h2>
+                <ol class="fix-list">
+                    {% for fix in report_insights.top_fixes %}
+                        <li><span>{{ forloop.counter }}</span><div>{{ fix }}</div></li>
+                    {% endfor %}
+                </ol>
             </div>
 
-            <div class="mt-4">
-                <h5>Missing Skills</h5>
-                <p>{{ result.missing_skills }}</p>
+            <div class="report-card report-panel">
+                <h2>ATS and recruiter signals</h2>
+                <div class="signal-grid">
+                    <div class="signal-card"><strong>{{ breakdown.skills }}%</strong><span>Skills</span></div>
+                    <div class="signal-card"><strong>{{ breakdown.keywords }}%</strong><span>Keywords</span></div>
+                    <div class="signal-card"><strong>{{ breakdown.experience }}%</strong><span>Experience</span></div>
+                    <div class="signal-card"><strong>{{ breakdown.format }}%</strong><span>Format</span></div>
+                </div>
+                <div class="value-note mt-3">
+                    <strong>Recommendation:</strong> {{ result.recommendation }}
+                </div>
             </div>
+        </div>
 
-            <div class="mt-4">
-                <h5>Recommendation</h5>
-                <p>{{ result.recommendation }}</p>
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="skill-box good">
+                    <strong>Matched evidence</strong>
+                    <p>
+                        {% if matched %}
+                            {{ matched|join:", " }}
+                        {% else %}
+                            No strong matched skills were detected yet. Add visible evidence for the role requirements.
+                        {% endif %}
+                    </p>
+                </div>
             </div>
+            <div class="col-lg-6">
+                <div class="skill-box risk">
+                    <strong>Evidence gaps</strong>
+                    <p>
+                        {% if missing %}
+                            {{ missing|join:", " }}
+                        {% else %}
+                            No major missing skills detected. Focus on clarity, proof, and role-specific ordering.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
 
-            <a href="{% url 'ats_analyse' %}" class="btn btn-primary mt-3">
-                Analyse Another Role
-            </a>
-
+        <div id="suggestedCv" class="report-card mt-4">
+            <div class="report-card-pad d-flex justify-content-between align-items-start gap-3 flex-wrap border-bottom">
+                <div>
+                    <h2 class="h5 mb-1">Suggested CV draft</h2>
+                    <p class="report-muted mb-0">Preview the role-focused changes. Keep every claim truthful and interview-ready.</p>
+                </div>
+                {% if result.generated_cv and can_download %}
+                    <a href="{% url 'download_generated_cv' result.id %}" class="btn btn-primary btn-sm">Download TXT</a>
+                {% elif result.generated_cv %}
+                    <a href="{% url 'pricing' %}" class="btn btn-outline-primary btn-sm">Upgrade to download</a>
+                {% endif %}
+            </div>
+            <div class="report-card-pad">
+                {% if result.generated_cv %}
+                    <h3 class="h6">{{ result.generated_cv.title }}</h3>
+                    <pre class="draft-output">{{ result.generated_cv.content }}</pre>
+                    {% if not can_download %}
+                        <div class="value-note mt-3">
+                            Free users can preview the suggested CV. Plus and Professional users can download the tailored draft.
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <p class="report-muted mb-0">No generated CV draft exists for this result.</p>
+                {% endif %}
+            </div>
         </div>
     </div>
-
-</div>
+</section>
 {% endblock %}

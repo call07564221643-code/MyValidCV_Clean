@@ -301,6 +301,62 @@ def score_breakdown(score, matched, missing):
     }
 
 
+def build_report_insights(result, matched, missing):
+    if result.score >= 80:
+        readiness_label = "Ready to apply"
+        readiness_class = "ready"
+        recruiter_view = (
+            "Recruiters are likely to see a clear role match. Before applying, make sure the strongest evidence "
+            "is visible in the top third of the CV."
+        )
+        weakness_summary = (
+            "The CV is not weak overall, but it may still lose interviews if the best achievements are buried, "
+            "generic, or not measurable."
+        )
+    elif result.score >= 60:
+        readiness_label = "Needs work before applying"
+        readiness_class = "work"
+        recruiter_view = (
+            "Recruiters may see partial fit, but they may need to work too hard to connect your CV to this role."
+        )
+        weakness_summary = (
+            "The CV likely has relevant experience, but some requirements are not visible enough or lack clear proof."
+        )
+    else:
+        readiness_label = "High risk of being screened out"
+        readiness_class = "risk"
+        recruiter_view = (
+            "Recruiters may not see enough role fit quickly, especially if the missing skills are important in the advert."
+        )
+        weakness_summary = (
+            "The CV is weak for this specific role because the visible evidence does not yet match enough of the job requirements."
+        )
+
+    top_fixes = [
+        "Move the strongest role-matched skills and achievements into the top third of the CV.",
+        "Add measurable proof beside relevant skills, such as outcomes, tools used, scale, or delivery impact.",
+        "Remove or shorten generic content that does not help this specific application.",
+    ]
+    if missing:
+        top_fixes.insert(
+            1,
+            f"Address missing evidence for {', '.join(missing[:3])} only if you genuinely have experience with it.",
+        )
+    if matched:
+        top_fixes.insert(
+            0,
+            f"Make these matched strengths easy to spot: {', '.join(matched[:4])}.",
+        )
+
+    return {
+        "readiness_label": readiness_label,
+        "readiness_class": readiness_class,
+        "recruiter_view": recruiter_view,
+        "weakness_summary": weakness_summary,
+        "top_fixes": top_fixes[:5],
+    }
+
+
 def save_inline_cv(request, form):
     selected_cv = form.cleaned_data.get("cv")
     if selected_cv:
@@ -480,12 +536,17 @@ def result_detail(request, result_id):
     result = get_object_or_404(ATSResult, id=result_id, user=request.user)
     matched = [item.strip() for item in result.matched_skills.split(",") if item.strip()]
     missing = [item.strip() for item in result.missing_skills.split(",") if item.strip()]
+    breakdown = score_breakdown(result.score, matched, missing)
+    report_insights = build_report_insights(result, matched, missing)
     return render(
         request,
         "ats/result.html",
         {
             "result": result,
-            "breakdown": score_breakdown(result.score, matched, missing),
+            "breakdown": breakdown,
+            "matched": matched,
+            "missing": missing,
+            "report_insights": report_insights,
             "can_download": can_download_generated_cv(request.user),
         },
     )
