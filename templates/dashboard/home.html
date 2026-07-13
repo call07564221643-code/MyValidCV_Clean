@@ -1,126 +1,191 @@
 {% extends 'base.html' %}
 
-{% block title %}MyValidCV - Dashboard{% endblock %}
+{% block title %}Dashboard - MyValidCV{% endblock %}
 
 {% block content %}
 <div class="container my-5">
-    <!-- Header -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <h2 class="display-5 fw-bold mb-1">Welcome, {{ user.first_name|default:user.username }}! 👋</h2>
-            <p class="text-muted">Track your CV analyses and manage your account</p>
-        </div>
-    </div>
-
-    <!-- Stats Cards -->
     <div class="row mb-4">
-        <!-- Plan Card -->
-        <div class="col-md-6 mb-3">
-            <div class="card shadow-sm border-0 h-100">
+        <div class="col-lg-8">
+            <h1 class="h2 fw-bold mb-1">Welcome, {{ user.first_name|default:user.username }}</h1>
+            <p class="text-muted mb-0">Validate a CV against a job, review your score, and keep the next application moving.</p>
+        </div>
+        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+            <a href="{% url 'home' %}#composer" class="btn btn-primary">Validate another job</a>
+            <a href="{% url 'upload_cv' %}" class="btn btn-outline-primary">Manage CVs</a>
+            {% if is_enterprise %}
+                <a href="{% url 'enterprise_bulk' %}" class="btn btn-outline-success">Enterprise Bulk</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-3 mb-5">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <h6 class="card-title text-muted fw-semibold mb-3">Current Plan</h6>
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <h3 class="fw-bold mb-0">
-                                {% if plan == 'free' %}
-                                    <span class="badge bg-secondary">Free</span>
-                                {% elif plan == 'professional' %}
-                                    <span class="badge bg-info">Professional</span>
-                                {% elif plan == 'enterprise' %}
-                                    <span class="badge bg-success">Enterprise</span>
-                                {% endif %}
-                            </h3>
-                            <small class="text-muted">
-                                {% if plan == 'free' %}
-                                    Get started with basic analysis
-                                {% elif plan == 'professional' %}
-                                    Boost your job search
-                                {% elif plan == 'enterprise' %}
-                                    Enterprise power & API
-                                {% endif %}
-                            </small>
-                        </div>
-                        <div class="text-end">
-                            <a href="#" class="btn btn-sm btn-outline-primary">Upgrade</a>
-                        </div>
+                    <p class="text-muted mb-1">Current Plan</p>
+                    <h2 class="h4 mb-0 text-capitalize">{{ plan }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Daily Usage</p>
+                    <h2 class="h4 mb-2">{{ analyses_today }} / {{ limit }}</h2>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar" style="width: {{ usage_percent }}%;"></div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Usage Card -->
-        <div class="col-md-6 mb-3">
-            <div class="card shadow-sm border-0 h-100">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <h6 class="card-title text-muted fw-semibold mb-3">Daily Usage</h6>
-                    <div>
-                        <h3 class="fw-bold mb-0">{{ analyses_today }} <span class="h6 fw-normal text-muted">/ {{ limit }}</span></h3>
-                        <small class="text-muted">analyses today</small>
-                        <div class="progress mt-3" style="height: 8px;">
-                            <div class="progress-bar bg-primary" style="width: {{ analyses_today|multiply:100|divide:limit }}%;"></div>
-                        </div>
-                    </div>
+                    <p class="text-muted mb-1">Saved CVs</p>
+                    <h2 class="h4 mb-0">{{ uploaded_cvs|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Generated CV Drafts</p>
+                    <h2 class="h4 mb-0">{{ generated_cvs|length }}</h2>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Quick Action -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card shadow-lg border-0 rounded-4 bg-gradient">
-                <div class="card-body p-5 text-center">
-                    <h4 class="fw-bold mb-3">Ready to analyze another CV?</h4>
-                    <p class="text-muted mb-4">Upload a CV and compare it against a job description to see your match score.</p>
-                    <a href="{% url 'home' %}" class="btn btn-primary btn-lg">
-                        Start New Analysis
-                    </a>
+    <div class="alert alert-light border shadow-sm mb-4">
+        {% if is_owner %}
+            <strong>Owner view:</strong> You can see website management controls, financial reports, payment/refund data, health checks, and global platform statistics.
+        {% elif plan == 'enterprise' %}
+            <strong>Enterprise view:</strong> You can run bulk CV analysis and view reports created by your account. Owner finance and website-wide reports are hidden.
+        {% elif plan == 'plus' or plan == 'professional' %}
+            <strong>Paid user view:</strong> You can validate more roles and download generated CV drafts. Website owner reports are hidden.
+        {% else %}
+            <strong>Free user view:</strong> You can keep 1 CV and run 2 validations per day. Upgrade when you need more checks or downloadable CV drafts.
+        {% endif %}
+    </div>
+
+    {% if show_demo_preview %}
+        <div class="card border-0 shadow-sm mb-5">
+            <div class="card-body p-4">
+                <div class="row align-items-center g-4">
+                    <div class="col-lg-5">
+                        <span class="badge bg-primary mb-2">Demo Preview</span>
+                        <h2 class="h4 fw-bold">Your dashboard fills up after your first CV analysis.</h2>
+                        <p class="text-muted">
+                            This preview shows the data MyValidCV will create: saved CVs, job roles, ATS outcomes,
+                            generated CV drafts, and application reminders.
+                        </p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="{% url 'upload_cv' %}" class="btn btn-primary">Upload CV</a>
+                            <a href="{% url 'home' %}#composer" class="btn btn-outline-primary">Run Analysis</a>
+                        </div>
+                    </div>
+                    <div class="col-lg-7">
+                        <div class="row g-3 text-center">
+                            <div class="col-6 col-md-3">
+                                <div class="score-ring score-ring-blue mx-auto" style="--score: {{ demo_metrics.skills }};"><span>{{ demo_metrics.skills }}%</span></div>
+                                <small class="text-muted d-block mt-2">Skills</small>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="score-ring score-ring-info mx-auto" style="--score: {{ demo_metrics.keywords }};"><span>{{ demo_metrics.keywords }}%</span></div>
+                                <small class="text-muted d-block mt-2">Keywords</small>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="score-ring score-ring-green mx-auto" style="--score: {{ demo_metrics.experience }};"><span>{{ demo_metrics.experience }}%</span></div>
+                                <small class="text-muted d-block mt-2">Experience</small>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="score-ring score-ring-total mx-auto" style="--score: {{ demo_metrics.total }};"><span>{{ demo_metrics.total }}%</span></div>
+                                <small class="text-muted d-block mt-2">Total</small>
+                            </div>
+                        </div>
+                        <div class="workflow-strip compact mt-4">
+                            <div class="workflow-step">
+                                <div class="workflow-icon bg-primary text-white">CV</div>
+                                <strong>Saved CV</strong>
+                                <small>Software Developer CV</small>
+                            </div>
+                            <div class="workflow-line"></div>
+                            <div class="workflow-step">
+                                <div class="workflow-icon bg-info text-white">Job</div>
+                                <strong>Role</strong>
+                                <small>Django Developer</small>
+                            </div>
+                            <div class="workflow-line"></div>
+                            <div class="workflow-step">
+                                <div class="workflow-icon bg-success text-white">Draft</div>
+                                <strong>Generated CV</strong>
+                                <small>Tailored download</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    {% endif %}
 
-    <!-- Recent Analyses -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white border-bottom">
-                    <h5 class="fw-bold mb-0">📊 Recent Analyses</h5>
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Uploaded CVs</h2>
+                </div>
+                <div class="card-body">
+                    {% if uploaded_cvs %}
+                        <div class="list-group list-group-flush">
+                            {% for cv in uploaded_cvs %}
+                                <div class="list-group-item px-0 d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h3 class="h6 mb-1">{{ cv.title }}</h3>
+                                        <small class="text-muted">Uploaded {{ cv.uploaded_at|date:"M d, Y" }}</small>
+                                    </div>
+                                    <a href="{{ cv.file.url }}" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener">View</a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No CVs uploaded yet.</p>
+                        <a href="{% url 'upload_cv' %}" class="btn btn-primary btn-sm">Upload your first CV</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Recent ATS Results</h2>
                 </div>
                 <div class="card-body p-0">
-                    {% if recent_analyses %}
+                    {% if recent_results %}
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0 align-middle">
                                 <thead class="table-light">
                                     <tr>
-                                        <th class="fw-semibold text-muted">Date</th>
-                                        <th class="fw-semibold text-muted">Score</th>
-                                        <th class="fw-semibold text-muted">ATS Score</th>
-                                        <th class="fw-semibold text-muted">Action</th>
+                                        <th>Role</th>
+                                        <th>CV</th>
+                                        <th>Score</th>
+                                        <th>Date</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for analysis in recent_analyses %}
+                                    {% for result in recent_results %}
                                         <tr>
+                                            <td>{{ result.job_title }}</td>
+                                            <td>{{ result.cv.title }}</td>
                                             <td>
-                                                <small class="text-muted">
-                                                    {{ analysis.created_at|date:"M d, Y" }}
-                                                </small>
+                                                <span class="badge {% if result.score >= 80 %}bg-success{% elif result.score >= 50 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                                    {{ result.score }}%
+                                                </span>
                                             </td>
-                                            <td>
-                                                <span class="badge 
-                                                    {% if analysis.overall_score >= 80 %}bg-success
-                                                    {% elif analysis.overall_score >= 65 %}bg-info
-                                                    {% elif analysis.overall_score >= 50 %}bg-warning
-                                                    {% else %}bg-danger
-                                                    {% endif %}
-                                                ">{{ analysis.overall_score }}</span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-primary">{{ analysis.ats_score }}</span>
-                                            </td>
-                                            <td>
-                                                <a href="#" class="btn btn-sm btn-outline-secondary" disabled title="Feature coming soon">View</a>
+                                            <td><small class="text-muted">{{ result.created_at|date:"M d, Y" }}</small></td>
+                                            <td class="text-end">
+                                                <a href="{% url 'ats_result' result.id %}" class="btn btn-sm btn-outline-primary">Open</a>
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -128,11 +193,9 @@
                             </table>
                         </div>
                     {% else %}
-                        <div class="text-center py-5">
-                            <div class="text-muted mb-3" style="font-size: 48px;">📭</div>
-                            <h6 class="text-muted">No analyses yet</h6>
-                            <p class="text-muted mb-3">Start by analyzing your first CV against a job description</p>
-                            <a href="{% url 'home' %}" class="btn btn-primary btn-sm">Start Analyzing</a>
+                        <div class="p-4">
+                            <p class="text-muted">No ATS results yet. Upload a CV, paste a job description, and generate your first report.</p>
+                            <a href="{% url 'home' %}#composer" class="btn btn-primary btn-sm">Run ATS analysis</a>
                         </div>
                     {% endif %}
                 </div>
@@ -140,33 +203,292 @@
         </div>
     </div>
 
-    <!-- Upgrade Card -->
-    <div class="row mt-5">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                <div class="card-body p-4">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h5 class="fw-bold mb-2">Unlock More Analyses with Professional Plan</h5>
-                            <p class="mb-0 opacity-75">
-                                <span class="badge bg-white text-primary me-2">5 analyses/day</span>
-                                <span class="badge bg-white text-primary me-2">Save history</span>
-                                <span class="badge bg-white text-primary">Priority support</span>
-                            </p>
+    <div class="row g-4 mt-1">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Saved Job Roles</h2>
+                </div>
+                <div class="card-body">
+                    {% if saved_jobs %}
+                        <div class="list-group list-group-flush">
+                            {% for job in saved_jobs %}
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between gap-3">
+                                        <div>
+                                            <h3 class="h6 mb-1">{{ job.title }}</h3>
+                                            <small class="text-muted">
+                                                {{ job.get_source_type_display }}
+                                                {% if job.company %} · {{ job.company }}{% endif %}
+                                                {% if job.deadline %} · Deadline {{ job.deadline|date:"M d, Y" }}{% endif %}
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-light text-dark border">{{ job.results.count }} result(s)</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
                         </div>
-                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                            <a href="#" class="btn btn-light fw-semibold">Learn More →</a>
+                    {% else %}
+                        <p class="text-muted mb-0">No saved job roles yet. Each ATS analysis saves the role automatically.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Application Reminders</h2>
+                </div>
+                <div class="card-body">
+                    {% if reminders %}
+                        <div class="list-group list-group-flush">
+                            {% for reminder in reminders %}
+                                <div class="list-group-item px-0 d-flex justify-content-between gap-3">
+                                    <div>
+                                        <h3 class="h6 mb-1">{{ reminder.job_role.title }}</h3>
+                                        <small class="text-muted">{{ reminder.note|default:"Apply before the deadline." }}</small>
+                                    </div>
+                                    <span class="badge bg-warning text-dark">{{ reminder.reminder_date|date:"M d" }}</span>
+                                </div>
+                            {% endfor %}
                         </div>
-                    </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No deadline reminders yet. Add an optional alert in the validation composer.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">Generated CV Drafts</h2>
+                    <a href="{% url 'home' %}#composer" class="btn btn-sm btn-outline-primary">Generate New Draft</a>
+                </div>
+                <div class="card-body">
+                    {% if generated_cvs %}
+                        <div class="row g-3">
+                            {% for draft in generated_cvs %}
+                                <div class="col-md-6 col-xl-4">
+                                    <div class="border rounded p-3 h-100">
+                                        <h3 class="h6 mb-1">{{ draft.title }}</h3>
+                                        <small class="text-muted">Created {{ draft.created_at|date:"M d, Y" }}</small>
+                                        <p class="text-muted small mt-2 mb-3">{{ draft.content|truncatechars:120 }}</p>
+                                        <a href="{% url 'download_generated_cv' draft.ats_result.id %}" class="btn btn-sm btn-outline-primary">Download Draft</a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="row g-3 align-items-center">
+                            <div class="col-lg-8">
+                                <h3 class="h6">Sample generated CV draft</h3>
+                                <p class="text-muted mb-0">
+                                    After analysis, this section will show role-specific CV drafts with rewritten summaries,
+                                    key skills to emphasise, missing evidence to add, and download links.
+                                </p>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="border rounded p-3 bg-light">
+                                    <strong>Django Developer Tailored CV</strong>
+                                    <p class="small text-muted mb-2">Highlights Python, Django, SQL, API delivery, and measurable project outcomes.</p>
+                                    <span class="badge bg-success">Demo draft preview</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if is_enterprise %}
+        <div class="row g-4 mt-1">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h2 class="h5 mb-0">Enterprise Reports</h2>
+                        <a href="{% url 'enterprise_bulk' %}" class="btn btn-sm btn-success">New Bulk Analysis</a>
+                    </div>
+                    <div class="card-body">
+                        {% if enterprise_batches %}
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Report</th>
+                                            <th>Job Role</th>
+                                            <th>CVs</th>
+                                            <th>Date</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for batch in enterprise_batches %}
+                                            <tr>
+                                                <td>{{ batch.title }}</td>
+                                                <td>{{ batch.job_role.title }}</td>
+                                                <td>{{ batch.candidate_results.count }}</td>
+                                                <td>{{ batch.created_at|date:"M d, Y" }}</td>
+                                                <td class="text-end">
+                                                    <a href="{% url 'enterprise_report' batch.id %}" class="btn btn-sm btn-outline-primary">Open Report</a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-muted mb-0">No enterprise reports yet. Upload CVs in bulk against one job role to create your first shortlist.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if is_owner %}
+        <div class="row g-4 mt-1">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <div class="d-flex flex-column flex-lg-row justify-content-between gap-2 align-items-lg-center">
+                            <div>
+                                <h2 class="h5 mb-0">Admin Control Center</h2>
+                                <small class="text-muted">One-click controls for users, payments, plans, reporting, and enterprise operations.</small>
+                            </div>
+                            <a href="{% url 'admin:index' %}" class="btn btn-sm btn-dark">Open Django Admin</a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6 col-xl-3">
+                                <a class="admin-control-tile" href="{% url 'admin:auth_user_changelist' %}">
+                                    <span>Users</span>
+                                    <strong>{{ admin_stats.users }}</strong>
+                                    <small>Profiles and account access</small>
+                                </a>
+                            </div>
+                            <div class="col-md-6 col-xl-3">
+                                <a class="admin-control-tile" href="{% url 'admin:payments_paymenttransaction_changelist' %}">
+                                    <span>Payments</span>
+                                    <strong>{{ admin_stats.payments }}</strong>
+                                    <small>Transactions and checkout status</small>
+                                </a>
+                            </div>
+                            <div class="col-md-6 col-xl-3">
+                                <a class="admin-control-tile" href="{% url 'admin:subscriptions_subscriptionplan_changelist' %}">
+                                    <span>Plans</span>
+                                    <strong>{{ admin_stats.plans }}</strong>
+                                    <small>Pricing and plan limits</small>
+                                </a>
+                            </div>
+                            <div class="col-md-6 col-xl-3">
+                                <a class="admin-control-tile" href="{% url 'admin:subscriptions_customersubscription_changelist' %}">
+                                    <span>Subscriptions</span>
+                                    <strong>{{ admin_stats.active_subscriptions }}</strong>
+                                    <small>Active customer plans</small>
+                                </a>
+                            </div>
+                            <div class="col-md-6 col-xl-3">
+                                <a class="admin-control-tile" href="{% url 'admin:payments_invoice_changelist' %}">
+                                    <span>Invoices</span>
+                                    <strong>{{ admin_stats.open_invoices }}</strong>
+                                    <small>Open invoices and receipts</small>
+                                </a>
+                            </div>
+                            <div class="col-md-6 col-xl-3">
+                                <a class="admin-control-tile" href="{% url 'admin:payments_refund_changelist' %}">
+                                    <span>Refunds</span>
+                                    <strong>{{ admin_stats.refunds }}</strong>
+                                    <small>Refund approvals and notes</small>
+                                </a>
+                            </div>
+                            <div class="col-md-6 col-xl-3">
+                                <a class="admin-control-tile" href="{% url 'website_health' %}">
+                                    <span>Health</span>
+                                    <strong>{{ admin_stats.ats_results }}</strong>
+                                    <small>Reports, risks, and finance</small>
+                                </a>
+                            </div>
+                            <div class="col-md-6 col-xl-3">
+                                <a class="admin-control-tile" href="{% url 'admin:analytics_financialassumption_changelist' %}">
+                                    <span>Finance Inputs</span>
+                                    <strong>{{ admin_stats.enterprise_batches }}</strong>
+                                    <small>Costs, suppliers, and assumptions</small>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="h5 mb-0">Website Health Report</h2>
+                            <small class="text-muted">Monitor database, payments, ATS processing, compatibility, and upcoming maintenance risks.</small>
+                        </div>
+                        <a href="{% url 'website_health' %}" class="btn btn-sm btn-outline-primary">Open Health Report</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="h5 mb-0">Social Login Providers</h2>
+                            <small class="text-muted">Control which social buttons appear on Login and Sign Up.</small>
+                        </div>
+                        <a href="{% url 'admin:accounts_socialauthprovider_changelist' %}" class="btn btn-sm btn-outline-primary">Manage Providers</a>
+                    </div>
+                    <div class="card-body">
+                        {% if social_providers %}
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Provider</th>
+                                            <th>Visible</th>
+                                            <th>OAuth Configured</th>
+                                            <th>Admin Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for provider in social_providers %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ provider.name }}</strong>
+                                                    <br><small class="text-muted">{{ provider.key }}</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge {% if provider.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                                                        {% if provider.is_active %}Shown{% else %}Hidden{% endif %}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge {% if provider.is_configured %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                                        {% if provider.is_configured %}Configured{% else %}Needs keys{% endif %}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <a href="{% url 'admin:accounts_socialauthprovider_change' provider.id %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-muted mb-0">No providers configured yet. Add Google, LinkedIn, Facebook, or another provider in admin.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 </div>
-
-<!-- Custom filter for multiply and divide -->
-<script>
-    // This would normally be a Django template filter, but we'll use a workaround
-</script>
-
 {% endblock %}
