@@ -3,58 +3,407 @@
 {% block title %}Login - MyValidCV{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-            <div class="card shadow-lg border-0 rounded-4">
-                <div class="card-body p-5">
-                    <h2 class="fw-bold mb-1 text-center">Welcome Back</h2>
-                    <p class="text-muted text-center mb-4">Log in to your account</p>
+<section class="mvcv-auth-shell">
+    <div class="container">
+        <div class="mvcv-auth-grid">
+            <aside class="mvcv-auth-story" aria-label="MyValidCV value proposition">
+                <a class="mvcv-auth-brand" href="{% url 'home' %}" aria-label="MyValidCV home">
+                    <span>MyValid<span>CV</span></span>
+                </a>
 
-                    <form method="post">
-                        {% csrf_token %}
-
-                        {% for field in form %}
-                            <div class="mb-3">
-                                {{ field.label_tag }}
-                                {{ field }}
-                                {% if field.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ field.errors.0 }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-
-                        <button type="submit" class="btn btn-primary btn-lg w-100 fw-semibold mt-4">
-                            Log In
-                        </button>
-                    </form>
-
-                    <hr class="my-4">
-
-                    <p class="text-center text-muted mb-0">
-                        Don't have an account? 
-                        <a href="{% url 'register' %}" class="fw-bold text-decoration-none">Sign up</a>
+                <div class="mvcv-auth-copy">
+                    <p class="mvcv-auth-eyebrow">CV readiness workspace</p>
+                    <h1>The fastest way to know if your CV is ready.</h1>
+                    <p>
+                        Continue to your validation workspace, compare your CV with a job advert,
+                        and see the changes most likely to improve interview chances.
                     </p>
                 </div>
+
+                <div class="mvcv-auth-steps" aria-label="Product journey">
+                    <span>Upload CV</span>
+                    <span>Paste Job</span>
+                    <span>Validate</span>
+                    <span>Improve</span>
+                </div>
+
+                <div class="mvcv-auth-trust">
+                    <div>
+                        <strong>Recruiter-focused</strong>
+                        <span>Explains what a hiring team is likely to notice.</span>
+                    </div>
+                    <div>
+                        <strong>Truthful improvements</strong>
+                        <span>Suggests stronger wording without inventing experience.</span>
+                    </div>
+                    <div>
+                        <strong>Fast by design</strong>
+                        <span>Your saved CVs and reports stay one click away.</span>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="mvcv-auth-card">
+                <div class="mvcv-auth-card-head">
+                    <span class="mvcv-auth-status">Welcome back</span>
+                    <h2>Log in to MyValidCV</h2>
+                    <p>Pick up where you left off and validate the next job faster.</p>
+                </div>
+
+                {% if social_providers %}
+                    <div class="mvcv-social-grid mb-4">
+                        {% for provider in social_providers %}
+                            <a class="mvcv-social-button provider-{{ provider.key }}" href="{% url 'social_login_start' provider.key %}?next={{ next|urlencode }}">
+                                <span>{{ provider.icon_label|default:provider.name|slice:":2" }}</span>
+                                Continue with {{ provider.name }}
+                            </a>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mvcv-auth-divider"><span>or use email</span></div>
+                {% endif %}
+
+                <form method="post" class="mvcv-auth-form" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next }}">
+
+                    {% for field in form %}
+                        <div class="mb-3">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ field.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-semibold">
+                        Continue
+                    </button>
+                </form>
+
+                <p class="mvcv-auth-switch">
+                    New to MyValidCV?
+                    <a href="{% url 'register' %}?next={{ next|urlencode }}">Create a free account</a>
+                </p>
             </div>
         </div>
     </div>
-</div>
+</section>
 
 <style>
-    input[type="text"],
-    input[type="password"] {
-        border-radius: 8px !important;
-        border: 1px solid #dee2e6 !important;
-        padding: 10px 12px !important;
+    .mvcv-auth-shell {
+        min-height: calc(100vh - 164px);
+        padding: 4rem 0;
+        background:
+            radial-gradient(circle at 15% 0%, rgba(79, 70, 229, 0.13), transparent 34%),
+            radial-gradient(circle at 84% 12%, rgba(20, 184, 166, 0.12), transparent 28%),
+            var(--mvcv-body-bg, #f8fafc);
     }
-    
-    input[type="text"]:focus,
-    input[type="password"]:focus {
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+
+    .mvcv-auth-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.72fr);
+        gap: 1.25rem;
+        align-items: stretch;
+        max-width: 1120px;
+        margin: 0 auto;
+    }
+
+    .mvcv-auth-story,
+    .mvcv-auth-card {
+        border: 1px solid var(--mvcv-card-border, #e2e8f0);
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: 0 24px 70px rgba(15, 23, 42, 0.10);
+    }
+
+    .mvcv-auth-story {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 620px;
+        padding: 2rem;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .mvcv-auth-story::after {
+        content: "";
+        position: absolute;
+        width: 260px;
+        height: 260px;
+        right: -90px;
+        bottom: -90px;
+        border-radius: 999px;
+        background: rgba(159, 184, 255, 0.28);
+    }
+
+    .mvcv-auth-brand {
+        position: relative;
+        z-index: 1;
+        color: #1f3374;
+        font-size: 1.35rem;
+        font-weight: 650;
+        letter-spacing: -0.04em;
+        text-decoration: none;
+    }
+
+    .mvcv-auth-brand span span {
+        color: #9fb8ff;
+    }
+
+    .mvcv-auth-copy {
+        position: relative;
+        z-index: 1;
+        max-width: 650px;
+    }
+
+    .mvcv-auth-eyebrow,
+    .mvcv-auth-status {
+        display: inline-flex;
+        width: fit-content;
+        border: 1px solid rgba(79, 70, 229, 0.16);
+        border-radius: 999px;
+        background: rgba(79, 70, 229, 0.07);
+        color: #1f3374;
+        font-size: 0.82rem;
+        font-weight: 800;
+        padding: 0.36rem 0.7rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .mvcv-auth-copy h1 {
+        color: var(--mvcv-body-text, #0f172a);
+        font-size: clamp(2.4rem, 5vw, 4.8rem);
+        line-height: 0.98;
+        letter-spacing: -0.055em;
+        margin-bottom: 1rem;
+    }
+
+    .mvcv-auth-copy p,
+    .mvcv-auth-card-head p,
+    .mvcv-auth-trust span,
+    .mvcv-auth-switch {
+        color: var(--mvcv-muted, #64748b);
+    }
+
+    .mvcv-auth-steps {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.6rem;
+        margin: 1.5rem 0;
+    }
+
+    .mvcv-auth-steps span {
+        border: 1px solid rgba(79, 70, 229, 0.14);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #1f3374;
+        font-weight: 800;
+        padding: 0.55rem 0.75rem;
+        text-align: center;
+    }
+
+    .mvcv-auth-trust {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .mvcv-auth-trust div {
+        border: 1px solid var(--mvcv-card-border, #e2e8f0);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.72);
+        padding: 1rem;
+    }
+
+    .mvcv-auth-trust strong,
+    .mvcv-auth-trust span {
+        display: block;
+    }
+
+    .mvcv-auth-trust strong {
+        color: var(--mvcv-body-text, #0f172a);
+        margin-bottom: 0.25rem;
+    }
+
+    .mvcv-auth-card {
+        padding: 2rem;
+        align-self: center;
+    }
+
+    .mvcv-auth-card-head h2 {
+        color: var(--mvcv-body-text, #0f172a);
+        font-size: 2rem;
+        letter-spacing: -0.035em;
+        margin-bottom: 0.35rem;
+    }
+
+    .mvcv-social-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .mvcv-social-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        border: 1px solid var(--mvcv-card-border, #e2e8f0);
+        border-radius: 999px;
+        background: #ffffff;
+        color: #0f172a;
+        padding: 0.78rem 1rem;
+        text-align: center;
+        text-decoration: none;
+        font-weight: 800;
+    }
+
+    .mvcv-social-button:hover {
+        background: rgba(79, 70, 229, 0.07);
+        border-color: rgba(79, 70, 229, 0.22);
+        color: #1f3374;
+    }
+
+    .mvcv-social-button span {
+        display: inline-grid;
+        place-items: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        font-size: 0.78rem;
+    }
+
+    .provider-linkedin span {
+        background: #0a66c2;
+        color: #ffffff;
+    }
+
+    .provider-google span {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        color: #4285f4;
+    }
+
+    .mvcv-auth-divider {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--mvcv-muted, #64748b);
+        font-size: 0.86rem;
+        margin-bottom: 1rem;
+    }
+
+    .mvcv-auth-divider::before,
+    .mvcv-auth-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--mvcv-card-border, #e2e8f0);
+    }
+
+    .mvcv-auth-form label {
+        color: var(--mvcv-body-text, #0f172a);
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+    }
+
+    .mvcv-auth-form input[type="text"],
+    .mvcv-auth-form input[type="email"],
+    .mvcv-auth-form input[type="password"] {
+        width: 100%;
+        border-radius: 14px !important;
+        border: 1px solid var(--mvcv-card-border, #e2e8f0) !important;
+        background: #ffffff;
+        color: #0f172a;
+        padding: 0.82rem 0.95rem !important;
+    }
+
+    .mvcv-auth-form input:focus {
+        border-color: #4f46e5 !important;
+        box-shadow: 0 0 0 0.22rem rgba(79, 70, 229, 0.16) !important;
+        outline: 0;
+    }
+
+    .mvcv-auth-switch {
+        margin: 1.25rem 0 0;
+        text-align: center;
+    }
+
+    .mvcv-auth-switch a {
+        color: #1f3374;
+        font-weight: 800;
+        text-decoration: none;
+    }
+
+    .mvcv-auth-switch a:hover {
+        text-decoration: underline;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .mvcv-auth-story,
+        .mvcv-auth-card,
+        .mvcv-auth-trust div {
+            background: rgba(17, 28, 51, 0.88);
+        }
+
+        .mvcv-auth-brand,
+        .mvcv-auth-eyebrow,
+        .mvcv-auth-status,
+        .mvcv-auth-steps span,
+        .mvcv-auth-switch a {
+            color: #dbe7ff;
+        }
+
+        .mvcv-auth-steps span,
+        .mvcv-social-button,
+        .mvcv-auth-form input[type="text"],
+        .mvcv-auth-form input[type="email"],
+        .mvcv-auth-form input[type="password"] {
+            background: #0b1224;
+            color: #f8fafc;
+        }
+
+        .mvcv-social-button:hover {
+            background: rgba(159, 184, 255, 0.16);
+            color: #f8fafc;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .mvcv-auth-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .mvcv-auth-story {
+            min-height: auto;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .mvcv-auth-shell {
+            padding: 2rem 0;
+        }
+
+        .mvcv-auth-story,
+        .mvcv-auth-card {
+            border-radius: 20px;
+            padding: 1.25rem;
+        }
+
+        .mvcv-auth-steps,
+        .mvcv-auth-trust {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 {% endblock %}
