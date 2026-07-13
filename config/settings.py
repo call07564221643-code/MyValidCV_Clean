@@ -34,6 +34,26 @@ def env_list(name, default=''):
     return [item.strip() for item in value.split(',') if item.strip()]
 
 
+def unique_list(items):
+    seen = set()
+    result = []
+    for item in items:
+        if item and item not in seen:
+            seen.add(item)
+            result.append(item)
+    return result
+
+
+def csrf_origin_from_host(host):
+    if not host or host == '*':
+        return ''
+    if host.startswith('http://') or host.startswith('https://'):
+        return host
+    if host.startswith('.'):
+        return f'https://*{host}'
+    return f'https://{host}'
+
+
 def database_from_url(database_url):
     parsed = urlparse(database_url)
     return {
@@ -63,6 +83,10 @@ if HEROKU_APP_NAME:
 CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS')
 if HEROKU_APP_NAME:
     CSRF_TRUSTED_ORIGINS.append(f'https://{HEROKU_APP_NAME}.herokuapp.com')
+CSRF_TRUSTED_ORIGINS.extend(
+    origin for origin in (csrf_origin_from_host(host) for host in ALLOWED_HOSTS) if origin
+)
+CSRF_TRUSTED_ORIGINS = unique_list(CSRF_TRUSTED_ORIGINS)
 
 # Application definition
 INSTALLED_APPS = [
