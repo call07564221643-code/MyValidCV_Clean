@@ -168,7 +168,7 @@
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'pricing' %}active{% endif %}" href="{% url 'pricing' %}">Plans</a>
                         </li>
-                        {% if user.is_superuser or user.profile.plan == 'enterprise' %}
+                        {% if user.is_superuser or is_enterprise %}
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'enterprise_bulk' %}active{% endif %}" href="{% url 'enterprise_bulk' %}">Enterprise</a>
                             </li>
