@@ -2,7 +2,7 @@
 
 {% block branding %}
 <div id="site-name">
-    <a href="{% url 'admin:index' %}"><span class="mvcv-admin-logo">M</span> MyValidCV Admin</a>
+    <a href="{% url 'admin:index' %}"><span class="mvcv-admin-wordmark">MyValid<span>CV</span></span> Admin</a>
 </div>
 {% endblock %}
 
@@ -10,53 +10,50 @@
 {{ block.super }}
 <style>
     :root {
-        --primary: rgba(143, 188, 235, 0.58);
-        --secondary: rgba(123, 200, 182, 0.55);
-        --accent: #d97706;
+        --primary: rgba(31, 51, 116, 0.62);
+        --secondary: rgba(31, 51, 116, 0.10);
+        --accent: #1f3374;
         --primary-fg: #101a33;
         --body-fg: #212529;
         --body-bg: #f8f9fa;
         --link-fg: #17233f;
-        --link-selected-fg: #245f55;
+        --link-selected-fg: #1f3374;
         --header-color: #101a33;
         --header-branding-color: #101a33;
-        --header-bg: rgba(143, 188, 235, 0.38);
-        --breadcrumbs-bg: rgba(123, 200, 182, 0.35);
+        --header-bg: rgba(255, 255, 255, 0.92);
+        --breadcrumbs-bg: rgba(31, 51, 116, 0.10);
     }
 
     #header {
-        background: rgba(143, 188, 235, 0.38);
+        background: rgba(255, 255, 255, 0.92);
         color: #101a33;
+        border-bottom: 1px solid rgba(31, 51, 116, 0.12);
     }
 
     #branding #site-name a {
-        color: #101a33;
-        font-weight: 650;
+        color: #1f3374;
+        font-weight: 560;
+        letter-spacing: -0.025em;
     }
 
-    .mvcv-admin-logo {
-        display: inline-grid;
-        place-items: center;
-        width: 28px;
-        height: 28px;
-        border-radius: 8px;
-        margin-right: 0.35rem;
-        background:
-            radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.92), transparent 18%),
-            linear-gradient(135deg, #f59e0b, #d97706);
-        color: #ffffff;
-        font-weight: 800;
+    .mvcv-admin-wordmark {
+        color: #1f3374;
+        font-weight: 620;
+    }
+
+    .mvcv-admin-wordmark span {
+        color: #7f9df5;
     }
 
     .module h2,
     .module caption,
     .inline-group h2 {
-        background: rgba(143, 188, 235, 0.38);
+        background: rgba(31, 51, 116, 0.10);
         color: #101a33;
     }
 
     div.breadcrumbs {
-        background: rgba(123, 200, 182, 0.35);
+        background: rgba(31, 51, 116, 0.10);
         color: #101a33;
     }
 </style>

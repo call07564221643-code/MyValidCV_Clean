@@ -21,37 +21,32 @@
         }
 
         .navbar .nav-link:hover,
-        .navbar .nav-link:focus {
-            background: rgba(79, 70, 229, 0.10);
-            color: #4F46E5 !important;
+        .navbar .nav-link:focus,
+        .navbar .nav-link.active {
+            background: rgba(31, 51, 116, 0.10);
+            color: #1f3374 !important;
         }
 
         .mvcv-brand-inline {
-            color: #18223a !important;
-            font-weight: 850;
-            letter-spacing: -0.025em;
+            color: #1f3374 !important;
+            font-weight: 620;
+            letter-spacing: -0.035em;
+            font-size: 1.2rem;
         }
 
-        .mvcv-brand-mark-mini {
-            width: auto;
-            min-width: 34px;
-            padding: 0 0.55rem;
-            background:
-                radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.35), transparent 18%),
-                linear-gradient(135deg, #4F46E5, #7C3AED 54%, #14B8A6);
-            color: #ffffff;
-            box-shadow: 0 10px 22px rgba(79, 70, 229, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.34);
+        .mvcv-brand-inline span span {
+            color: #9fb8ff;
         }
 
         .btn-primary {
-            background: #4F46E5;
-            border-color: #4F46E5;
+            background: #1f3374;
+            border-color: #1f3374;
         }
 
         .btn-primary:hover,
         .btn-primary:focus {
-            background: #4338CA;
-            border-color: #4338CA;
+            background: #17275f;
+            border-color: #17275f;
         }
     </style>
 
@@ -62,8 +57,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
         <div class="container">
             <a class="navbar-brand mvcv-brand-inline" href="{% url 'home' %}" aria-label="MyValidCV home">
-                <span class="mvcv-brand-mark-mini">M</span>
-                <span>MyValidCV</span>
+                <span>MyValid<span>CV</span></span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -72,24 +66,24 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-lg-center">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">Validate CV</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Validate CV</a>
                     </li>
 
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'dashboard' %}">Reports</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Reports</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'pricing' %}">Plans</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'pricing' %}active{% endif %}" href="{% url 'pricing' %}">Plans</a>
                         </li>
                         {% if user.is_superuser or user.profile.plan == 'enterprise' %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'enterprise_bulk' %}">Enterprise</a>
+                                <a class="nav-link {% if request.resolver_match.url_name == 'enterprise_bulk' %}active{% endif %}" href="{% url 'enterprise_bulk' %}">Enterprise</a>
                             </li>
                         {% endif %}
                         {% if user.is_superuser %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'website_health' %}">Health</a>
+                                <a class="nav-link {% if request.resolver_match.url_name == 'website_health' %}active{% endif %}" href="{% url 'website_health' %}">Health</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
@@ -103,10 +97,10 @@
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'pricing' %}">Plans</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'pricing' %}active{% endif %}" href="{% url 'pricing' %}">Plans</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">Login</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" href="{% url 'login' %}">Login</a>
                         </li>
                         <li class="nav-item ms-lg-2">
                             <a class="btn btn-primary btn-sm" href="{% url 'register' %}">Start Free</a>
