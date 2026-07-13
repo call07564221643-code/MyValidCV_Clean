@@ -5,6 +5,7 @@
 {% block extra_css %}
 <style>
     :root {
+        color-scheme: light;
         --mvcv-navy: #1f3374;
         --mvcv-navy-dark: #17275f;
         --mvcv-navy-soft: #eef3ff;
@@ -14,10 +15,10 @@
         --mvcv-ink: #0f172a;
         --mvcv-muted: #64748b;
         --mvcv-line: #e2e8f0;
-    }
-
-    :root {
-        color-scheme: light;
+        --mvcv-on-dark: #ffffff;
+        --mvcv-on-dark-muted: #d8e2ff;
+        --mvcv-sidebar-active: rgba(0, 0, 0, 0.18);
+        --mvcv-light-hover: #dfe8ff;
     }
 
     body {
@@ -43,7 +44,7 @@
         gap: 0.9rem;
         padding: 1.2rem 0.95rem;
         background: linear-gradient(180deg, var(--mvcv-navy) 0%, var(--mvcv-navy-dark) 100%);
-        color: #ffffff;
+        color: var(--mvcv-on-dark);
     }
 
     .mvcv-wordmark,
@@ -75,7 +76,7 @@
         place-items: center;
         background: rgba(255, 255, 255, 0.12);
         border: 1px solid rgba(255, 255, 255, 0.2);
-        color: #ffffff;
+        color: var(--mvcv-on-dark);
         font-weight: 650;
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
     }
@@ -91,7 +92,7 @@
     .mvcv-ai-recent,
     .mvcv-ai-account {
         border-radius: 12px;
-        color: rgba(255, 255, 255, 0.88);
+        color: var(--mvcv-on-dark);
         text-decoration: none;
     }
 
@@ -100,8 +101,8 @@
         align-items: center;
         gap: 0.7rem;
         padding: 0.72rem 0.8rem;
-        background: rgba(255, 255, 255, 0.14);
-        color: #ffffff;
+        background: rgba(0, 0, 0, 0.14);
+        color: var(--mvcv-on-dark);
         font-size: 0.92rem;
         font-weight: 520;
     }
@@ -110,8 +111,8 @@
     .mvcv-ai-nav a:hover,
     .mvcv-ai-nav a.active,
     .mvcv-ai-recent:hover {
-        background: rgba(0, 0, 0, 0.16);
-        color: #ffffff;
+        background: var(--mvcv-sidebar-active);
+        color: var(--mvcv-on-dark);
     }
 
     .mvcv-ai-section {
@@ -120,7 +121,7 @@
 
     .mvcv-ai-section-title {
         margin: 0 0 0.5rem 0.45rem;
-        color: rgba(255, 255, 255, 0.58);
+        color: var(--mvcv-on-dark-muted);
         font-size: 0.75rem;
         font-weight: 650;
         text-transform: uppercase;
@@ -145,11 +146,11 @@
 
     .mvcv-ai-recent small,
     .mvcv-ai-account small {
-        color: rgba(255, 255, 255, 0.64);
+        color: var(--mvcv-on-dark-muted);
     }
 
     .mvcv-ai-recent-icon {
-        color: rgba(255, 255, 255, 0.7);
+        color: var(--mvcv-on-dark-muted);
         font-size: 0.76rem;
         font-weight: 650;
     }
@@ -198,7 +199,7 @@
 
     .mvcv-ai-nav a span {
         width: 2.3rem;
-        color: rgba(255, 255, 255, 0.62);
+        color: var(--mvcv-on-dark-muted);
         font-size: 0.75rem;
         font-weight: 650;
     }
@@ -216,7 +217,7 @@
         width: 36px;
         height: 36px;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.18);
+        background: rgba(0, 0, 0, 0.18);
     }
 
     .mvcv-ai-main {
@@ -301,7 +302,7 @@
         height: 34px;
         border-radius: 50%;
         background: var(--mvcv-navy);
-        color: #ffffff;
+        color: var(--mvcv-on-dark);
         font-weight: 650;
     }
 
@@ -550,7 +551,7 @@
         place-items: center;
         padding: 0;
         background: #2f3337;
-        color: #ffffff;
+        color: var(--mvcv-on-dark);
         font-size: 0;
     }
 
@@ -563,7 +564,7 @@
 
     .mvcv-ai-voice:hover {
         background: var(--mvcv-navy);
-        color: #ffffff;
+        color: var(--mvcv-on-dark);
         box-shadow: 0 12px 26px rgba(31, 51, 116, 0.22);
     }
 
@@ -798,6 +799,10 @@
             --mvcv-ink: #f8fafc;
             --mvcv-muted: #cbd5e1;
             --mvcv-line: #2a3856;
+            --mvcv-on-dark: #f8fafc;
+            --mvcv-on-dark-muted: #cbd5e1;
+            --mvcv-sidebar-active: rgba(255, 255, 255, 0.12);
+            --mvcv-light-hover: #23345f;
         }
 
         body,
@@ -876,7 +881,7 @@
         .mvcv-ai-result-actions a:hover,
         .mvcv-ai-top-icons a:hover,
         .mvcv-ai-user-menu:hover {
-            background: var(--mvcv-navy-soft);
+            background: var(--mvcv-light-hover);
             color: #f8fafc;
         }
 

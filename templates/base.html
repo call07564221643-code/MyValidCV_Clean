@@ -11,24 +11,33 @@
     <style>
         :root {
             color-scheme: light;
+            --mvcv-nav-bg: rgba(255, 255, 255, 0.92);
+            --mvcv-nav-text: #18223a;
+            --mvcv-nav-active-bg: rgba(31, 51, 116, 0.10);
+            --mvcv-nav-active-text: #1f3374;
+            --mvcv-body-bg: #f8fafc;
+            --mvcv-body-text: #0f172a;
+            --mvcv-card-bg: #ffffff;
+            --mvcv-card-border: #e2e8f0;
+            --mvcv-muted: #64748b;
         }
 
         .navbar {
-            background: rgba(255, 255, 255, 0.92) !important;
+            background: var(--mvcv-nav-bg) !important;
             backdrop-filter: blur(14px);
         }
 
         .navbar .nav-link {
             border-radius: 999px;
             padding-inline: 0.85rem !important;
-            color: #18223a !important;
+            color: var(--mvcv-nav-text) !important;
         }
 
         .navbar .nav-link:hover,
         .navbar .nav-link:focus,
         .navbar .nav-link.active {
-            background: rgba(31, 51, 116, 0.10);
-            color: #1f3374 !important;
+            background: var(--mvcv-nav-active-bg);
+            color: var(--mvcv-nav-active-text) !important;
         }
 
         .mvcv-brand-inline {
@@ -56,27 +65,36 @@
         @media (prefers-color-scheme: dark) {
             :root {
                 color-scheme: dark;
+                --mvcv-nav-bg: rgba(15, 23, 42, 0.94);
+                --mvcv-nav-text: #e2e8f0;
+                --mvcv-nav-active-bg: rgba(159, 184, 255, 0.18);
+                --mvcv-nav-active-text: #dbe7ff;
+                --mvcv-body-bg: #0f172a;
+                --mvcv-body-text: #f8fafc;
+                --mvcv-card-bg: #111c33;
+                --mvcv-card-border: #273449;
+                --mvcv-muted: #cbd5e1;
             }
 
             body {
-                background: #0f172a;
-                color: #f8fafc;
+                background: var(--mvcv-body-bg);
+                color: var(--mvcv-body-text);
             }
 
             .navbar {
-                background: rgba(15, 23, 42, 0.94) !important;
-                border-bottom-color: #273449 !important;
+                background: var(--mvcv-nav-bg) !important;
+                border-bottom-color: var(--mvcv-card-border) !important;
             }
 
             .navbar .nav-link {
-                color: #e2e8f0 !important;
+                color: var(--mvcv-nav-text) !important;
             }
 
             .navbar .nav-link:hover,
             .navbar .nav-link:focus,
             .navbar .nav-link.active {
-                background: rgba(159, 184, 255, 0.18);
-                color: #dbe7ff !important;
+                background: var(--mvcv-nav-active-bg);
+                color: var(--mvcv-nav-active-text) !important;
             }
 
             .mvcv-brand-inline {
@@ -89,29 +107,29 @@
 
             .bg-light,
             footer.bg-light {
-                background: #111c33 !important;
-                color: #cbd5e1 !important;
+                background: var(--mvcv-card-bg) !important;
+                color: var(--mvcv-muted) !important;
             }
 
             .border-top,
             .border-bottom {
-                border-color: #273449 !important;
+                border-color: var(--mvcv-card-border) !important;
             }
 
             .card,
             .modal-content,
             .dropdown-menu,
             .list-group-item {
-                background-color: #111c33;
-                color: #f8fafc;
-                border-color: #273449;
+                background-color: var(--mvcv-card-bg);
+                color: var(--mvcv-body-text);
+                border-color: var(--mvcv-card-border);
             }
 
             .form-control,
             .form-select {
                 background-color: #0b1224;
-                color: #f8fafc;
-                border-color: #273449;
+                color: var(--mvcv-body-text);
+                border-color: var(--mvcv-card-border);
             }
 
             .form-control::placeholder {
@@ -119,7 +137,7 @@
             }
 
             .text-muted {
-                color: #cbd5e1 !important;
+                color: var(--mvcv-muted) !important;
             }
         }
     </style>
