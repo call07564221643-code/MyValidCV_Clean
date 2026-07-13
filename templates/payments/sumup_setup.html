@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Connect Payments - MyValidCV{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h1 class="h4 fw-bold">Live checkout is not connected yet</h1>
+                    <p class="text-muted">
+                        The payment record was created, but live checkout needs payment credentials in environment variables.
+                    </p>
+                    <pre class="bg-light border rounded p-3">PAYMENT_PROVIDER_ACCESS_TOKEN=your_access_token
+PAYMENT_PROVIDER_MERCHANT_CODE=your_merchant_code
+PAYMENT_WEBHOOK_SECRET=optional_shared_secret</pre>
+                    <p class="mb-0">
+                        Transaction reference: <strong>{{ transaction.checkout_reference }}</strong>.
+                        You can also mark this payment paid manually from Django admin while testing.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
