@@ -7,12 +7,14 @@ Views for CV analysis MVP:
 
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
+from django.db import DatabaseError
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 import json
+import logging
 from datetime import timedelta
 
 from .services import ats_engine
@@ -33,6 +35,8 @@ from ats.views import (
     validate_cv_for_analysis,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def home(request):
     """
@@ -45,26 +49,37 @@ def home(request):
         'result': None,
         'breakdown': None,
         'can_download': False,
+        'workspace_available': True,
     }
 
     if request.user.is_authenticated:
-        profile, _created = UserProfile.objects.get_or_create(user=request.user)
-        selected_cv = request.GET.get("cv")
-        initial = {"cv": selected_cv} if selected_cv else {}
-        form = ATSAnalysisForm(request.user, request.POST or None, request.FILES or None, initial=initial)
-        context.update({
-            'profile': profile,
-            'form': form,
-            'has_cvs': CV.objects.filter(user=request.user).exists(),
-            'recent_results': ATSResult.objects.filter(user=request.user).select_related("cv", "job_role")[:8],
-            'saved_cvs': CV.objects.filter(user=request.user)[:6],
-            'generated_cvs': GeneratedCV.objects.filter(user=request.user).select_related("ats_result")[:6],
-            'reminders': ApplicationReminder.objects.filter(user=request.user, is_sent=False).select_related("job_role")[:4],
-            'is_enterprise': request.user.is_staff or profile.plan == "enterprise",
-            'can_download': can_download_generated_cv(request.user),
-        })
+        try:
+            profile, _created = UserProfile.objects.get_or_create(user=request.user)
+            selected_cv = request.GET.get("cv")
+            initial = {"cv": selected_cv} if selected_cv else {}
+            form = ATSAnalysisForm(request.user, request.POST or None, request.FILES or None, initial=initial)
+            context.update({
+                'profile': profile,
+                'form': form,
+                'has_cvs': CV.objects.filter(user=request.user).exists(),
+                'recent_results': ATSResult.objects.filter(user=request.user).select_related("cv", "job_role")[:8],
+                'saved_cvs': CV.objects.filter(user=request.user)[:6],
+                'generated_cvs': GeneratedCV.objects.filter(user=request.user).select_related("ats_result")[:6],
+                'reminders': ApplicationReminder.objects.filter(user=request.user, is_sent=False).select_related("job_role")[:4],
+                'is_enterprise': request.user.is_staff or profile.plan == "enterprise",
+                'can_download': can_download_generated_cv(request.user),
+            })
+        except DatabaseError:
+            logger.exception("Unable to load authenticated homepage workspace context.")
+            context.update({
+                'workspace_available': False,
+                'profile': None,
+                'form': None,
+                'is_enterprise': request.user.is_staff,
+                'can_download': False,
+            })
 
-        if request.method == "POST":
+        if request.method == "POST" and context.get("workspace_available"):
             if not profile.can_run_analysis():
                 messages.error(request, f"You have used today's {profile.get_analysis_limit()} analysis limit for your {profile.plan} plan.")
             elif form.is_valid():

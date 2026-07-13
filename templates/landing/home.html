@@ -1172,7 +1172,7 @@
                 <button type="button" data-bs-toggle="collapse" data-bs-target="#jobFilePanel">Ad</button>
             </div>
 
-            {% if user.is_authenticated %}
+            {% if user.is_authenticated and workspace_available %}
                 <form method="post" enctype="multipart/form-data" action="{% url 'home' %}" class="mvcv-ai-form">
                     {% csrf_token %}
                     {{ form.source_type }}
@@ -1255,6 +1255,16 @@
                         <span>Reading CV...</span>
                     </div>
                 </form>
+            {% elif user.is_authenticated %}
+                <div class="mvcv-ai-form">
+                    <div class="mvcv-ai-upload-row">
+                        <button type="button" class="mvcv-ai-plus">+</button>
+                        <div class="mvcv-ai-guest-input">Your validation workspace is syncing. Please run migrations or try again after deployment finishes.</div>
+                        <a class="mvcv-ai-mode" href="{% url 'dashboard' %}">Dashboard</a>
+                        <a class="mvcv-ai-voice" href="{% url 'admin:index' %}">Admin</a>
+                    </div>
+                    <div class="mvcv-ai-guest-box">The public landing page is available while workspace tables finish setup.</div>
+                </div>
             {% else %}
                 <div class="mvcv-ai-form">
                     <div class="mvcv-ai-upload-row">
