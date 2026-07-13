@@ -1,128 +1,563 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block title %}MyValidCV AI - Validate Your CV{% endblock %}
 
-<section class="py-5 bg-light">
-    <div class="container">
-        <div class="row align-items-center g-5">
-            <div class="col-lg-6">
-                <span class="badge bg-primary mb-3">AI Career Intelligence Platform</span>
-                <h1 class="display-5 fw-bold mb-3">
-                    Improve your CV. Match better jobs. Apply with confidence.
-                </h1>
-                <p class="lead text-muted mb-4">
-                    MVCV helps candidates compare their CV against job roles, identify missing skills,
-                    and understand how strong their application really is.
-                </p>
+{% block extra_css %}
+<style>
+    :root {
+        --mvcv-blue: #4285f4;
+        --mvcv-blue-soft: #eef5ff;
+        --mvcv-green: #34a853;
+        --mvcv-green-soft: #edf8f1;
+        --mvcv-yellow: #fbbc05;
+        --mvcv-yellow-soft: #fff8df;
+        --mvcv-red: #ea4335;
+        --mvcv-red-soft: #fff0ee;
+        --mvcv-ink: #18223a;
+        --mvcv-muted: #667085;
+        --mvcv-line: #e7edf7;
+    }
 
-                <div class="d-flex gap-3 flex-wrap">
-                    <a href="{% url 'upload_cv' %}" class="btn btn-primary btn-lg">
-                        Upload CV
-                    </a>
-                    <a href="{% url 'register' %}" class="btn btn-outline-primary btn-lg">
-                        Create Account
-                    </a>
-                </div>
-            </div>
+    .mvcv-ai-app {
+        background:
+            radial-gradient(circle at 74% 8%, rgba(66, 133, 244, 0.12), transparent 30%),
+            radial-gradient(circle at 24% 20%, rgba(251, 188, 5, 0.10), transparent 28%),
+            linear-gradient(180deg, #fbfdff 0%, #f7fbff 45%, #ffffff 100%);
+    }
 
-            <div class="col-lg-6">
-                <div class="card shadow border-0 rounded-4">
-                    <div class="card-body p-4">
-                        <h5 class="fw-bold">Example ATS Report</h5>
-                        <hr>
-                        <p class="mb-2">Overall Match</p>
-                        <div class="progress mb-3">
-                            <div class="progress-bar bg-success" style="width: 82%;">82%</div>
-                        </div>
-                        <p><strong>Matched Skills:</strong> Python, Django, SQL, Communication</p>
-                        <p><strong>Missing Skills:</strong> PostgreSQL, API Testing</p>
-                        <p class="text-muted mb-0">
-                            Recommendation: improve your CV summary and add truthful evidence for missing skills.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+    .mvcv-ai-sidebar {
+        background: linear-gradient(180deg, #f8fbff 0%, #f5f9ff 48%, #fffaf1 100%);
+        border-right: 1px solid rgba(66, 133, 244, 0.14);
+    }
 
-<section class="py-5">
-    <div class="container text-center">
-        <h2 class="fw-bold mb-4">How MVCV Works</h2>
+    .mvcv-ai-logo-word {
+        display: inline-flex;
+        align-items: center;
+        min-height: 34px;
+        border-radius: 12px;
+        padding: 0.25rem 0.65rem;
+        color: #b45309;
+        background:
+            radial-gradient(circle at 16% 18%, rgba(255, 255, 255, 0.88), transparent 18%),
+            linear-gradient(135deg, #fff3c4, #ffd166 46%, #f59e0b);
+        box-shadow: 0 12px 26px rgba(245, 158, 11, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+        font-weight: 850;
+        letter-spacing: -0.02em;
+    }
 
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="card h-100 border-0 shadow-sm rounded-4">
-                    <div class="card-body">
-                        <h5>1. Upload CV</h5>
-                        <p class="text-muted">Store your CV securely inside your account.</p>
-                    </div>
-                </div>
-            </div>
+    .mvcv-ai-brand strong {
+        color: var(--mvcv-ink);
+        letter-spacing: -0.02em;
+    }
 
-            <div class="col-md-4">
-                <div class="card h-100 border-0 shadow-sm rounded-4">
-                    <div class="card-body">
-                        <h5>2. Paste Job Role</h5>
-                        <p class="text-muted">Add a job description or job link for comparison.</p>
-                    </div>
-                </div>
-            </div>
+    .mvcv-ai-new,
+    .mvcv-ai-nav a.active {
+        background: rgba(66, 133, 244, 0.10);
+        color: var(--mvcv-ink);
+    }
 
-            <div class="col-md-4">
-                <div class="card h-100 border-0 shadow-sm rounded-4">
-                    <div class="card-body">
-                        <h5>3. Get ATS Report</h5>
-                        <p class="text-muted">See match score, missing skills, and improvement advice.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+    .mvcv-ai-nav a:hover,
+    .mvcv-ai-recent:hover {
+        background: rgba(66, 133, 244, 0.08);
+        color: var(--mvcv-ink);
+        transform: translateX(2px);
+    }
 
-<section class="py-5 bg-light">
-    <div class="container">
-        <div class="row g-4 align-items-center">
-            <div class="col-lg-6">
-                <h2 class="fw-bold">For Candidates</h2>
-                <p class="text-muted">
-                    Compare one CV against multiple job roles and discover where your strongest chance is.
-                </p>
-                <ul>
-                    <li>CV storage</li>
-                    <li>ATS compatibility score</li>
-                    <li>Matched and missing skills</li>
-                    <li>Career improvement recommendations</li>
-                </ul>
-            </div>
+    .mvcv-ai-main {
+        padding-top: 3.4rem;
+    }
 
-            <div class="col-lg-6">
-                <h2 class="fw-bold">For Enterprises</h2>
-                <p class="text-muted">
-                    Future enterprise accounts will compare multiple CVs against job roles and produce shortlist reports.
-                </p>
-                <ul>
-                    <li>Bulk CV analysis</li>
-                    <li>Candidate ranking</li>
-                    <li>Role fit comparison</li>
-                    <li>Recruitment decision support</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</section>
+    .mvcv-ai-hero {
+        border-radius: 28px;
+        max-width: 980px;
+        margin: 0 auto 1.25rem;
+        padding: 2.4rem 1.25rem 1.35rem;
+        background:
+            linear-gradient(135deg, rgba(238, 245, 255, 0.82), rgba(237, 248, 241, 0.72)),
+            #ffffff;
+        border: 1px solid rgba(66, 133, 244, 0.10);
+    }
 
-<section class="py-5 text-center">
-    <div class="container">
-        <h2 class="fw-bold">Start with your CV today</h2>
-        <p class="text-muted mb-4">
-            Upload your CV, compare it with a job role, and get a validation report in minutes.
-        </p>
-        <a href="{% url 'upload_cv' %}" class="btn btn-primary btn-lg">
-            Start ATS Analysis
-        </a>
-    </div>
-</section>
+    .mvcv-ai-hero h1 {
+        color: var(--mvcv-ink);
+        letter-spacing: -0.045em;
+    }
 
+    .mvcv-ai-hero h1 span {
+        color: #f59e0b;
+    }
+
+    .mvcv-ai-hero p {
+        color: var(--mvcv-muted);
+    }
+
+    .mvcv-ai-composer-card,
+    .mvcv-ai-result,
+    .mvcv-ai-table-card,
+    .mvcv-ai-feature-grid article {
+        border-color: rgba(66, 133, 244, 0.12);
+        box-shadow: 0 18px 55px rgba(24, 34, 58, 0.08);
+    }
+
+    .mvcv-ai-composer-card {
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(14px);
+    }
+
+    .mvcv-ai-upload-row {
+        border: 1px solid var(--mvcv-line);
+        background: #ffffff;
+    }
+
+    .mvcv-ai-voice {
+        background: #2f3337;
+        color: #ffffff;
+    }
+
+    .mvcv-ai-voice:hover {
+        background: #17233f;
+        box-shadow: 0 12px 26px rgba(23, 35, 63, 0.18);
+    }
+
+    .mvcv-ai-mode,
+    .mvcv-ai-actions a,
+    .mvcv-ai-result-actions a {
+        transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .mvcv-ai-mode:hover,
+    .mvcv-ai-actions a:hover,
+    .mvcv-ai-result-actions a:hover {
+        transform: translateY(-2px);
+    }
+
+    .mvcv-ai-actions a:nth-child(1) {
+        background: var(--mvcv-blue-soft);
+        border-color: rgba(66, 133, 244, 0.18);
+        color: #174ea6;
+    }
+
+    .mvcv-ai-actions a:nth-child(2) {
+        background: var(--mvcv-green-soft);
+        border-color: rgba(52, 168, 83, 0.18);
+        color: #137333;
+    }
+
+    .mvcv-ai-actions a:nth-child(3) {
+        background: var(--mvcv-yellow-soft);
+        border-color: rgba(251, 188, 5, 0.28);
+        color: #8a5b00;
+    }
+
+    .mvcv-ai-feature-grid {
+        max-width: 980px;
+    }
+
+    .mvcv-ai-feature-grid article {
+        border-radius: 18px;
+        min-height: 138px;
+        align-content: start;
+    }
+
+    .mvcv-ai-feature-grid article:nth-child(1) {
+        background: linear-gradient(180deg, #ffffff, var(--mvcv-blue-soft));
+    }
+
+    .mvcv-ai-feature-grid article:nth-child(2) {
+        background: linear-gradient(180deg, #ffffff, var(--mvcv-green-soft));
+    }
+
+    .mvcv-ai-feature-grid article:nth-child(3) {
+        background: linear-gradient(180deg, #ffffff, var(--mvcv-yellow-soft));
+    }
+
+    .mvcv-ai-feature-grid article:nth-child(4) {
+        background: linear-gradient(180deg, #ffffff, var(--mvcv-red-soft));
+    }
+
+    .mvcv-ai-feature-grid article:nth-child(1) span { background: #dceaff; color: #174ea6; }
+    .mvcv-ai-feature-grid article:nth-child(2) span { background: #dff3e6; color: #137333; }
+    .mvcv-ai-feature-grid article:nth-child(3) span { background: #fff1bd; color: #8a5b00; }
+    .mvcv-ai-feature-grid article:nth-child(4) span { background: #ffe0dc; color: #a50e0e; }
+
+    .mvcv-ai-table-card {
+        max-width: 980px;
+        background: linear-gradient(180deg, #ffffff, #f8fbff);
+    }
+
+    .mvcv-ai-table-head {
+        background: rgba(238, 245, 255, 0.72);
+    }
+
+    .mvcv-ai-top-icons a,
+    .mvcv-ai-user-menu {
+        background: rgba(255, 255, 255, 0.78);
+        border: 1px solid rgba(66, 133, 244, 0.12);
+    }
+
+    .mvcv-ai-top-icons a:hover,
+    .mvcv-ai-user-menu:hover {
+        background: var(--mvcv-blue-soft);
+    }
+
+    @media (max-width: 768px) {
+        .mvcv-ai-hero {
+            padding-top: 1.6rem;
+        }
+
+        .mvcv-ai-feature-grid article {
+            min-height: auto;
+        }
+    }
+</style>
 {% endblock %}
+
+{% block app_shell %}
+<section class="mvcv-ai-app">
+    <aside class="mvcv-ai-sidebar">
+        <div class="mvcv-ai-brand">
+            <span class="mvcv-ai-logo-word">MyValidCV</span>
+            <strong>MyValidCV</strong>
+        </div>
+
+        <a class="mvcv-ai-new" href="{% url 'home' %}">
+            <span>+</span> New Validation
+        </a>
+
+        <div class="mvcv-ai-section">
+            <div class="mvcv-ai-section-title">Recent validations</div>
+            {% if user.is_authenticated and recent_results %}
+                {% for report in recent_results|slice:":4" %}
+                    <a class="mvcv-ai-recent" href="{% url 'ats_result' report.id %}">
+                        <span class="mvcv-ai-recent-icon">CV</span>
+                        <span>
+                            <strong>{{ report.cv.title|truncatechars:26 }}</strong>
+                            <small>vs {{ report.job_title|truncatechars:28 }}</small>
+                        </span>
+                        <em class="{% if report.score >= 80 %}good{% elif report.score >= 70 %}warn{% else %}risk{% endif %}">{{ report.score }}%</em>
+                    </a>
+                {% endfor %}
+            {% else %}
+                <div class="mvcv-ai-recent">
+                    <span class="mvcv-ai-recent-icon">CV</span>
+                    <span><strong>Software Engineer CV</strong><small>vs Senior Python Developer JD</small></span>
+                    <em class="good">82%</em>
+                </div>
+                <div class="mvcv-ai-recent">
+                    <span class="mvcv-ai-recent-icon">CV</span>
+                    <span><strong>Data Analyst CV</strong><small>vs careers.company.com/job/123</small></span>
+                    <em class="warn">74%</em>
+                </div>
+                <div class="mvcv-ai-recent">
+                    <span class="mvcv-ai-recent-icon">CV</span>
+                    <span><strong>Marketing CV</strong><small>Custom text input</small></span>
+                    <em class="good">91%</em>
+                </div>
+            {% endif %}
+        </div>
+
+        <nav class="mvcv-ai-nav">
+            <a class="active" href="{% url 'home' %}"><span>Home</span> Validate</a>
+            <a href="{% if user.is_authenticated %}{% url 'upload_cv' %}{% else %}{% url 'register' %}?next={% url 'home' %}{% endif %}"><span>CV</span> My CVs</a>
+            <a href="{% url 'home' %}#composer"><span>Job</span> Job Descriptions</a>
+            <a href="{% url 'home' %}#composer"><span>URL</span> Ads & Links</a>
+            <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}?next={% url 'home' %}{% endif %}"><span>Rpt</span> My Reports</a>
+            <a href="{% url 'pricing' %}"><span>Up</span> Upgrade</a>
+        </nav>
+
+        {% if user.is_superuser %}
+            <div class="mvcv-ai-section">
+                <div class="mvcv-ai-section-title">Owner</div>
+                <nav class="mvcv-ai-nav compact">
+                    <a href="{% url 'admin:auth_user_changelist' %}"><span>Usr</span> Users</a>
+                    <a href="{% url 'admin:index' %}"><span>Cfg</span> System Settings</a>
+                    <a href="{% url 'website_health' %}"><span>Fin</span> Owner Reports</a>
+                    <a href="{% url 'enterprise_bulk' %}"><span>Ent</span> Enterprise</a>
+                </nav>
+            </div>
+        {% endif %}
+
+        <div class="mvcv-ai-account">
+            <div class="mvcv-ai-avatar">{% if user.is_authenticated %}{{ user.username|first|upper }}{% else %}G{% endif %}</div>
+            <div>
+                <strong>{% if user.is_authenticated %}{{ user.username }}{% else %}Guest{% endif %}</strong>
+                <small>{% if user.is_authenticated %}{{ profile.plan|title }}{% else %}Start free{% endif %}</small>
+            </div>
+        </div>
+    </aside>
+
+    <main class="mvcv-ai-main">
+        <div class="mvcv-ai-topbar">
+            <div class="mvcv-ai-top-icons">
+                <a href="{% url 'pricing' %}" title="Upgrade">Upgrade</a>
+                <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}" title="Dashboard">Dashboard</a>
+            </div>
+            <a class="mvcv-ai-user-menu" href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}">
+                <span>Me</span>
+                {% if user.is_authenticated %}{{ user.username }}{% else %}User Name{% endif %}
+                <span>down</span>
+            </a>
+        </div>
+
+        <section class="mvcv-ai-hero">
+            <h1>Welcome to <span>MyValidCV</span> AI</h1>
+            <p>Validate your CV against any job description, URL, text, or ad.</p>
+        </section>
+
+        <section id="composer" class="mvcv-ai-composer-card">
+            <div class="mvcv-ai-tabs">
+                <button type="button" class="active">Upload CV</button>
+                <button type="button">Job Description</button>
+                <button type="button" data-bs-toggle="collapse" data-bs-target="#jobUrlPanel">URL</button>
+                <button type="button">Text</button>
+                <button type="button" data-bs-toggle="collapse" data-bs-target="#jobFilePanel">Ad</button>
+            </div>
+
+            {% if user.is_authenticated %}
+                <form method="post" enctype="multipart/form-data" action="{% url 'home' %}" class="mvcv-ai-form">
+                    {% csrf_token %}
+                    {{ form.source_type }}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">{{ form.non_field_errors.0 }}</div>
+                    {% endif %}
+
+                    <div class="mvcv-ai-upload-row">
+                        <label class="mvcv-ai-plus" title="Attach CV">
+                            +
+                            {{ form.cv_file }}
+                        </label>
+                        <div class="mvcv-ai-selects">
+                            {{ form.cv }}
+                            {{ form.cv_title }}
+                        </div>
+                        <div class="mvcv-ai-mode-wrap">
+                            <button type="button" class="mvcv-ai-mode">Instant</button>
+                            <div class="mvcv-ai-mode-menu">
+                                <button type="submit">
+                                    <strong>Instant</strong>
+                                    <span>Quick match score and key insights</span>
+                                </button>
+                                <a href="{% url 'home' %}">
+                                    <strong>Validate new</strong>
+                                    <span>Start a full validation</span>
+                                </a>
+                                <a href="{% url 'home' %}#composer">
+                                    <strong>CV rewrite</strong>
+                                    <span>Rewrite and improve your CV</span>
+                                </a>
+                                <a href="{% url 'pricing' %}">
+                                    <strong>Upgrade</strong>
+                                    <span>Unlock downloads and cover letters</span>
+                                </a>
+                            </div>
+                        </div>
+                        <button type="submit" class="mvcv-ai-voice">Validate</button>
+                    </div>
+                    {% if form.cv_file.errors %}<div class="invalid-feedback d-block">{{ form.cv_file.errors.0 }}</div>{% endif %}
+
+                    {{ form.job_description }}
+                    {% if form.job_description.errors %}<div class="invalid-feedback d-block">{{ form.job_description.errors.0 }}</div>{% endif %}
+
+                    <button type="button" class="mvcv-ai-alert-toggle" data-bs-toggle="collapse" data-bs-target="#detailsPanel">
+                        Optional alert
+                    </button>
+
+                    <div class="collapse mvcv-ai-extra" id="jobUrlPanel">
+                        <label class="form-label">Job advert URL</label>
+                        {{ form.job_url }}
+                        {% if form.job_url.errors %}<div class="invalid-feedback d-block">{{ form.job_url.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="collapse mvcv-ai-extra" id="jobFilePanel">
+                        <label class="form-label">Upload job advert file</label>
+                        {{ form.job_file }}
+                        {% if form.job_file.errors %}<div class="invalid-feedback d-block">{{ form.job_file.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="collapse mvcv-ai-extra" id="detailsPanel">
+                        <p class="mvcv-ai-alert-note">Add these only if you want a deadline reminder or cannot infer the role from text, URL, or advert file.</p>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Job title</label>
+                                {{ form.job_title }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Company</label>
+                                {{ form.company }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Deadline</label>
+                                {{ form.deadline }}
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            {% else %}
+                <div class="mvcv-ai-form">
+                    <div class="mvcv-ai-upload-row">
+                        <button type="button" class="mvcv-ai-plus">+</button>
+                        <div class="mvcv-ai-guest-input">Upload your CV and paste the job ad after creating a free account.</div>
+                        <a class="mvcv-ai-mode" href="{% url 'login' %}?next={% url 'home' %}">Login</a>
+                        <a class="mvcv-ai-voice" href="{% url 'register' %}?next={% url 'home' %}">Validate</a>
+                    </div>
+                    <div class="mvcv-ai-guest-box">Paste job description, URL, text, or ad.</div>
+                </div>
+            {% endif %}
+        </section>
+
+        <div class="mvcv-ai-actions">
+            <a href="{% url 'home' %}">Validate new</a>
+            <a href="{% url 'home' %}#composer">Generate CV</a>
+            <a href="{% url 'pricing' %}">Upgrade</a>
+        </div>
+
+        {% if result %}
+            <section class="mvcv-ai-result">
+                <div>
+                    <strong>{{ result.score }}% match</strong>
+                    <span>{{ result.job_title }}</span>
+                    <p>{{ result.recommendation }}</p>
+                </div>
+                <div class="mvcv-ai-result-actions">
+                    <a href="{% url 'ats_result' result.id %}">Full report</a>
+                    {% if can_download %}
+                        <a href="{% url 'download_generated_cv' result.id %}">Download draft</a>
+                    {% else %}
+                        <a href="{% url 'pricing' %}">Upgrade</a>
+                    {% endif %}
+                </div>
+            </section>
+        {% endif %}
+
+        <section class="mvcv-ai-feature-grid">
+            <article><span>AI</span><strong>AI CV Score</strong><p>Overall match score and feedback.</p></article>
+            <article><span>KW</span><strong>Keyword Match</strong><p>See how your CV matches the job.</p></article>
+            <article><span>CV</span><strong>Improvement Tips</strong><p>Suggestions to strengthen your CV.</p></article>
+            <article><span>ATS</span><strong>ATS Check</strong><p>Make sure your CV is ATS-friendly.</p></article>
+        </section>
+
+        <section class="mvcv-ai-table-card">
+            <div class="mvcv-ai-table-head">
+                <strong>Recent Validations</strong>
+                <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}?next={% url 'home' %}{% endif %}">View all</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Type</th>
+                            <th>Match Score</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if user.is_authenticated and recent_results %}
+                            {% for report in recent_results|slice:":4" %}
+                                <tr>
+                                    <td><strong>{{ report.cv.title }}</strong><br><small>vs {{ report.job_title }}</small></td>
+                                    <td><span class="mvcv-ai-pill">{{ report.job_role.get_source_type_display|default:"Text" }}</span></td>
+                                    <td><strong class="{% if report.score >= 80 %}good{% elif report.score >= 70 %}warn{% else %}risk{% endif %}">{{ report.score }}%</strong></td>
+                                    <td><span class="mvcv-ai-status">Completed</span></td>
+                                    <td><a href="{% url 'ats_result' report.id %}">View</a></td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td><strong>Software Engineer CV</strong><br><small>vs Senior Python Developer JD</small></td><td><span class="mvcv-ai-pill">Job Description</span></td><td><strong class="good">82%</strong></td><td><span class="mvcv-ai-status">Completed</span></td><td>View</td></tr>
+                            <tr><td><strong>Data Analyst CV</strong><br><small>vs careers.company.com/job/123</small></td><td><span class="mvcv-ai-pill">URL</span></td><td><strong class="warn">74%</strong></td><td><span class="mvcv-ai-status">Completed</span></td><td>View</td></tr>
+                            <tr><td><strong>Marketing Specialist CV</strong><br><small>Custom text input</small></td><td><span class="mvcv-ai-pill">Text</span></td><td><strong class="good">91%</strong></td><td><span class="mvcv-ai-status">Completed</span></td><td>View</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function () {
+        const detailsPanel = document.getElementById('detailsPanel');
+        const urlPanel = document.getElementById('jobUrlPanel');
+        const filePanel = document.getElementById('jobFilePanel');
+        const jobUrl = document.getElementById('id_job_url');
+        const jobFile = document.getElementById('id_job_file');
+        const sourceType = document.getElementById('id_source_type');
+        const jobText = document.getElementById('id_job_description');
+        const modeButton = document.querySelector('.mvcv-ai-mode');
+        const modeMenu = document.querySelector('.mvcv-ai-mode-menu');
+        const form = document.querySelector('.mvcv-ai-form');
+        const actionLinks = document.querySelectorAll('.mvcv-ai-actions a');
+        let selectedSource = 'text';
+
+        function hideDetails() {
+            if (!detailsPanel || !window.bootstrap) return;
+            window.bootstrap.Collapse.getOrCreateInstance(detailsPanel, { toggle: false }).hide();
+        }
+
+        function hideDetailsWhenAdvertSourceIsUsed() {
+            const hasUrl = jobUrl && jobUrl.value.trim().length > 0;
+            const hasFile = jobFile && jobFile.files && jobFile.files.length > 0;
+            if (hasUrl || hasFile) hideDetails();
+        }
+
+        [urlPanel, filePanel].forEach(function (panel) {
+            if (!panel) return;
+            panel.addEventListener('shown.bs.collapse', hideDetails);
+        });
+        [jobUrl, jobFile].forEach(function (field) {
+            if (!field) return;
+            field.addEventListener('input', hideDetailsWhenAdvertSourceIsUsed);
+            field.addEventListener('change', hideDetailsWhenAdvertSourceIsUsed);
+        });
+
+        if (actionLinks[0]) actionLinks[0].setAttribute('href', '#composer');
+        if (actionLinks[1]) actionLinks[1].textContent = 'Generate CV';
+        if (actionLinks[2]) actionLinks[2].textContent = 'Upgrade';
+
+        function setSource(source, label) {
+            selectedSource = source;
+            if (sourceType) sourceType.value = source;
+            if (modeButton) modeButton.setAttribute('data-label', label);
+            if (source !== 'url' && jobUrl) jobUrl.value = '';
+        }
+
+        if (modeMenu) {
+            modeMenu.innerHTML = [
+                '<button type="button" data-source-choice="text"><strong>Write text</strong><span>Paste the job role in the box</span></button>',
+                '<button type="button" data-source-choice="url"><strong>URL</strong><span>Paste the job advert link in the box</span></button>',
+                '<button type="button" data-source-choice="file"><strong>Attach Ad</strong><span>Upload the job advert file</span></button>'
+            ].join('');
+
+            modeMenu.querySelectorAll('[data-source-choice]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const source = button.getAttribute('data-source-choice');
+                    const label = button.querySelector('strong').textContent;
+                    setSource(source, label);
+                    if (source === 'file' && jobFile) jobFile.click();
+                });
+            });
+        }
+
+        if (jobFile) {
+            jobFile.addEventListener('change', function () {
+                if (jobFile.files && jobFile.files.length > 0) {
+                    setSource('file', 'Attach Ad');
+                }
+            });
+        }
+
+        if (form) {
+            form.addEventListener('submit', function () {
+                if (selectedSource === 'url' && jobText && jobUrl && !jobUrl.value.trim()) {
+                    jobUrl.value = jobText.value.trim();
+                }
+            });
+        }
+    })();
+</script>
+{% endblock %}
+

@@ -4,48 +4,112 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MyValidCV - AI Career Intelligence{% endblock %}</title>
-    
-    <!-- Bootstrap 5.3 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Custom CSS -->
+
     {% load static %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    
+    <style>
+        .navbar {
+            background: rgba(255, 255, 255, 0.92) !important;
+            backdrop-filter: blur(14px);
+        }
+
+        .navbar .nav-link {
+            border-radius: 999px;
+            padding-inline: 0.85rem !important;
+            color: #18223a !important;
+        }
+
+        .navbar .nav-link:hover,
+        .navbar .nav-link:focus {
+            background: rgba(66, 133, 244, 0.10);
+            color: #174ea6 !important;
+        }
+
+        .mvcv-brand-inline {
+            color: #18223a !important;
+            font-weight: 850;
+            letter-spacing: -0.025em;
+        }
+
+        .mvcv-brand-mark-mini {
+            width: auto;
+            min-width: 34px;
+            padding: 0 0.55rem;
+            background:
+                radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.9), transparent 18%),
+                linear-gradient(135deg, #fff3c4, #ffd166 46%, #f59e0b);
+            color: #b45309;
+            box-shadow: 0 10px 22px rgba(245, 158, 11, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+        }
+
+        .btn-primary {
+            background: #17233f;
+            border-color: #17233f;
+        }
+
+        .btn-primary:hover,
+        .btn-primary:focus {
+            background: #0f172a;
+            border-color: #0f172a;
+        }
+    </style>
+
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Navigation -->
+    {% block app_shell %}
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'home' %}">
-                <span class="text-primary">MyValid</span><span class="text-success">CV</span>
+            <a class="navbar-brand mvcv-brand-inline" href="{% url 'home' %}" aria-label="MyValidCV home">
+                <span class="mvcv-brand-mark-mini">M</span>
+                <span>MyValidCV</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
+
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-lg-center">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">Home</a>
+                        <a class="nav-link" href="{% url 'home' %}">Validate CV</a>
                     </li>
+
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
+                            <a class="nav-link" href="{% url 'dashboard' %}">Reports</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'pricing' %}">Plans</a>
+                        </li>
+                        {% if user.is_superuser or user.profile.plan == 'enterprise' %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'upload_cv' %}">Upload CV</a>
+                                <a class="nav-link" href="{% url 'enterprise_bulk' %}">Enterprise</a>
+                            </li>
+                        {% endif %}
+                        {% if user.is_superuser %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'website_health' %}">Health</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'ats_analyse' %}">ATS Analysis</a>
-                            </li> </form>
+                                <a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
+                            </li>
+                        {% endif %}
+                        <li class="nav-item ms-lg-2">
+                            <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">Logout</button>
+                            </form>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">Login</a>
+                            <a class="nav-link" href="{% url 'pricing' %}">Plans</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link btn btn-primary text-white ms-2" href="{% url 'register' %}">Sign Up</a>
+                            <a class="nav-link" href="{% url 'login' %}">Login</a>
+                        </li>
+                        <li class="nav-item ms-lg-2">
+                            <a class="btn btn-primary btn-sm" href="{% url 'register' %}">Start Free</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -53,38 +117,32 @@
         </div>
     </nav>
 
-    <!-- Messages -->
     {% if messages %}
         <div class="container mt-3">
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                     {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endfor %}
         </div>
     {% endif %}
 
-    <!-- Main Content -->
     <main>
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
     <footer class="bg-light border-top mt-5 py-4">
         <div class="container text-center text-muted">
-            <p class="mb-0">&copy; 2024 MyValidCV. AI Career Intelligence SaaS.</p>
-            <small>Your CVs and ATS reports are stored securely inside your account.</small>
+            <p class="mb-0">&copy; 2026 MyValidCV. CV upload and ATS analysis for job seekers.</p>
+            <small>Logged-in users can save CVs, run ATS analyses, and review results from the dashboard.</small>
         </div>
     </footer>
+    {% endblock %}
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Custom JS -->
-    {% load static %}
     <script src="{% static 'js/main.js' %}"></script>
-    
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>
