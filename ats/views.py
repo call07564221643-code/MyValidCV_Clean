@@ -222,7 +222,7 @@ def infer_deadline(form, job_description):
 
 
 def user_can_use_enterprise(user):
-    return user.is_staff or get_user_profile(user).plan == "enterprise"
+    return user.is_superuser or get_user_profile(user).plan == "enterprise"
 
 
 def calculate_score(cv_text, job_description):
@@ -280,7 +280,7 @@ Original CV Content Reference
 
 
 def can_download_generated_cv(user):
-    return user.is_staff or get_user_profile(user).plan in ("plus", "professional", "enterprise")
+    return user.is_superuser or get_user_profile(user).plan in ("plus", "professional", "enterprise")
 
 
 def score_breakdown(score, matched, missing):
@@ -387,7 +387,7 @@ def analyse_cv(request):
             "saved_cvs": CV.objects.filter(user=request.user)[:6],
             "generated_cvs": GeneratedCV.objects.filter(user=request.user).select_related("ats_result")[:6],
             "reminders": ApplicationReminder.objects.filter(user=request.user, is_sent=False).select_related("job_role")[:4],
-            "is_enterprise": request.user.is_staff or profile.plan == "enterprise",
+            "is_enterprise": request.user.is_superuser or profile.plan == "enterprise",
         }
 
     if request.method == "POST":
@@ -581,17 +581,38 @@ def enterprise_bulk_upload(request):
 
 @login_required(login_url="login")
 def enterprise_report(request, batch_id):
-    if request.user.is_staff:
+    if request.user.is_superuser:
         batch = get_object_or_404(EnterpriseBatch, id=batch_id)
     else:
         batch = get_object_or_404(EnterpriseBatch, id=batch_id, user=request.user)
     results = batch.candidate_results.all()
-    return render(request, "ats/enterprise_report.html", {"batch": batch, "results": results})
+    candidate_count = results.count()
+    top_candidate = results.first()
+    shortlisted_count = results.filter(score__gte=80).count()
+    review_count = results.filter(score__gte=60, score__lt=80).count()
+    average_score = 0
+    if candidate_count:
+        average_score = int(sum(result.score for result in results) / candidate_count)
+    return render(
+        request,
+        "ats/enterprise_report.html",
+        {
+            "batch": batch,
+            "results": results,
+            "summary": {
+                "candidate_count": candidate_count,
+                "shortlisted_count": shortlisted_count,
+                "review_count": review_count,
+                "average_score": average_score,
+                "top_candidate": top_candidate,
+            },
+        },
+    )
 
 
 @login_required(login_url="login")
 def enterprise_report_csv(request, batch_id):
-    if request.user.is_staff:
+    if request.user.is_superuser:
         batch = get_object_or_404(EnterpriseBatch, id=batch_id)
     else:
         batch = get_object_or_404(EnterpriseBatch, id=batch_id, user=request.user)
