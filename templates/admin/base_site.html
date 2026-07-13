@@ -56,5 +56,83 @@
         background: rgba(31, 51, 116, 0.10);
         color: #101a33;
     }
+
+    html[data-theme="dark"] {
+        --primary: #9fb8ff;
+        --secondary: #172340;
+        --accent: #dbe7ff;
+        --primary-fg: #f8fafc;
+        --body-fg: #f8fafc;
+        --body-bg: #0f172a;
+        --link-fg: #dbe7ff;
+        --link-selected-fg: #ffffff;
+        --header-color: #f8fafc;
+        --header-branding-color: #f8fafc;
+        --header-bg: #111c33;
+        --breadcrumbs-bg: #172340;
+    }
+
+    html[data-theme="dark"] #header {
+        background: #111c33;
+        color: #f8fafc;
+        border-bottom-color: #273449;
+    }
+
+    html[data-theme="dark"] #branding #site-name a,
+    html[data-theme="dark"] .mvcv-admin-wordmark {
+        color: #dbe7ff;
+    }
+
+    html[data-theme="dark"] .mvcv-admin-wordmark span {
+        color: #9fb8ff;
+    }
+
+    html[data-theme="dark"] .module h2,
+    html[data-theme="dark"] .module caption,
+    html[data-theme="dark"] .inline-group h2,
+    html[data-theme="dark"] div.breadcrumbs {
+        background: #172340;
+        color: #f8fafc;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        html[data-theme="auto"] {
+            --primary: #9fb8ff;
+            --secondary: #172340;
+            --accent: #dbe7ff;
+            --primary-fg: #f8fafc;
+            --body-fg: #f8fafc;
+            --body-bg: #0f172a;
+            --link-fg: #dbe7ff;
+            --link-selected-fg: #ffffff;
+            --header-color: #f8fafc;
+            --header-branding-color: #f8fafc;
+            --header-bg: #111c33;
+            --breadcrumbs-bg: #172340;
+        }
+
+        html[data-theme="auto"] #header {
+            background: #111c33;
+            color: #f8fafc;
+            border-bottom-color: #273449;
+        }
+
+        html[data-theme="auto"] #branding #site-name a,
+        html[data-theme="auto"] .mvcv-admin-wordmark {
+            color: #dbe7ff;
+        }
+
+        html[data-theme="auto"] .mvcv-admin-wordmark span {
+            color: #9fb8ff;
+        }
+
+        html[data-theme="auto"] .module h2,
+        html[data-theme="auto"] .module caption,
+        html[data-theme="auto"] .inline-group h2,
+        html[data-theme="auto"] div.breadcrumbs {
+            background: #172340;
+            color: #f8fafc;
+        }
+    }
 </style>
 {% endblock %}

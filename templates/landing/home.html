@@ -16,6 +16,10 @@
         --mvcv-line: #e2e8f0;
     }
 
+    :root {
+        color-scheme: light;
+    }
+
     body {
         background: var(--mvcv-bg);
     }
@@ -246,6 +250,7 @@
         border: 1px solid var(--mvcv-line);
         border-radius: 8px;
         padding: 0.55rem 2.2rem 0.55rem 0.8rem;
+        background: #ffffff;
         color: var(--mvcv-ink);
     }
 
@@ -427,6 +432,7 @@
         border-color: transparent;
         border-radius: 999px;
         background: #f8fafc;
+        color: var(--mvcv-ink);
     }
 
     .mvcv-ai-selects input {
@@ -753,6 +759,10 @@
         font-size: 0.82rem;
     }
 
+    .mvcv-ai-table-card td {
+        color: var(--mvcv-ink);
+    }
+
     .mvcv-ai-table-card small {
         color: var(--mvcv-muted);
     }
@@ -774,6 +784,127 @@
     .mvcv-ai-status {
         background: #eef3ff;
         color: var(--mvcv-navy);
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            color-scheme: dark;
+            --mvcv-navy: #9fb8ff;
+            --mvcv-navy-dark: #6f8ff0;
+            --mvcv-navy-soft: #23345f;
+            --mvcv-cv: #c7d5ff;
+            --mvcv-bg: #0f172a;
+            --mvcv-card: #111c33;
+            --mvcv-ink: #f8fafc;
+            --mvcv-muted: #cbd5e1;
+            --mvcv-line: #2a3856;
+        }
+
+        body,
+        .mvcv-ai-app {
+            background: linear-gradient(180deg, #0b1224 0%, var(--mvcv-bg) 100%);
+            color: var(--mvcv-ink);
+        }
+
+        .mvcv-ai-sidebar {
+            background: linear-gradient(180deg, #101f52 0%, #0b163d 100%);
+        }
+
+        .mvcv-ai-topbar,
+        .mvcv-ai-composer-card,
+        .mvcv-ai-result,
+        .mvcv-ai-table-card,
+        .mvcv-ai-feature-grid article {
+            background: var(--mvcv-card);
+            border-color: var(--mvcv-line);
+            color: var(--mvcv-ink);
+            box-shadow: 0 20px 52px rgba(0, 0, 0, 0.28);
+        }
+
+        .mvcv-ai-topbar,
+        .mvcv-ai-table-head {
+            background: rgba(17, 28, 51, 0.94);
+        }
+
+        .mvcv-ai-hero h1,
+        .mvcv-ai-feature-grid article strong,
+        .mvcv-ai-table-card td,
+        .mvcv-ai-table-head strong {
+            color: var(--mvcv-ink);
+        }
+
+        .mvcv-ai-hero h1 span,
+        .mvcv-ai-result strong,
+        .mvcv-ai-table-head a,
+        .mvcv-ai-table-card td a,
+        .mvcv-ai-top-icons a,
+        .mvcv-ai-user-menu {
+            color: var(--mvcv-navy);
+        }
+
+        .mvcv-ai-search input,
+        .mvcv-ai-upload-row,
+        .mvcv-ai-selects select,
+        .mvcv-ai-selects input,
+        .mvcv-ai-extra input,
+        .mvcv-ai-form textarea,
+        .mvcv-ai-guest-box,
+        .mvcv-ai-mode-menu {
+            background: #0b1224;
+            border-color: var(--mvcv-line);
+            color: var(--mvcv-ink);
+        }
+
+        .mvcv-ai-search input::placeholder,
+        .mvcv-ai-form textarea::placeholder {
+            color: #94a3b8;
+        }
+
+        .mvcv-ai-mode,
+        .mvcv-ai-mode-menu button,
+        .mvcv-ai-mode-menu a,
+        .mvcv-ai-actions a,
+        .mvcv-ai-result-actions a {
+            color: var(--mvcv-ink);
+        }
+
+        .mvcv-ai-mode-menu button:hover,
+        .mvcv-ai-mode-menu a:hover,
+        .mvcv-ai-plus:hover,
+        .mvcv-ai-mode:hover,
+        .mvcv-ai-actions a:hover,
+        .mvcv-ai-result-actions a:hover,
+        .mvcv-ai-top-icons a:hover,
+        .mvcv-ai-user-menu:hover {
+            background: var(--mvcv-navy-soft);
+            color: #f8fafc;
+        }
+
+        .mvcv-ai-plus,
+        .mvcv-ai-actions a,
+        .mvcv-ai-result-actions a {
+            background: #111c33;
+            border-color: var(--mvcv-line);
+        }
+
+        .mvcv-ai-voice {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        .mvcv-ai-pill,
+        .mvcv-ai-status {
+            background: var(--mvcv-navy-soft);
+            color: #dbe7ff;
+        }
+
+        .mvcv-card-visual,
+        .mvcv-card-visual.alt,
+        .mvcv-card-visual.third {
+            background:
+                radial-gradient(circle at 24% 50%, rgba(159, 184, 255, 0.32) 0 20px, transparent 21px),
+                linear-gradient(135deg, #172340, #223967);
+        }
     }
 
     @media (max-width: 768px) {
