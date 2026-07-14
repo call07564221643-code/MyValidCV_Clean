@@ -1,1053 +1,578 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}MyValidCV - Validate Your CV{% endblock %}
+{% block title %}MyValidCV - Validate Your CV with AI{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/mvcv-wireframe.css' %}">
 <style>
-    :root {
-        color-scheme: light;
-        --mvcv-bg: #ffffff;
-        --mvcv-sidebar: #f7f7f7;
-        --mvcv-panel: #ffffff;
-        --mvcv-hover: #ececec;
-        --mvcv-border: #dedede;
-        --mvcv-ink: #0d0d0d;
-        --mvcv-muted: #8a8a8a;
-        --mvcv-soft: #f3f3f3;
-        --mvcv-brand: #6f8f83;
-        --mvcv-shadow: 0 18px 52px rgba(0, 0, 0, 0.10);
-    }
-
-    body {
-        margin: 0;
-        background: var(--mvcv-bg);
-        color: var(--mvcv-ink);
-        font-family: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-    }
-
-    .mvcv-chat-shell {
-        min-height: 100vh;
-        display: grid;
-        grid-template-columns: 300px minmax(0, 1fr);
-        background: var(--mvcv-bg);
-        transition: grid-template-columns 0.18s ease;
-    }
-
-    body.mvcv-sidebar-collapsed .mvcv-chat-shell {
-        grid-template-columns: 0 minmax(0, 1fr);
-    }
-
-    .mvcv-sidebar {
-        min-height: 100vh;
-        background: var(--mvcv-sidebar);
-        border-right: 1px solid var(--mvcv-border);
+    .landing-frame {
         display: flex;
         flex-direction: column;
-        overflow: hidden;
-        transition: opacity 0.18s ease, transform 0.18s ease;
     }
 
-    body.mvcv-sidebar-collapsed .mvcv-sidebar {
-        opacity: 0;
-        transform: translateX(-16px);
-        pointer-events: none;
-    }
-
-    .mvcv-side-top {
-        min-height: 88px;
+    .landing-nav {
+        min-height: 70px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 24px 0 18px;
+        padding: 0 1.45rem;
+        border-bottom: 1px solid transparent;
     }
 
-    .mvcv-frog {
-        width: 34px;
-        height: 34px;
-        color: var(--mvcv-brand);
-    }
-
-    .mvcv-frog svg {
-        width: 100%;
-        height: 100%;
-        display: block;
-    }
-
-    .mvcv-collapse-button {
-        width: 27px;
-        height: 27px;
-        border: 0;
-        background: transparent;
-        padding: 0;
-        display: grid;
-        place-items: center;
-        cursor: pointer;
-    }
-
-    .mvcv-collapse-icon {
-        width: 24px;
-        height: 24px;
-        border: 2px solid #9c9c9c;
-        border-radius: 8px;
-        position: relative;
-        display: inline-block;
-    }
-
-    .mvcv-collapse-icon::after {
-        content: "";
-        position: absolute;
-        top: 3px;
-        bottom: 3px;
-        left: 11px;
-        border-left: 2px solid #9c9c9c;
-    }
-
-    .mvcv-nav-list {
-        padding: 0 8px;
-    }
-
-    .mvcv-side-link,
-    .mvcv-side-action {
-        min-height: 54px;
+    .landing-nav-left,
+    .landing-nav-links,
+    .landing-nav-actions {
         display: flex;
         align-items: center;
-        gap: 14px;
-        width: 100%;
+    }
+
+    .landing-nav-left {
+        gap: 1.8rem;
+    }
+
+    .landing-nav-links {
+        gap: 1.35rem;
+    }
+
+    .landing-nav-links a,
+    .landing-resource-button {
         border: 0;
-        border-radius: 12px;
         background: transparent;
-        color: var(--mvcv-ink);
+        color: var(--wf-text);
         text-decoration: none;
-        font-size: 18px;
-        line-height: 1;
-        padding: 0 18px;
-        text-align: left;
-    }
-
-    .mvcv-side-link:hover,
-    .mvcv-side-link.active,
-    .mvcv-side-action:hover {
-        background: var(--mvcv-hover);
-        color: var(--mvcv-ink);
-    }
-
-    .mvcv-side-icon {
-        width: 25px;
-        height: 25px;
-        display: inline-grid;
-        place-items: center;
-        color: #151515;
-        font-size: 25px;
-        line-height: 1;
-    }
-
-    .mvcv-side-spacer {
-        flex: 1;
-        min-height: 150px;
-    }
-
-    .mvcv-side-lower {
-        padding: 0 20px 22px;
-    }
-
-    .mvcv-side-lower .mvcv-side-link {
-        padding-left: 0;
-    }
-
-    .mvcv-signin-panel {
-        border-top: 1px solid #d8d8d8;
-        padding: 31px 23px 22px;
-    }
-
-    .mvcv-signin-panel h2 {
-        font-size: 20px;
-        line-height: 1.15;
-        margin: 0 0 25px;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-    }
-
-    .mvcv-signin-panel p {
-        color: #818181;
-        font-size: 18px;
-        line-height: 1.28;
-        margin: 0 0 34px;
-        max-width: 310px;
-    }
-
-    .mvcv-side-login {
-        min-height: 66px;
-        border: 1px solid #d8d8d8;
-        border-radius: 999px;
-        background: #ffffff;
-        color: #0d0d0d;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        font-size: 18px;
+        font-size: 0.82rem;
         font-weight: 700;
     }
 
-    .mvcv-side-login:hover {
-        background: #f2f2f2;
-        color: #0d0d0d;
-    }
-
-    .mvcv-main {
-        min-width: 0;
-        min-height: 100vh;
-        display: grid;
-        grid-template-rows: 66px minmax(0, 1fr) auto;
-    }
-
-    .mvcv-topbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 25px 0 50px;
-    }
-
-    .mvcv-top-left {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-
-    .mvcv-reopen-sidebar {
-        width: 32px;
-        height: 32px;
-        border: 1px solid #d7d7d7;
-        border-radius: 10px;
-        background: #ffffff;
-        color: #0d0d0d;
-        display: none;
-        place-items: center;
-        font-size: 18px;
-        line-height: 1;
-    }
-
-    body.mvcv-sidebar-collapsed .mvcv-reopen-sidebar {
-        display: grid;
-    }
-
-    .mvcv-product-menu {
+    .landing-resource {
         position: relative;
     }
 
-    .mvcv-product-button {
-        border: 0;
-        background: transparent;
-        color: #0d0d0d;
-        font-size: 28px;
-        font-weight: 700;
-        letter-spacing: -0.04em;
-        padding: 0;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .mvcv-chevron {
-        width: 12px;
-        height: 12px;
-        border-right: 2px solid #8b8b8b;
-        border-bottom: 2px solid #8b8b8b;
-        transform: rotate(45deg);
-        margin-top: -5px;
-    }
-
-    .mvcv-product-popover {
+    .landing-resource-menu {
         position: absolute;
-        z-index: 10;
-        top: 44px;
+        top: 28px;
         left: 0;
-        width: 340px;
-        border: 1px solid var(--mvcv-border);
-        border-radius: 18px;
+        width: 240px;
+        border: 1px solid var(--wf-border);
+        border-radius: 12px;
         background: #ffffff;
-        box-shadow: var(--mvcv-shadow);
-        padding: 18px;
+        box-shadow: var(--wf-card-shadow);
+        padding: 0.45rem;
         display: none;
+        z-index: 10;
     }
 
-    .mvcv-product-menu:focus-within .mvcv-product-popover,
-    .mvcv-product-menu:hover .mvcv-product-popover {
-        display: block;
+    .landing-resource:hover .landing-resource-menu,
+    .landing-resource:focus-within .landing-resource-menu {
+        display: grid;
     }
 
-    .mvcv-product-popover strong,
-    .mvcv-product-popover span {
-        display: block;
+    .landing-resource-menu a {
+        padding: 0.65rem 0.75rem;
+        border-radius: 9px;
     }
 
-    .mvcv-product-popover strong {
-        font-size: 17px;
-        margin-bottom: 8px;
+    .landing-resource-menu a:hover {
+        background: var(--wf-primary-soft);
     }
 
-    .mvcv-product-popover span {
-        color: #636363;
-        line-height: 1.45;
+    .landing-nav-actions {
+        gap: 0.65rem;
     }
 
-    .mvcv-product-popover .mvcv-pop-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 15px;
+    .landing-mobile-menu {
+        display: none;
+        border: 0;
+        background: transparent;
+        color: var(--wf-text);
+        font-size: 1.25rem;
     }
 
-    .mvcv-top-actions {
-        display: flex;
+    .landing-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+        gap: 2.4rem;
         align-items: center;
-        gap: 12px;
+        padding: 1.1rem 4rem 1.4rem;
     }
 
-    .mvcv-pill {
-        min-height: 51px;
-        border-radius: 999px;
+    .landing-kicker {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        padding: 0 25px;
-        text-decoration: none;
-        font-size: 21px;
-        font-weight: 700;
-        border: 1px solid #d7d7d7;
-        color: #0d0d0d;
-        background: #ffffff;
+        border-radius: 999px;
+        background: var(--wf-primary-soft);
+        color: var(--wf-primary);
+        padding: 0.42rem 0.7rem;
+        font-size: 0.75rem;
+        font-weight: 800;
+        margin-bottom: 1.1rem;
     }
 
-    .mvcv-pill.dark {
-        background: #0d0d0d;
-        border-color: #0d0d0d;
-        color: #ffffff;
+    .landing-copy h1 {
+        max-width: 560px;
+        margin: 0;
+        color: var(--wf-text);
+        font-size: clamp(2.5rem, 5.8vw, 4.6rem);
+        line-height: 0.97;
+        letter-spacing: -0.065em;
+        font-weight: 820;
     }
 
-    .mvcv-pill:hover {
-        filter: brightness(0.94);
+    .landing-copy p {
+        max-width: 520px;
+        margin: 1.2rem 0 1.35rem;
+        color: var(--wf-muted);
+        font-size: 1rem;
+        line-height: 1.65;
     }
 
-    .mvcv-hero {
+    .landing-hero-actions {
         display: flex;
-        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        padding: 0 24px 82px;
+        gap: 0.8rem;
+        margin-bottom: 1.45rem;
     }
 
-    .mvcv-hero h1 {
-        margin: 0 0 48px;
-        text-align: center;
-        font-size: 36px;
-        line-height: 1.15;
-        font-weight: 400;
-        letter-spacing: -0.035em;
+    .landing-trusted {
+        margin-top: 1.4rem;
     }
 
-    .mvcv-composer {
-        width: min(963px, calc(100vw - 380px));
-        min-height: 80px;
-        border: 1px solid #e8e8e8;
-        border-radius: 999px;
-        background: #ffffff;
-        box-shadow: 0 16px 42px rgba(0, 0, 0, 0.09);
-        display: grid;
-        grid-template-columns: 62px minmax(0, 1fr) auto auto auto;
-        align-items: center;
-        gap: 7px;
-        padding: 8px 11px 8px 20px;
-    }
-
-    .mvcv-upload {
-        width: 43px;
-        height: 43px;
-        border: 0;
-        border-radius: 50%;
-        background: transparent;
-        color: #0d0d0d;
-        display: grid;
-        place-items: center;
-        font-size: 44px;
-        font-weight: 300;
-        line-height: 1;
-        position: relative;
-        cursor: pointer;
-        text-decoration: none !important;
-    }
-
-    .mvcv-upload input {
-        position: absolute;
-        inset: 0;
-        opacity: 0;
-        cursor: pointer;
-    }
-
-    .mvcv-composer-text,
-    .mvcv-composer textarea {
-        width: 100%;
-        border: 0;
-        outline: 0;
-        resize: none;
-        background: transparent;
-        color: var(--mvcv-ink);
-        font: inherit;
-        font-size: 22px;
-        line-height: 1.25;
-        max-height: 54px;
-        overflow-y: auto;
-        padding: 10px 0;
-    }
-
-    .mvcv-composer-text {
-        color: #8f8f8f;
-        text-decoration: none;
-    }
-
-    .mvcv-mode-wrap {
-        position: relative;
-    }
-
-    .mvcv-mode-button {
-        min-height: 56px;
-        border: 0;
-        border-radius: 999px;
-        background: #f0f0f0;
-        color: #0d0d0d;
-        padding: 0 19px;
-        font-size: 20px;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .mvcv-mode-button:hover,
-    .mvcv-voice:hover,
-    .mvcv-submit:hover {
-        background: #e2e2e2;
-    }
-
-    .mvcv-mode-menu {
-        position: absolute;
-        right: 0;
-        bottom: 64px;
-        width: 220px;
-        border: 1px solid var(--mvcv-border);
-        border-radius: 16px;
-        background: #ffffff;
-        box-shadow: var(--mvcv-shadow);
-        padding: 8px;
-        display: none;
-        z-index: 20;
-    }
-
-    .mvcv-mode-wrap:hover .mvcv-mode-menu,
-    .mvcv-mode-wrap:focus-within .mvcv-mode-menu {
+    .landing-trusted span {
         display: block;
+        color: var(--wf-muted);
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
     }
 
-    .mvcv-mode-menu button {
-        width: 100%;
-        min-height: 42px;
-        border: 0;
-        border-radius: 10px;
-        background: transparent;
-        color: #0d0d0d;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 11px;
-        font-size: 15px;
-        font-weight: 650;
-        text-align: left;
-    }
-
-    .mvcv-mode-menu button:hover {
-        background: #f2f2f2;
-    }
-
-    .mvcv-voice,
-    .mvcv-submit {
-        width: 47px;
-        height: 47px;
-        border: 0;
-        border-radius: 50%;
-        background: transparent;
-        color: #0d0d0d;
+    .landing-logo-row {
         display: grid;
-        place-items: center;
-        font-size: 25px;
-    }
-
-    .mvcv-mic {
-        width: 15px;
-        height: 24px;
-        border: 3px solid currentColor;
-        border-radius: 999px;
-        position: relative;
-    }
-
-    .mvcv-mic::before {
-        content: "";
-        position: absolute;
-        left: 50%;
-        bottom: -9px;
-        width: 22px;
-        height: 12px;
-        border: 3px solid currentColor;
-        border-top: 0;
-        border-radius: 0 0 999px 999px;
-        transform: translateX(-50%);
-    }
-
-    .mvcv-mic::after {
-        content: "";
-        position: absolute;
-        left: 50%;
-        bottom: -16px;
-        height: 9px;
-        border-left: 3px solid currentColor;
-        transform: translateX(-50%);
-    }
-
-    .mvcv-submit {
-        background: #0d0d0d;
-        color: #ffffff;
-        text-decoration: none;
-    }
-
-    .mvcv-submit:hover {
-        background: #262626;
-        color: #ffffff;
-    }
-
-    .mvcv-hidden-fields {
-        display: none;
-    }
-
-    .mvcv-footer {
-        text-align: center;
-        color: #8a8a8a;
-        font-size: 20px;
-        line-height: 1.12;
-        padding: 0 24px 12px;
-    }
-
-    .mvcv-footer a {
-        color: #757575;
-        text-decoration: underline;
-        text-underline-offset: 2px;
-    }
-
-    .mvcv-help-table {
-        position: fixed;
-        inset: auto 34px 34px auto;
-        z-index: 30;
-        width: min(520px, calc(100vw - 40px));
-        border: 1px solid var(--mvcv-border);
-        border-radius: 18px;
-        background: #ffffff;
-        box-shadow: var(--mvcv-shadow);
-        padding: 14px;
-        opacity: 0;
-        pointer-events: none;
-        transform: translateY(8px);
-        transition: all 0.2s ease;
-    }
-
-    .mvcv-help-table:target {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateY(0);
-    }
-
-    .mvcv-help-table table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .mvcv-help-table th,
-    .mvcv-help-table td {
-        border-bottom: 1px solid #eeeeee;
-        padding: 10px;
-        text-align: left;
-        vertical-align: top;
-        font-size: 14px;
-    }
-
-    .mvcv-help-table th {
-        color: #0d0d0d;
-    }
-
-    .mvcv-help-close {
-        float: right;
-        color: #0d0d0d;
-        text-decoration: none;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 0.9rem;
+        align-items: center;
+        color: #6b7280;
+        font-size: 0.8rem;
         font-weight: 800;
     }
 
-    @media (prefers-color-scheme: dark) {
-        :root {
-            color-scheme: dark;
-            --mvcv-bg: #171717;
-            --mvcv-sidebar: #202020;
-            --mvcv-panel: #212121;
-            --mvcv-hover: #2d2d2d;
-            --mvcv-border: #3b3b3b;
-            --mvcv-ink: #f5f5f5;
-            --mvcv-muted: #b5b5b5;
-            --mvcv-soft: #2a2a2a;
-            --mvcv-brand: #9bbab0;
+    .landing-preview-wrap {
+        position: relative;
+        min-height: 360px;
+        display: grid;
+        place-items: center;
+    }
+
+    .landing-cv-card {
+        width: min(350px, 100%);
+        padding: 1.35rem;
+        border-radius: 18px;
+        background: #ffffff;
+        border: 1px solid var(--wf-border);
+        box-shadow: var(--wf-shadow);
+    }
+
+    .landing-cv-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .landing-cv-title {
+        font-weight: 800;
+        font-size: 0.85rem;
+    }
+
+    .landing-score {
+        width: 86px;
+        height: 86px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background:
+            radial-gradient(circle closest-side, #ffffff 68%, transparent 70%),
+            conic-gradient(var(--wf-primary) 85%, #eef0f7 0);
+        color: var(--wf-text);
+        font-size: 1.25rem;
+        font-weight: 850;
+    }
+
+    .landing-lines {
+        display: grid;
+        gap: 0.62rem;
+        width: 60%;
+    }
+
+    .landing-line {
+        height: 10px;
+        border-radius: 999px;
+        background: #d9dce8;
+    }
+
+    .landing-line.short {
+        width: 70%;
+    }
+
+    .landing-match-card {
+        position: absolute;
+        right: 0;
+        bottom: 38px;
+        width: 210px;
+        padding: 1rem;
+        border-radius: 15px;
+        background: #ffffff;
+        border: 1px solid var(--wf-border);
+        box-shadow: var(--wf-card-shadow);
+    }
+
+    .landing-match-card div {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--wf-muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding: 0.45rem 0;
+    }
+
+    .landing-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--wf-primary);
+    }
+
+    .landing-feature-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+        padding: 0 4rem 1.25rem;
+    }
+
+    .landing-feature {
+        padding: 1rem;
+        min-height: 142px;
+    }
+
+    .landing-feature-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: var(--wf-primary-soft);
+        color: var(--wf-primary);
+        font-weight: 900;
+        margin-bottom: 0.85rem;
+    }
+
+    .landing-feature strong {
+        display: block;
+        font-size: 0.88rem;
+        margin-bottom: 0.45rem;
+    }
+
+    .landing-feature p {
+        color: var(--wf-muted);
+        font-size: 0.78rem;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .landing-security {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin: 0 4rem 1rem;
+        padding: 0.85rem 1rem;
+        border-radius: 13px;
+        background: #f9faff;
+        border: 1px solid var(--wf-border);
+    }
+
+    .landing-security-copy {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-width: 0;
+    }
+
+    .landing-security-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: #ffffff;
+        color: var(--wf-primary);
+        border: 1px solid var(--wf-border);
+        flex: 0 0 auto;
+    }
+
+    .landing-security strong,
+    .landing-security span {
+        display: block;
+    }
+
+    .landing-security strong {
+        font-size: 0.82rem;
+    }
+
+    .landing-security span {
+        color: var(--wf-muted);
+        font-size: 0.72rem;
+    }
+
+    .landing-auth-note {
+        display: none;
+        padding: 0.85rem 1rem;
+        margin: 0 4rem 1rem;
+        border-radius: 12px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+        font-size: 0.84rem;
+        font-weight: 700;
+    }
+
+    @media (max-width: 1060px) {
+        .landing-hero {
+            grid-template-columns: 1fr;
+            padding: 1rem 2rem 1.25rem;
+            gap: 1.25rem;
         }
 
-        .mvcv-product-button,
-        .mvcv-side-link,
-        .mvcv-side-action,
-        .mvcv-side-icon,
-        .mvcv-composer-text,
-        .mvcv-composer textarea,
-        .mvcv-mode-button,
-        .mvcv-mode-menu button,
-        .mvcv-upload,
-        .mvcv-voice {
-            color: var(--mvcv-ink);
+        .landing-preview-wrap {
+            min-height: 320px;
         }
 
-        .mvcv-composer,
-        .mvcv-mode-menu,
-        .mvcv-product-popover,
-        .mvcv-help-table,
-        .mvcv-side-login,
-        .mvcv-pill {
-            background: var(--mvcv-panel);
-            color: var(--mvcv-ink);
-            border-color: var(--mvcv-border);
+        .landing-match-card {
+            right: 12%;
         }
 
-        .mvcv-pill.dark,
-        .mvcv-submit {
-            background: #f4f4f4;
-            border-color: #f4f4f4;
-            color: #0d0d0d;
+        .landing-feature-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            padding-inline: 2rem;
         }
 
-        .mvcv-mode-button {
-            background: #2c2c2c;
-        }
-
-        .mvcv-footer,
-        .mvcv-footer a,
-        .mvcv-signin-panel p,
-        .mvcv-product-popover span {
-            color: var(--mvcv-muted);
+        .landing-security,
+        .landing-auth-note {
+            margin-inline: 2rem;
         }
     }
 
-    body.mvcv-force-dark {
-        --mvcv-bg: #171717;
-        --mvcv-sidebar: #202020;
-        --mvcv-panel: #212121;
-        --mvcv-hover: #2d2d2d;
-        --mvcv-border: #3b3b3b;
-        --mvcv-ink: #f5f5f5;
-        --mvcv-muted: #b5b5b5;
-        --mvcv-soft: #2a2a2a;
-        --mvcv-brand: #9bbab0;
-    }
-
-    body.mvcv-force-light {
-        --mvcv-bg: #ffffff;
-        --mvcv-sidebar: #f7f7f7;
-        --mvcv-panel: #ffffff;
-        --mvcv-hover: #ececec;
-        --mvcv-border: #dedede;
-        --mvcv-ink: #0d0d0d;
-        --mvcv-muted: #8a8a8a;
-        --mvcv-soft: #f3f3f3;
-        --mvcv-brand: #6f8f83;
-    }
-
-    body.mvcv-force-dark .mvcv-composer,
-    body.mvcv-force-dark .mvcv-mode-menu,
-    body.mvcv-force-dark .mvcv-product-popover,
-    body.mvcv-force-dark .mvcv-help-table,
-    body.mvcv-force-dark .mvcv-side-login,
-    body.mvcv-force-dark .mvcv-pill {
-        background: var(--mvcv-panel);
-        color: var(--mvcv-ink);
-        border-color: var(--mvcv-border);
-    }
-
-    body.mvcv-force-dark .mvcv-product-button,
-    body.mvcv-force-dark .mvcv-side-link,
-    body.mvcv-force-dark .mvcv-side-action,
-    body.mvcv-force-dark .mvcv-side-icon,
-    body.mvcv-force-dark .mvcv-composer-text,
-    body.mvcv-force-dark .mvcv-composer textarea,
-    body.mvcv-force-dark .mvcv-mode-button,
-    body.mvcv-force-dark .mvcv-mode-menu button,
-    body.mvcv-force-dark .mvcv-upload,
-    body.mvcv-force-dark .mvcv-voice {
-        color: var(--mvcv-ink);
-    }
-
-    body.mvcv-force-dark .mvcv-mode-button {
-        background: #2c2c2c;
-    }
-
-    body.mvcv-force-dark .mvcv-pill.dark,
-    body.mvcv-force-dark .mvcv-submit {
-        background: #f4f4f4;
-        border-color: #f4f4f4;
-        color: #0d0d0d;
-    }
-
-    @media (max-width: 1080px) {
-        .mvcv-chat-shell {
-            grid-template-columns: minmax(0, 1fr);
+    @media (max-width: 720px) {
+        .landing-nav {
+            min-height: 58px;
+            padding: 0 0.9rem;
         }
 
-        .mvcv-sidebar {
+        .landing-nav-links,
+        .landing-nav-actions {
             display: none;
         }
 
-        body.mvcv-sidebar-collapsed .mvcv-chat-shell {
-            grid-template-columns: minmax(0, 1fr);
+        .landing-mobile-menu {
+            display: inline-flex;
         }
 
-        .mvcv-topbar {
-            padding: 0 16px;
+        .landing-hero {
+            padding: 1.25rem 1rem 1rem;
         }
 
-        .mvcv-reopen-sidebar {
-            display: none !important;
+        .landing-copy h1 {
+            font-size: 2.25rem;
         }
 
-        .mvcv-product-button {
-            font-size: 24px;
+        .landing-copy p {
+            font-size: 0.9rem;
+            line-height: 1.55;
         }
 
-        .mvcv-top-actions {
-            gap: 8px;
+        .landing-hero-actions {
+            display: grid;
+            grid-template-columns: 1fr;
         }
 
-        .mvcv-pill {
-            min-height: 44px;
-            padding: 0 16px;
-            font-size: 17px;
+        .landing-hero-actions .wf-btn {
+            width: 100%;
         }
 
-        .mvcv-hero {
-            padding-bottom: 56px;
+        .landing-logo-row {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
-        .mvcv-hero h1 {
-            font-size: 29px;
+        .landing-preview-wrap {
+            min-height: 280px;
         }
 
-        .mvcv-composer {
-            width: min(963px, calc(100vw - 32px));
-        }
-    }
-
-    @media (max-width: 640px) {
-        .mvcv-main {
-            grid-template-rows: auto minmax(0, 1fr) auto;
+        .landing-cv-card {
+            width: 100%;
         }
 
-        .mvcv-topbar {
-            min-height: 70px;
-            align-items: flex-start;
-            padding-top: 12px;
+        .landing-match-card {
+            position: static;
+            width: 100%;
+            margin-top: -0.4rem;
         }
 
-        .mvcv-top-actions .mvcv-pill {
-            font-size: 14px;
-            padding: 0 12px;
+        .landing-feature-grid {
+            grid-template-columns: 1fr;
+            padding: 0 1rem 1rem;
         }
 
-        .mvcv-product-popover {
-            width: calc(100vw - 32px);
+        .landing-security {
+            align-items: stretch;
+            flex-direction: column;
+            margin: 0 1rem 1rem;
         }
 
-        .mvcv-composer {
-            grid-template-columns: 44px minmax(0, 1fr) auto;
-            border-radius: 28px;
-            min-height: 76px;
-            padding: 8px 10px 8px 14px;
+        .landing-security .wf-btn {
+            width: 100%;
         }
 
-        .mvcv-mode-wrap,
-        .mvcv-voice {
-            display: none;
-        }
-
-        .mvcv-composer-text,
-        .mvcv-composer textarea {
-            font-size: 18px;
-        }
-
-        .mvcv-footer {
-            font-size: 14px;
+        .landing-auth-note {
+            display: block;
+            margin-inline: 1rem;
         }
     }
 </style>
 {% endblock %}
 
 {% block app_shell %}
-<section class="mvcv-chat-shell">
-    <aside class="mvcv-sidebar" aria-label="MyValidCV navigation">
-        <div class="mvcv-side-top">
-            <a class="mvcv-frog" href="{% url 'home' %}" aria-label="MyValidCV home">
-                <svg viewBox="0 0 64 64" role="img" aria-label="MyValidCV frog head mark">
-                    <path d="M16 25c0-8 7-15 16-15s16 7 16 15v14c0 8-7 15-16 15s-16-7-16-15V25Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
-                    <circle cx="22" cy="18" r="7" fill="none" stroke="currentColor" stroke-width="4"/>
-                    <circle cx="42" cy="18" r="7" fill="none" stroke="currentColor" stroke-width="4"/>
-                    <circle cx="24" cy="19" r="2.4" fill="currentColor"/>
-                    <circle cx="40" cy="19" r="2.4" fill="currentColor"/>
-                    <path d="M24 38c4 4 12 4 16 0" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-                </svg>
-            </a>
-            <button class="mvcv-collapse-button" type="button" data-sidebar-toggle aria-label="Collapse sidebar">
-                <span class="mvcv-collapse-icon" aria-hidden="true"></span>
-            </button>
-        </div>
-
-        <nav class="mvcv-nav-list">
-            <a class="mvcv-side-link active" href="{% url 'home' %}">
-                <span class="mvcv-side-icon">+</span>
-                <span>New CV</span>
-            </a>
-            <a class="mvcv-side-link" href="{% if user.is_authenticated %}{% url 'upload_cv' %}{% else %}{% url 'register' %}?next={% url 'home' %}{% endif %}">
-                <span class="mvcv-side-icon">□</span>
-                <span>Stored CV</span>
-            </a>
-            {% if user.is_authenticated %}
-                <a class="mvcv-side-link" href="{% url 'dashboard' %}">
-                    <span class="mvcv-side-icon">◌</span>
-                    <span>Report</span>
+<main class="wf-shell">
+    <section class="wf-frame landing-frame">
+        <header class="landing-nav">
+            <div class="landing-nav-left">
+                <a class="wf-logo" href="{% url 'home' %}" aria-label="MyValidCV home">
+                    <span class="wf-logo-mark">M</span>
+                    <span>MVCV</span>
                 </a>
-            {% endif %}
-        </nav>
-
-        <div class="mvcv-side-spacer"></div>
-
-        <nav class="mvcv-side-lower">
-            <a class="mvcv-side-link" href="{% url 'pricing' %}">
-                <span class="mvcv-side-icon">⌬</span>
-                <span>View our plans</span>
-            </a>
-            <button class="mvcv-side-action" type="button" data-theme-toggle>
-                <span class="mvcv-side-icon">☼</span>
-                <span>Dark or Light</span>
-            </button>
-            <a class="mvcv-side-link" href="#mvcv-help">
-                <span class="mvcv-side-icon">?</span>
-                <span>Help →</span>
-            </a>
-        </nav>
-
-        <div class="mvcv-signin-panel">
-            <h2>Get your CV Validated</h2>
-            <p>Login to validate your CV based on the uploaded job ads, link, or text, plus create updated CV.</p>
-            {% if user.is_authenticated %}
-                <a class="mvcv-side-login" href="{% url 'dashboard' %}">Open reports</a>
-            {% else %}
-                <a class="mvcv-side-login" href="{% url 'login' %}?next={% url 'home' %}">Log in</a>
-            {% endif %}
-        </div>
-    </aside>
-
-    <main class="mvcv-main">
-        <header class="mvcv-topbar">
-            <div class="mvcv-top-left">
-                <button class="mvcv-reopen-sidebar" type="button" data-sidebar-toggle aria-label="Open sidebar">☰</button>
-                <div class="mvcv-product-menu">
-                    <button class="mvcv-product-button" type="button">
-                        <span>MVCV</span>
-                        <span class="mvcv-chevron" aria-hidden="true"></span>
-                    </button>
-                    <div class="mvcv-product-popover">
-                        <strong>Rank your CV before recruiters read it.</strong>
-                        <span>MyValidCV compares your CV with a job advert, URL, or text and explains how to improve your shortlist chances without inventing experience.</span>
-                        <div class="mvcv-pop-actions">
-                            <a class="mvcv-pill dark" href="{% url 'login' %}?next={% url 'home' %}">Log in</a>
-                            <a class="mvcv-pill" href="{% url 'register' %}?next={% url 'home' %}">Sign up free</a>
+                <nav class="landing-nav-links" aria-label="Primary navigation">
+                    <a href="#features">Features</a>
+                    <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'register' %}?next={% url 'home' %}{% endif %}">How it Works</a>
+                    <a href="{% url 'pricing' %}">Pricing</a>
+                    <a href="{% url 'pricing' %}">For Enterprise</a>
+                    <div class="landing-resource">
+                        <button class="landing-resource-button" type="button">Resources v</button>
+                        <div class="landing-resource-menu">
+                            <a href="#features">ATS guidance</a>
+                            <a href="#privacy">Privacy</a>
+                            <a href="#security">Use of data</a>
                         </div>
                     </div>
-                </div>
+                </nav>
             </div>
-
-            <div class="mvcv-top-actions">
+            <div class="landing-nav-actions">
                 {% if user.is_authenticated %}
-                    <a class="mvcv-pill dark" href="{% url 'dashboard' %}">Dashboard</a>
+                    <a class="wf-btn" href="{% url 'dashboard' %}">Dashboard</a>
                     <form method="post" action="{% url 'logout' %}">
                         {% csrf_token %}
-                        <button class="mvcv-pill" type="submit">Log out</button>
+                        <button class="wf-btn wf-btn-primary" type="submit">Log out</button>
                     </form>
                 {% else %}
-                    <a class="mvcv-pill dark" href="{% url 'login' %}?next={% url 'home' %}">Log in</a>
-                    <a class="mvcv-pill" href="{% url 'register' %}?next={% url 'home' %}">Sign up for free</a>
+                    <a class="wf-btn" href="{% url 'login' %}?next={% url 'home' %}">Log in</a>
+                    <a class="wf-btn wf-btn-primary" href="{% url 'register' %}?next={% url 'home' %}">Sign up free</a>
                 {% endif %}
             </div>
+            <button class="landing-mobile-menu" type="button" aria-label="Open menu">☰</button>
         </header>
 
-        <section class="mvcv-hero">
-            <h1>Validate your CV against a job.</h1>
+        {% if user.is_authenticated and not workspace_available %}
+            <div class="landing-auth-note">Your validation workspace is syncing. The landing page is available while setup finishes.</div>
+        {% endif %}
 
-            {% if user.is_authenticated and workspace_available %}
-                <form class="mvcv-composer" method="post" enctype="multipart/form-data" action="{% url 'home' %}">
-                    {% csrf_token %}
-                    <label class="mvcv-upload" title="Upload CV">
-                        +
-                        {{ form.cv_file }}
-                    </label>
-
-                    {{ form.job_description }}
-
-                    <div class="mvcv-mode-wrap">
-                        <button class="mvcv-mode-button" type="button">
-                            Job role <span class="mvcv-chevron" aria-hidden="true"></span>
-                        </button>
-                        <div class="mvcv-mode-menu">
-                            <button type="button" data-source="url">URL <span>→</span></button>
-                            <button type="button" data-source="file">Job Ads <span>→</span></button>
-                            <button type="button" data-source="text">Text <span>→</span></button>
-                            <button type="button" data-source="photo">Photo <span>→</span></button>
-                        </div>
-                    </div>
-
-                    <button class="mvcv-voice" type="button" title="Voice to text"><span class="mvcv-mic" aria-hidden="true"></span></button>
-                    <button class="mvcv-submit" type="submit" title="Validate CV">↑</button>
-
-                    <div class="mvcv-hidden-fields">
-                        {{ form.source_type }}
-                        {{ form.cv }}
-                        {{ form.cv_title }}
-                        {{ form.job_url }}
-                        {{ form.job_file }}
-                        {{ form.job_title }}
-                        {{ form.company }}
-                        {{ form.deadline }}
-                    </div>
-                </form>
-            {% else %}
-                <div class="mvcv-composer" role="group" aria-label="Start CV validation">
-                    <a class="mvcv-upload" href="{% url 'register' %}?next={% url 'home' %}" title="Upload CV">+</a>
-                    <a class="mvcv-composer-text" href="{% url 'register' %}?next={% url 'home' %}">Validate your CV</a>
-                    <div class="mvcv-mode-wrap">
-                        <button class="mvcv-mode-button" type="button">
-                            Job role <span class="mvcv-chevron" aria-hidden="true"></span>
-                        </button>
-                        <div class="mvcv-mode-menu">
-                            <button type="button">URL <span>→</span></button>
-                            <button type="button">Job Ads <span>→</span></button>
-                            <button type="button">Text <span>→</span></button>
-                            <button type="button">Photo <span>→</span></button>
-                        </div>
-                    </div>
-                    <a class="mvcv-voice" href="{% url 'register' %}?next={% url 'home' %}" title="Voice to text"><span class="mvcv-mic" aria-hidden="true"></span></a>
-                    <a class="mvcv-submit" href="{% url 'register' %}?next={% url 'home' %}" title="Validate CV">↑</a>
+        <section class="landing-hero">
+            <div class="landing-copy">
+                <div class="landing-kicker">AI-powered CV validation</div>
+                <h1>Validate Your CV with AI</h1>
+                <p>Get instant, AI-powered feedback to improve your CV and increase your chances of getting hired.</p>
+                <div class="landing-hero-actions">
+                    {% if user.is_authenticated and workspace_available %}
+                        <a class="wf-btn wf-btn-primary" href="{% url 'home' %}#validate">Validate Your CV Now</a>
+                    {% else %}
+                        <a class="wf-btn wf-btn-primary" href="{% url 'register' %}?next={% url 'home' %}">Validate Your CV Now</a>
+                    {% endif %}
+                    <a class="wf-btn" href="#features">See How It Works</a>
                 </div>
-            {% endif %}
+                <div class="landing-trusted">
+                    <span>Trusted by job seekers applying to</span>
+                    <div class="landing-logo-row" aria-label="Example employers">
+                        <div>Google</div>
+                        <div>Microsoft</div>
+                        <div>Amazon</div>
+                        <div>Deloitte</div>
+                        <div>IBM</div>
+                        <div>Indeed</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="landing-preview-wrap" aria-label="Example CV analysis preview">
+                <div class="landing-cv-card">
+                    <div class="landing-cv-head">
+                        <span class="landing-cv-title">CV</span>
+                        <div class="landing-score">85</div>
+                    </div>
+                    <div class="landing-lines">
+                        <span class="landing-line"></span>
+                        <span class="landing-line short"></span>
+                        <span class="landing-line"></span>
+                        <span class="landing-line short"></span>
+                        <span class="landing-line"></span>
+                    </div>
+                </div>
+                <div class="landing-match-card">
+                    <div><span class="landing-dot"></span> Skills Match</div>
+                    <div><span class="landing-dot"></span> Experience</div>
+                    <div><span class="landing-dot"></span> ATS Check</div>
+                    <div><span class="landing-dot"></span> Summary</div>
+                    <div><span class="landing-dot"></span> Improvements</div>
+                </div>
+            </div>
         </section>
 
-        <footer class="mvcv-footer">
-            MyValidCV helps you validate your CV before applying.
-            <a href="#mvcv-help">Privacy</a> ·
-            <a href="#mvcv-help">Terms</a> ·
-            <a href="#mvcv-help">Use of Data</a>
-        </footer>
-    </main>
-</section>
+        <section id="features" class="landing-feature-grid">
+            <article class="wf-card landing-feature">
+                <div class="landing-feature-icon">AI</div>
+                <strong>AI CV Analysis</strong>
+                <p>Advanced AI analyses your CV against job descriptions and recruiter expectations.</p>
+            </article>
+            <article class="wf-card landing-feature">
+                <div class="landing-feature-icon">AT</div>
+                <strong>ATS Compatibility</strong>
+                <p>Ensure your CV passes Applicant Tracking Systems used by top companies.</p>
+            </article>
+            <article class="wf-card landing-feature">
+                <div class="landing-feature-icon">CV</div>
+                <strong>Smart Suggestions</strong>
+                <p>Get personalised recommendations to improve your content, skills, and impact.</p>
+            </article>
+            <article class="wf-card landing-feature">
+                <div class="landing-feature-icon">IN</div>
+                <strong>Instant Results</strong>
+                <p>Receive detailed feedback and a match score in seconds.</p>
+            </article>
+        </section>
 
-<section id="mvcv-help" class="mvcv-help-table" aria-label="Help and policies">
-    <a class="mvcv-help-close" href="#">Close</a>
-    <table>
-        <thead>
-            <tr>
-                <th>Page</th>
-                <th>What it explains</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr id="faq">
-                <td>FAQ</td>
-                <td>How to upload a CV, add a job role, run validation, and read the report.</td>
-            </tr>
-            <tr id="terms">
-                <td>Terms of Service</td>
-                <td>Use MyValidCV responsibly. Do not upload documents you do not have permission to use.</td>
-            </tr>
-            <tr id="privacy">
-                <td>Privacy Policy</td>
-                <td>CVs and job data are used to provide validation, reports, and saved workspace features.</td>
-            </tr>
-            <tr id="data">
-                <td>Use of Data</td>
-                <td>We do not ask users to invent experience. Suggestions should be truthful and verifiable.</td>
-            </tr>
-        </tbody>
-    </table>
-</section>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    (function () {
-        const jobText = document.getElementById('id_job_description');
-        const sourceType = document.getElementById('id_source_type');
-        const jobUrl = document.getElementById('id_job_url');
-        const jobFile = document.getElementById('id_job_file');
-        const themeToggle = document.querySelector('[data-theme-toggle]');
-        const sidebarToggles = document.querySelectorAll('[data-sidebar-toggle]');
-
-        if (jobText) {
-            jobText.setAttribute('placeholder', 'Validate your CV');
-            jobText.setAttribute('rows', '1');
-        }
-
-        document.querySelectorAll('[data-source]').forEach(function (button) {
-            button.addEventListener('click', function () {
-                const source = button.getAttribute('data-source');
-                if (sourceType) sourceType.value = source === 'photo' ? 'file' : source;
-                if (source === 'file' || source === 'photo') {
-                    if (jobFile) jobFile.click();
-                }
-                if (source === 'url' && jobText) {
-                    jobText.setAttribute('placeholder', 'Paste job advert URL');
-                    jobText.focus();
-                }
-                if (source === 'text' && jobText) {
-                    jobText.setAttribute('placeholder', 'Paste job role text');
-                    jobText.focus();
-                }
-            });
-        });
-
-        const form = document.querySelector('.mvcv-composer');
-        if (form && form.tagName === 'FORM') {
-            form.addEventListener('submit', function () {
-                if (sourceType && sourceType.value === 'url' && jobUrl && jobText && !jobUrl.value.trim()) {
-                    jobUrl.value = jobText.value.trim();
-                }
-            });
-        }
-
-        if (themeToggle) {
-            themeToggle.addEventListener('click', function () {
-                const forceDark = !document.body.classList.contains('mvcv-force-dark');
-                document.body.classList.toggle('mvcv-force-dark', forceDark);
-                document.body.classList.toggle('mvcv-force-light', !forceDark);
-            });
-        }
-
-        sidebarToggles.forEach(function (button) {
-            button.addEventListener('click', function () {
-                document.body.classList.toggle('mvcv-sidebar-collapsed');
-            });
-        });
-    })();
-</script>
+        <section id="security" class="landing-security">
+            <div class="landing-security-copy">
+                <div class="landing-security-icon">S</div>
+                <div>
+                    <strong>Your data is secure and private</strong>
+                    <span id="privacy">We use enterprise-grade security to protect your personal information.</span>
+                </div>
+            </div>
+            {% if user.is_authenticated and workspace_available %}
+                <a class="wf-btn wf-btn-primary" id="validate" href="{% url 'dashboard' %}">Go to Dashboard</a>
+            {% else %}
+                <a class="wf-btn wf-btn-primary" id="validate" href="{% url 'register' %}?next={% url 'home' %}">Get Started For Free</a>
+            {% endif %}
+        </section>
+    </section>
+</main>
 {% endblock %}

@@ -1,0 +1,126 @@
+/* MyValidCV wireframe design system */
+:root {
+    --wf-bg: #fbfbff;
+    --wf-surface: #ffffff;
+    --wf-surface-soft: #f7f8ff;
+    --wf-border: #e7e8f2;
+    --wf-border-strong: #d9daf0;
+    --wf-text: #111827;
+    --wf-muted: #6b7280;
+    --wf-faint: #9ca3af;
+    --wf-primary: #5b4df5;
+    --wf-primary-dark: #4338ca;
+    --wf-primary-soft: #eef0ff;
+    --wf-success: #16a34a;
+    --wf-warning: #f59e0b;
+    --wf-danger: #ef4444;
+    --wf-shadow: 0 18px 55px rgba(31, 41, 55, 0.08);
+    --wf-card-shadow: 0 10px 32px rgba(31, 41, 55, 0.06);
+    --wf-radius: 14px;
+    --wf-radius-lg: 18px;
+    --wf-font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+}
+
+body {
+    background: var(--wf-bg);
+    color: var(--wf-text);
+    font-family: var(--wf-font);
+}
+
+.wf-btn {
+    min-height: 38px;
+    border-radius: 8px;
+    border: 1px solid var(--wf-border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0 1rem;
+    color: var(--wf-text);
+    background: var(--wf-surface);
+    font-size: 0.86rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.wf-btn:hover {
+    transform: translateY(-1px);
+    background: var(--wf-surface-soft);
+    color: var(--wf-text);
+}
+
+.wf-btn-primary {
+    background: var(--wf-primary);
+    border-color: var(--wf-primary);
+    color: #ffffff;
+    box-shadow: 0 10px 22px rgba(91, 77, 245, 0.22);
+}
+
+.wf-btn-primary:hover {
+    background: var(--wf-primary-dark);
+    color: #ffffff;
+}
+
+.wf-shell {
+    min-height: 100vh;
+    padding: 1rem;
+    background:
+        radial-gradient(circle at 80% 18%, rgba(91, 77, 245, 0.08), transparent 28%),
+        linear-gradient(180deg, #ffffff 0%, var(--wf-bg) 100%);
+}
+
+.wf-frame {
+    width: min(1400px, 100%);
+    min-height: calc(100vh - 2rem);
+    margin: 0 auto;
+    border: 1px solid var(--wf-border);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: var(--wf-shadow);
+    overflow: hidden;
+}
+
+.wf-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--wf-text);
+    text-decoration: none;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.wf-logo-mark {
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    display: inline-grid;
+    place-items: center;
+    background: var(--wf-primary-soft);
+    color: var(--wf-primary);
+    font-size: 0.8rem;
+    font-weight: 900;
+}
+
+.wf-card {
+    border: 1px solid var(--wf-border);
+    border-radius: var(--wf-radius);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-card-shadow);
+}
+
+.wf-muted {
+    color: var(--wf-muted);
+}
+
+@media (max-width: 768px) {
+    .wf-shell {
+        padding: 0.65rem;
+    }
+
+    .wf-frame {
+        min-height: calc(100vh - 1.3rem);
+        border-radius: 13px;
+    }
+}
