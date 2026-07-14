@@ -28,8 +28,13 @@
     .mvcv-chat-shell {
         min-height: 100vh;
         display: grid;
-        grid-template-columns: 384px minmax(0, 1fr);
+        grid-template-columns: 300px minmax(0, 1fr);
         background: var(--mvcv-bg);
+        transition: grid-template-columns 0.18s ease;
+    }
+
+    body.mvcv-sidebar-collapsed .mvcv-chat-shell {
+        grid-template-columns: 0 minmax(0, 1fr);
     }
 
     .mvcv-sidebar {
@@ -38,6 +43,14 @@
         border-right: 1px solid var(--mvcv-border);
         display: flex;
         flex-direction: column;
+        overflow: hidden;
+        transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+
+    body.mvcv-sidebar-collapsed .mvcv-sidebar {
+        opacity: 0;
+        transform: translateX(-16px);
+        pointer-events: none;
     }
 
     .mvcv-side-top {
@@ -60,12 +73,24 @@
         display: block;
     }
 
-    .mvcv-collapse-icon {
+    .mvcv-collapse-button {
         width: 27px;
         height: 27px;
+        border: 0;
+        background: transparent;
+        padding: 0;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+    }
+
+    .mvcv-collapse-icon {
+        width: 24px;
+        height: 24px;
         border: 2px solid #9c9c9c;
         border-radius: 8px;
         position: relative;
+        display: inline-block;
     }
 
     .mvcv-collapse-icon::after {
@@ -93,7 +118,7 @@
         background: transparent;
         color: var(--mvcv-ink);
         text-decoration: none;
-        font-size: 22px;
+        font-size: 18px;
         line-height: 1;
         padding: 0 18px;
         text-align: left;
@@ -135,7 +160,7 @@
     }
 
     .mvcv-signin-panel h2 {
-        font-size: 22px;
+        font-size: 20px;
         line-height: 1.15;
         margin: 0 0 25px;
         font-weight: 700;
@@ -144,7 +169,7 @@
 
     .mvcv-signin-panel p {
         color: #818181;
-        font-size: 21px;
+        font-size: 18px;
         line-height: 1.28;
         margin: 0 0 34px;
         max-width: 310px;
@@ -160,7 +185,7 @@
         align-items: center;
         justify-content: center;
         text-decoration: none;
-        font-size: 21px;
+        font-size: 18px;
         font-weight: 700;
     }
 
@@ -181,6 +206,29 @@
         align-items: center;
         justify-content: space-between;
         padding: 0 25px 0 50px;
+    }
+
+    .mvcv-top-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .mvcv-reopen-sidebar {
+        width: 32px;
+        height: 32px;
+        border: 1px solid #d7d7d7;
+        border-radius: 10px;
+        background: #ffffff;
+        color: #0d0d0d;
+        display: none;
+        place-items: center;
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    body.mvcv-sidebar-collapsed .mvcv-reopen-sidebar {
+        display: grid;
     }
 
     .mvcv-product-menu {
@@ -285,20 +333,20 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 0 24px 86px;
+        padding: 0 24px 82px;
     }
 
     .mvcv-hero h1 {
         margin: 0 0 48px;
         text-align: center;
-        font-size: 37px;
+        font-size: 36px;
         line-height: 1.15;
         font-weight: 400;
         letter-spacing: -0.035em;
     }
 
     .mvcv-composer {
-        width: min(963px, calc(100vw - 520px));
+        width: min(963px, calc(100vw - 380px));
         min-height: 80px;
         border: 1px solid #e8e8e8;
         border-radius: 999px;
@@ -325,6 +373,7 @@
         line-height: 1;
         position: relative;
         cursor: pointer;
+        text-decoration: none !important;
     }
 
     .mvcv-upload input {
@@ -656,15 +705,23 @@
 
     @media (max-width: 1080px) {
         .mvcv-chat-shell {
-            grid-template-columns: 1fr;
+            grid-template-columns: minmax(0, 1fr);
         }
 
         .mvcv-sidebar {
             display: none;
         }
 
+        body.mvcv-sidebar-collapsed .mvcv-chat-shell {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
         .mvcv-topbar {
             padding: 0 16px;
+        }
+
+        .mvcv-reopen-sidebar {
+            display: none !important;
         }
 
         .mvcv-product-button {
@@ -718,6 +775,7 @@
             grid-template-columns: 44px minmax(0, 1fr) auto;
             border-radius: 28px;
             min-height: 76px;
+            padding: 8px 10px 8px 14px;
         }
 
         .mvcv-mode-wrap,
@@ -751,7 +809,9 @@
                     <path d="M24 38c4 4 12 4 16 0" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
                 </svg>
             </a>
-            <span class="mvcv-collapse-icon" aria-hidden="true"></span>
+            <button class="mvcv-collapse-button" type="button" data-sidebar-toggle aria-label="Collapse sidebar">
+                <span class="mvcv-collapse-icon" aria-hidden="true"></span>
+            </button>
         </div>
 
         <nav class="mvcv-nav-list">
@@ -801,17 +861,20 @@
 
     <main class="mvcv-main">
         <header class="mvcv-topbar">
-            <div class="mvcv-product-menu">
-                <button class="mvcv-product-button" type="button">
-                    <span>MVCV</span>
-                    <span class="mvcv-chevron" aria-hidden="true"></span>
-                </button>
-                <div class="mvcv-product-popover">
-                    <strong>Rank your CV before recruiters read it.</strong>
-                    <span>MyValidCV compares your CV with a job advert, URL, or text and explains how to improve your shortlist chances without inventing experience.</span>
-                    <div class="mvcv-pop-actions">
-                        <a class="mvcv-pill dark" href="{% url 'login' %}?next={% url 'home' %}">Log in</a>
-                        <a class="mvcv-pill" href="{% url 'register' %}?next={% url 'home' %}">Sign up free</a>
+            <div class="mvcv-top-left">
+                <button class="mvcv-reopen-sidebar" type="button" data-sidebar-toggle aria-label="Open sidebar">☰</button>
+                <div class="mvcv-product-menu">
+                    <button class="mvcv-product-button" type="button">
+                        <span>MVCV</span>
+                        <span class="mvcv-chevron" aria-hidden="true"></span>
+                    </button>
+                    <div class="mvcv-product-popover">
+                        <strong>Rank your CV before recruiters read it.</strong>
+                        <span>MyValidCV compares your CV with a job advert, URL, or text and explains how to improve your shortlist chances without inventing experience.</span>
+                        <div class="mvcv-pop-actions">
+                            <a class="mvcv-pill dark" href="{% url 'login' %}?next={% url 'home' %}">Log in</a>
+                            <a class="mvcv-pill" href="{% url 'register' %}?next={% url 'home' %}">Sign up free</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -831,7 +894,7 @@
         </header>
 
         <section class="mvcv-hero">
-            <h1>Upload your CV, add a job role, and get a clear ATS match report.</h1>
+            <h1>Validate your CV against a job.</h1>
 
             {% if user.is_authenticated and workspace_available %}
                 <form class="mvcv-composer" method="post" enctype="multipart/form-data" action="{% url 'home' %}">
@@ -938,6 +1001,7 @@
         const jobUrl = document.getElementById('id_job_url');
         const jobFile = document.getElementById('id_job_file');
         const themeToggle = document.querySelector('[data-theme-toggle]');
+        const sidebarToggles = document.querySelectorAll('[data-sidebar-toggle]');
 
         if (jobText) {
             jobText.setAttribute('placeholder', 'Validate your CV');
@@ -978,6 +1042,12 @@
                 document.body.classList.toggle('mvcv-force-light', !forceDark);
             });
         }
+
+        sidebarToggles.forEach(function (button) {
+            button.addEventListener('click', function () {
+                document.body.classList.toggle('mvcv-sidebar-collapsed');
+            });
+        });
     })();
 </script>
 {% endblock %}
