@@ -24,8 +24,8 @@
       "value": "30"
     },
     "STRIPE_MOCK_MODE": {
-      "description": "Keep true for preview; set false after Stripe keys, recurring Prices, and the signed webhook are configured.",
-      "value": "True"
+      "description": "Mock checkout is local-development only and must remain false on public deployments.",
+      "value": "False"
     },
     "STRIPE_SECRET_KEY": {
       "description": "Stripe secret API key.",

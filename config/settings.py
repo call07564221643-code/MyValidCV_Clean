@@ -293,7 +293,10 @@ SUMUP_WEBHOOK_SECRET = os.environ.get('SUMUP_WEBHOOK_SECRET', '')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
-STRIPE_MOCK_MODE = env_bool('STRIPE_MOCK_MODE', True)
+# A card-like mock form must never be exposed on a public deployment. Tests can
+# still override this setting explicitly, while production always uses hosted
+# Stripe Checkout (or fails closed when Stripe is not configured).
+STRIPE_MOCK_MODE = env_bool('STRIPE_MOCK_MODE', False) if DEBUG else False
 
 # Email receipts
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')

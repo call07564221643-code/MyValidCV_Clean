@@ -94,11 +94,14 @@ def start_checkout(request, plan_code):
     try:
         checkout = create_sumup_checkout(transaction, return_url)
     except SumUpConfigurationError:
-        if settings.STRIPE_MOCK_MODE or settings.STRIPE_SECRET_KEY:
+        if settings.STRIPE_MOCK_MODE:
             transaction.provider = "stripe"
             transaction.raw_response = {"internal_fallback": "card_checkout"}
             transaction.save(update_fields=["provider", "raw_response", "updated_at"])
             return render(request, "payments/stripe_mock_checkout.html", demo_checkout_context(transaction))
+        if settings.STRIPE_SECRET_KEY:
+            messages.info(request, "Please use the Stripe Pay Now button for secure hosted checkout.")
+            return redirect("pricing")
         messages.warning(request, "Live card checkout is not connected yet. Configure payment credentials to take payments.")
         return render(request, "payments/sumup_setup.html", {"transaction": transaction})
     except SumUpAPIError as exc:

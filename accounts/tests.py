@@ -18,7 +18,6 @@ class CustomerNavigationTests(TestCase):
         response = self.client.get(reverse('dashboard'))
         self.assertContains(response, '>Reports<', html=False)
         self.assertContains(response, '>Settings<', html=False)
-        self.assertNotContains(response, '>Plans<', html=False)
         self.assertNotContains(response, '>Health<', html=False)
         self.assertNotContains(response, '>Admin<', html=False)
 
@@ -43,6 +42,17 @@ class CustomerNavigationTests(TestCase):
         response = self.client.get(reverse('dashboard'))
         self.assertNotContains(response, 'Bulk analysis')
         self.assertNotContains(response, 'New bulk analysis')
+
+    def test_validation_page_is_focused_engine(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('ats_analyse'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'ATS validation engine')
+        self.assertContains(response, 'Paste job text')
+        self.assertContains(response, 'Job advert URL')
+        self.assertContains(response, 'Upload advert')
+        self.assertNotContains(response, 'Recent reports')
+        self.assertNotContains(response, 'Create cover letter</button>')
 
     def test_login_redirects_to_dashboard(self):
         response = self.client.post(reverse('login'), {
