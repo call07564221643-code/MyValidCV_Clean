@@ -531,7 +531,7 @@
                                         <strong>{{ job.title }}</strong>
                                         <small>{{ job.get_source_type_display }}{% if job.company %} · {{ job.company }}{% endif %}{% if job.deadline %} · Deadline {{ job.deadline|date:"M d, Y" }}{% endif %}</small>
                                     </div>
-                                    <span class="badge text-bg-light border">{{ job.results.count }} report(s)</span>
+                                    <span class="badge text-bg-light border">{{ job.result_count }} report(s)</span>
                                 </div>
                             {% endfor %}
                         </div>
@@ -602,7 +602,7 @@
                                     <div class="dash-item">
                                         <div>
                                             <strong>{{ batch.title }}</strong>
-                                            <small>{{ batch.job_role.title }} · {{ batch.candidate_results.count }} CVs · {{ batch.created_at|date:"M d, Y" }}</small>
+                                            <small>{{ batch.job_role.title }} · {{ batch.candidate_count }} CVs · {{ batch.created_at|date:"M d, Y" }}</small>
                                         </div>
                                         <a href="{% url 'enterprise_report' batch.id %}" class="btn btn-sm btn-outline-primary">Open</a>
                                     </div>

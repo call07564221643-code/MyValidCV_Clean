@@ -1,0 +1,77 @@
+{
+  "name": "MyValidCV",
+  "description": "CV storage, ATS validation, subscriptions, and Stripe payments.",
+  "repository": "https://github.com/call07564221643-code/MyValidCV_Clean",
+  "keywords": ["django", "cv", "ats", "stripe"],
+  "env": {
+    "SECRET_KEY": {
+      "description": "Long random Django signing secret.",
+      "generator": "secret"
+    },
+    "DEBUG": {
+      "description": "Django debug mode; keep false in production.",
+      "value": "False"
+    },
+    "ALLOWED_HOSTS": {
+      "description": "Comma-separated public host names.",
+      "value": ".herokuapp.com"
+    },
+    "SECURE_SSL_REDIRECT": {
+      "value": "True"
+    },
+    "CV_RETENTION_DAYS": {
+      "description": "Rolling retention period for individual and enterprise CV files.",
+      "value": "30"
+    },
+    "STRIPE_MOCK_MODE": {
+      "description": "Keep true for a preview app; set false only after live Stripe verification is completed.",
+      "value": "True"
+    },
+    "STRIPE_SECRET_KEY": {
+      "description": "Stripe secret API key.",
+      "required": false
+    },
+    "STRIPE_PUBLISHABLE_KEY": {
+      "description": "Stripe publishable API key.",
+      "required": false
+    },
+    "STRIPE_WEBHOOK_SECRET": {
+      "description": "Stripe webhook signing secret.",
+      "required": false
+    },
+    "GOOGLE_OAUTH_CLIENT_ID": {
+      "required": false
+    },
+    "GOOGLE_OAUTH_CLIENT_SECRET": {
+      "required": false
+    },
+    "LINKEDIN_OAUTH_CLIENT_ID": {
+      "required": false
+    },
+    "LINKEDIN_OAUTH_CLIENT_SECRET": {
+      "required": false
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:essential-0"
+    },
+    {
+      "plan": "scheduler:standard"
+    }
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "scripts": {
+    "postdeploy": "python manage.py seed_plans"
+  }
+}

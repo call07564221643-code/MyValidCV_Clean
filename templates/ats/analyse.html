@@ -1,37 +1,326 @@
 {% extends "base.html" %}
 
+{% block title %}Validate CV - MyValidCV{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-5">
-
-            <h2 class="mb-4">ATS Analysis</h2>
-
-            <form method="POST">
-                {% csrf_token %}
-
-                <div class="mb-3">
-                    {{ form.cv.label_tag }}
-                    {{ form.cv }}
-                </div>
-
-                <div class="mb-3">
-                    {{ form.job_title.label_tag }}
-                    {{ form.job_title }}
-                </div>
-
-                <div class="mb-4">
-                    {{ form.job_description.label_tag }}
-                    {{ form.job_description }}
-                </div>
-
-                <button type="submit" class="btn btn-success">
-                    Analyse Compatibility
-                </button>
-
-            </form>
-
+<section class="mvcv-workspace">
+    <aside class="mvcv-sidebar">
+        <div class="mvcv-sidebar-top">
+            <a href="{% url 'home' %}" class="mvcv-brand-mark">
+                <span>M</span>
+                <strong>MyValidCV</strong>
+            </a>
+            <a href="{% url 'home' %}#composer" class="mvcv-new-action">Validate CV</a>
         </div>
-    </div>
-</div>
+
+        <nav class="mvcv-side-nav">
+            <a class="active" href="{% url 'home' %}#composer">Validate CV</a>
+            <a href="{% url 'dashboard' %}">Reports</a>
+            <a href="{% url 'upload_cv' %}">Saved CVs</a>
+            <a href="{% url 'dashboard' %}">Generated drafts</a>
+            <a href="{% url 'dashboard' %}">Applications</a>
+            <a href="{% url 'pricing' %}">Plan and usage</a>
+            {% if is_enterprise %}
+                <a href="{% url 'enterprise_bulk' %}">Enterprise reports</a>
+            {% endif %}
+            {% if user.is_superuser %}
+                <a href="{% url 'admin:index' %}">Owner control</a>
+            {% endif %}
+        </nav>
+
+        <div class="mvcv-sidebar-section">
+            <div class="mvcv-sidebar-heading">Recent reports</div>
+            {% for report in recent_results %}
+                <a class="mvcv-history-item" href="{% url 'ats_result' report.id %}">
+                    <span>{{ report.job_title|truncatechars:28 }}</span>
+                    <small>{{ report.score }}% &middot; {{ report.cv.title|truncatechars:20 }}</small>
+                </a>
+            {% empty %}
+                <p class="mvcv-empty-small">No reports yet.</p>
+            {% endfor %}
+        </div>
+
+        <div class="mvcv-sidebar-section">
+            <div class="mvcv-sidebar-heading">Saved CVs</div>
+            {% for cv in saved_cvs %}
+                <a class="mvcv-history-item" href="{% url 'home' %}?cv={{ cv.id }}#composer">
+                    <span>{{ cv.title|truncatechars:30 }}</span>
+                    <small>Use this CV</small>
+                </a>
+            {% empty %}
+                <p class="mvcv-empty-small">Attach one in the composer.</p>
+            {% endfor %}
+        </div>
+
+        <div class="mvcv-sidebar-footer">
+            <div>
+                <strong>{{ profile.plan|title }} plan</strong>
+                <small>{{ profile.analyses_today }} / {{ profile.get_analysis_limit }} validations used today</small>
+            </div>
+            <a href="{% url 'pricing' %}">Upgrade</a>
+        </div>
+    </aside>
+
+    <main class="mvcv-chat-main">
+        <div class="mvcv-chat-topbar">
+            <button class="mvcv-mobile-menu" type="button" data-bs-toggle="collapse" data-bs-target="#mobileWorkspaceNav">Menu</button>
+            <div>
+                <strong>CV validation</strong>
+                <span>{{ profile.plan|title }} &middot; {{ profile.analyses_today }} / {{ profile.get_analysis_limit }} today</span>
+            </div>
+            <select class="form-select form-select-sm mvcv-account-select" aria-label="Account type">
+                <option selected>{{ profile.plan|title }} job seeker</option>
+                <option disabled>Plus - cover letters and downloads</option>
+                <option disabled>Enterprise - bulk candidate ranking</option>
+            </select>
+        </div>
+
+        <div class="collapse mvcv-mobile-collapse" id="mobileWorkspaceNav">
+            <a href="{% url 'home' %}#composer">Validate</a>
+            <a href="{% url 'dashboard' %}">Reports</a>
+            <a href="{% url 'upload_cv' %}">Saved CVs</a>
+            <a href="{% url 'pricing' %}">Plans</a>
+            {% if is_enterprise %}<a href="{% url 'enterprise_bulk' %}">Enterprise</a>{% endif %}
+        </div>
+
+        <div class="mvcv-chat-scroll">
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors.0 }}</div>
+            {% endif %}
+
+            <div class="mvcv-message mvcv-system-message">
+                <div class="mvcv-avatar">M</div>
+                <div class="mvcv-bubble">
+                    <h1>What job are you applying for?</h1>
+                    <p>
+                        Attach a CV and paste the job advert, URL, or file. MyValidCV will show the match,
+                        gaps, recommendations, and suggested CV draft here.
+                    </p>
+                    <div class="mvcv-quick-row">
+                        <button type="button" class="mvcv-chip paid-action" data-bs-toggle="tooltip" title="Plus feature">Create cover letter</button>
+                        <button type="button" class="mvcv-chip disabled" id="rewriteCvAction" title="Attach a CV and add a job first">Rewrite my CV</button>
+                        <button type="button" class="mvcv-chip" data-bs-toggle="collapse" data-bs-target="#jobUrlPanel">Job advert URL</button>
+                        <button type="button" class="mvcv-chip" data-bs-toggle="collapse" data-bs-target="#jobFilePanel">Upload job advert</button>
+                    </div>
+                </div>
+            </div>
+
+            {% if result %}
+                <div class="mvcv-message mvcv-user-message">
+                    <div class="mvcv-bubble">
+                        <strong>{{ result.job_title }}</strong>
+                        <span>Validated against {{ result.cv.title }}</span>
+                    </div>
+                </div>
+
+                <div class="mvcv-message mvcv-result-message">
+                    <div class="mvcv-avatar">M</div>
+                    <div class="mvcv-bubble mvcv-result-bubble">
+                        <div class="mvcv-result-header">
+                            <div>
+                                <span class="badge bg-success">Validation complete</span>
+                                <h2>{{ result.job_title }}</h2>
+                                <p>CV: {{ result.cv.title }}{% if result.job_role.company %} &middot; {{ result.job_role.company }}{% endif %}</p>
+                            </div>
+                            <a href="#suggestedCv" class="btn btn-outline-primary btn-sm">Suggested CV</a>
+                        </div>
+
+                        <div class="mvcv-score-grid">
+                            <div>
+                                <div class="score-ring score-ring-blue mx-auto" style="--score: {{ breakdown.skills }};"><span>{{ breakdown.skills }}%</span></div>
+                                <small>Skills</small>
+                            </div>
+                            <div>
+                                <div class="score-ring score-ring-info mx-auto" style="--score: {{ breakdown.keywords }};"><span>{{ breakdown.keywords }}%</span></div>
+                                <small>Keywords</small>
+                            </div>
+                            <div>
+                                <div class="score-ring score-ring-green mx-auto" style="--score: {{ breakdown.experience }};"><span>{{ breakdown.experience }}%</span></div>
+                                <small>Experience</small>
+                            </div>
+                            <div>
+                                <div class="score-ring score-ring-warning mx-auto" style="--score: {{ breakdown.format }};"><span>{{ breakdown.format }}%</span></div>
+                                <small>Format</small>
+                            </div>
+                            <div class="mvcv-total-score">
+                                <div class="score-ring score-ring-total mx-auto" style="--score: {{ breakdown.total }};"><span>{{ breakdown.total }}%</span></div>
+                                <small>Total</small>
+                            </div>
+                        </div>
+
+                        <div class="mvcv-insight-grid">
+                            <div class="mvcv-insight-card good">
+                                <strong>Matched skills</strong>
+                                <p>{{ result.matched_skills|default:"No matched skills detected yet." }}</p>
+                            </div>
+                            <div class="mvcv-insight-card risk">
+                                <strong>Missing skills</strong>
+                                <p>{{ result.missing_skills|default:"No major missing skills detected." }}</p>
+                            </div>
+                        </div>
+
+                        <div class="mvcv-recommendation">
+                            <strong>Recommendation</strong>
+                            <p>{{ result.recommendation }}</p>
+                        </div>
+
+                        <div id="suggestedCv" class="mvcv-draft-panel">
+                            <div class="mvcv-draft-head">
+                                <div>
+                                    <strong>Suggested CV draft</strong>
+                                    <small>Review before using. Keep every claim truthful.</small>
+                                </div>
+                                {% if can_download %}
+                                    <a href="{% url 'download_generated_cv' result.id %}" class="btn btn-primary btn-sm">Download</a>
+                                {% else %}
+                                    <a href="{% url 'pricing' %}" class="btn btn-outline-primary btn-sm">Upgrade to download</a>
+                                {% endif %}
+                            </div>
+                            <pre>{{ result.generated_cv.content }}</pre>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="mvcv-empty-state">
+                    <div class="mvcv-empty-card">
+                        <strong>Fast path</strong>
+                        <span>CV + job advert + Validate CV</span>
+                    </div>
+                    <div class="mvcv-empty-card">
+                        <strong>Convenience</strong>
+                        <span>Job title, company, and deadline are optional when a job advert is provided.</span>
+                    </div>
+                    <div class="mvcv-empty-card">
+                        <strong>Limits</strong>
+                        <span>Free: 2 daily validations. Plus: 5 daily validations and downloads.</span>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="mvcv-composer">
+            {% csrf_token %}
+            <div class="mvcv-composer-top">
+                <div class="mvcv-field-row">
+                    <span>CV</span>
+                    {{ form.cv }}
+                    <label class="mvcv-attach">
+                        Attach CV
+                        {{ form.cv_file }}
+                    </label>
+                    {{ form.cv_title }}
+                </div>
+                {% if form.cv_file.errors %}<div class="invalid-feedback d-block">{{ form.cv_file.errors.0 }}</div>{% endif %}
+            </div>
+
+            <label class="visually-hidden">Job role text</label>
+            {{ form.job_description }}
+            {% if form.job_description.errors %}<div class="invalid-feedback d-block">{{ form.job_description.errors.0 }}</div>{% endif %}
+
+            <div class="mvcv-composer-actions">
+                <button type="button" data-bs-toggle="collapse" data-bs-target="#jobUrlPanel">Job URL</button>
+                <button type="button" data-bs-toggle="collapse" data-bs-target="#jobFilePanel">Upload advert</button>
+                <button type="button" data-bs-toggle="collapse" data-bs-target="#detailsPanel">Alert</button>
+                <button type="submit" class="mvcv-send">Validate CV</button>
+            </div>
+
+            <div class="collapse mvcv-extra-panel" id="jobUrlPanel">
+                <label class="form-label">Job advert URL</label>
+                {{ form.job_url }}
+                {% if form.job_url.errors %}<div class="invalid-feedback d-block">{{ form.job_url.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="collapse mvcv-extra-panel" id="jobFilePanel">
+                <label class="form-label">Upload job advert file</label>
+                {{ form.job_file }}
+                {% if form.job_file.errors %}<div class="invalid-feedback d-block">{{ form.job_file.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="collapse mvcv-extra-panel" id="detailsPanel">
+                <p class="mvcv-ai-alert-note">Optional. Add these only if you want a deadline reminder or the job source cannot be inferred.</p>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Job title</label>
+                        {{ form.job_title }}
+                        <small class="text-muted">{{ form.job_title.help_text }}</small>
+                        {% if form.job_title.errors %}<div class="invalid-feedback d-block">{{ form.job_title.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Company</label>
+                        {{ form.company }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Deadline</label>
+                        {{ form.deadline }}
+                        <small class="text-muted">Reminder is created two days before.</small>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </main>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function () {
+        const rewrite = document.getElementById('rewriteCvAction');
+        const cvSelect = document.getElementById('id_cv');
+        const cvFile = document.getElementById('id_cv_file');
+        const jobText = document.getElementById('id_job_description');
+        const jobUrl = document.getElementById('id_job_url');
+        const jobFile = document.getElementById('id_job_file');
+        const detailsPanel = document.getElementById('detailsPanel');
+        const urlPanel = document.getElementById('jobUrlPanel');
+        const filePanel = document.getElementById('jobFilePanel');
+
+        function hideDetails() {
+            if (!detailsPanel || !window.bootstrap) return;
+            window.bootstrap.Collapse.getOrCreateInstance(detailsPanel, { toggle: false }).hide();
+        }
+
+        function hideDetailsWhenAdvertSourceIsUsed() {
+            const hasUrl = jobUrl && jobUrl.value.trim().length > 0;
+            const hasFile = jobFile && jobFile.files && jobFile.files.length > 0;
+            if (hasUrl || hasFile) hideDetails();
+        }
+
+        function hasCv() {
+            return (cvSelect && cvSelect.value) || (cvFile && cvFile.files && cvFile.files.length > 0);
+        }
+
+        function hasJob() {
+            return (jobText && jobText.value.trim().length > 0) ||
+                   (jobUrl && jobUrl.value.trim().length > 0) ||
+                   (jobFile && jobFile.files && jobFile.files.length > 0);
+        }
+
+        function updateRewriteState() {
+            if (!rewrite) return;
+            if (hasCv() && hasJob()) {
+                rewrite.classList.remove('disabled');
+                rewrite.title = 'Ready. Click Validate CV to generate the rewrite.';
+            } else {
+                rewrite.classList.add('disabled');
+                rewrite.title = 'Attach a CV and add a job first.';
+            }
+        }
+
+        [cvSelect, cvFile, jobText, jobUrl, jobFile].forEach(function (field) {
+            if (!field) return;
+            field.addEventListener('change', updateRewriteState);
+            field.addEventListener('input', updateRewriteState);
+        });
+        [urlPanel, filePanel].forEach(function (panel) {
+            if (!panel) return;
+            panel.addEventListener('shown.bs.collapse', hideDetails);
+        });
+        [jobUrl, jobFile].forEach(function (field) {
+            if (!field) return;
+            field.addEventListener('input', hideDetailsWhenAdvertSourceIsUsed);
+            field.addEventListener('change', hideDetailsWhenAdvertSourceIsUsed);
+        });
+        updateRewriteState();
+    })();
+</script>
 {% endblock %}

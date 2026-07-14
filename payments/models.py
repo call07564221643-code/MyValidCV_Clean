@@ -46,6 +46,7 @@ class PaymentTransaction(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [models.Index(fields=["status", "-created_at"], name="payment_status_date_idx")]
 
     def __str__(self):
         return f"{self.checkout_reference} - {self.user} - {self.status}"
@@ -75,6 +76,7 @@ class Invoice(models.Model):
 
     class Meta:
         ordering = ["-issued_at"]
+        indexes = [models.Index(fields=["status", "-issued_at"], name="invoice_status_date_idx")]
 
     def __str__(self):
         return self.invoice_number

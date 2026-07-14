@@ -1,0 +1,340 @@
+{% extends 'base.html' %}
+
+{% block title %}Website Health - MyValidCV{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end mb-4">
+        <div>
+            <span class="badge rounded-pill text-bg-light border mb-2">Admin health report</span>
+            <h1 class="h2 fw-bold mb-1">Website Health</h1>
+            <p class="text-muted mb-0">System, data, ATS, payment, compatibility, and maintenance checks for MyValidCV.</p>
+        </div>
+        <div class="text-lg-end">
+            <div class="small text-muted">Last checked</div>
+            <strong>{{ checked_at|date:"M d, Y H:i" }}</strong>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 health-card">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Health Score</p>
+                    <div class="d-flex align-items-end gap-2">
+                        <h2 class="display-6 fw-bold mb-0">{{ health_score }}%</h2>
+                        <span class="badge {% if health_score >= 85 %}text-bg-success{% elif health_score >= 65 %}text-bg-warning{% else %}text-bg-danger{% endif %} mb-2">
+                            {% if health_score >= 85 %}Healthy{% elif health_score >= 65 %}Watch{% else %}Action needed{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 health-card">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Critical</p>
+                    <h2 class="h3 fw-bold mb-0 text-danger">{{ critical_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 health-card">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Warnings</p>
+                    <h2 class="h3 fw-bold mb-0 text-warning">{{ warning_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 health-card">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Passed</p>
+                    <h2 class="h3 fw-bold mb-0 text-success">{{ ok_count }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-0">Operational Checks</h2>
+            <small class="text-muted">Use this as a weekly CTO checklist.</small>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Area</th>
+                        <th>Check</th>
+                        <th>Status</th>
+                        <th>Current Reading</th>
+                        <th>Next Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for check in checks %}
+                        <tr>
+                            <td><span class="badge text-bg-light border">{{ check.category }}</span></td>
+                            <td><strong>{{ check.title }}</strong></td>
+                            <td>
+                                <span class="badge rounded-pill {% if check.status == 'ok' %}text-bg-success{% elif check.status == 'warning' %}text-bg-warning{% else %}text-bg-danger{% endif %}">
+                                    {{ check.status|title }}
+                                </span>
+                            </td>
+                            <td>{{ check.detail }}</td>
+                            <td class="text-muted">{{ check.action }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Usage & ATS Health</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6"><div class="metric-tile"><span>Users</span><strong>{{ usage.users_total }}</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>Active users</span><strong>{{ usage.active_users }}</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>CV uploads</span><strong>{{ usage.cvs_total }}</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>Valid CVs</span><strong>{{ usage.valid_cvs }}</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>ATS reports</span><strong>{{ usage.ats_total }}</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>7-day reports</span><strong>{{ usage.ats_last_7_days }}</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>Avg ATS score</span><strong>{{ usage.ats_avg_score }}%</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>Low score reports</span><strong>{{ usage.low_score_results }}</strong></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Payment Risk Snapshot</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6"><div class="metric-tile"><span>Active plans</span><strong>{{ financial.plan_count }}</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>Active subs</span><strong>{{ financial.active_subscriptions }}</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>Payment success</span><strong>{{ financial.payment_success_rate }}%</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>30-day checkouts</span><strong>{{ financial.transactions_last_30_days }}</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>Total revenue</span><strong>{{ mini_finance.currency }} {{ financial.revenue_total }}</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>30-day revenue</span><strong>{{ mini_finance.currency }} {{ financial.revenue_30_days }}</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>Open invoices</span><strong>{{ financial.open_invoices }}</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>Refunds</span><strong>{{ mini_finance.currency }} {{ financial.refunds_total }}</strong></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex flex-column flex-lg-row justify-content-between gap-2 align-items-lg-center">
+                    <div>
+                        <h2 class="h5 mb-0">User Attribution & Plan Unit Economics</h2>
+                        <small class="text-muted">Free cost, paid-plan benefit, enterprise delivery cost, and conversion pressure in one table.</small>
+                    </div>
+                    <a href="{% url 'admin:analytics_financialassumption_change' mini_finance.assumption_id %}" class="btn btn-sm btn-outline-primary">
+                        Edit finance inputs
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3"><div class="metric-tile"><span>Free users</span><strong>{{ unit_economics.free_users }}</strong></div></div>
+                        <div class="col-md-3"><div class="metric-tile"><span>Paid users</span><strong>{{ unit_economics.paid_users }}</strong></div></div>
+                        <div class="col-md-3"><div class="metric-tile"><span>Free user cost</span><strong>{{ mini_finance.currency }} {{ unit_economics.free_cost }}</strong></div></div>
+                        <div class="col-md-3"><div class="metric-tile"><span>Free to paid ratio</span><strong>{{ unit_economics.free_to_paid_ratio }}%</strong></div></div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Plan</th>
+                                    <th>Users</th>
+                                    <th>Active</th>
+                                    <th>30-day validations</th>
+                                    <th>Generated CVs</th>
+                                    <th>Revenue</th>
+                                    <th>Cost</th>
+                                    <th>Profit / Loss</th>
+                                    <th>Benefit Ratio</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in unit_economics.plan_rows %}
+                                    <tr>
+                                        <td><strong>{{ row.label }}</strong></td>
+                                        <td>{{ row.users }}</td>
+                                        <td>{{ row.active_users }}</td>
+                                        <td>{{ row.validations }}</td>
+                                        <td>{{ row.generated_cvs }}</td>
+                                        <td>{{ mini_finance.currency }} {{ row.revenue }}</td>
+                                        <td>{{ mini_finance.currency }} {{ row.cost }}</td>
+                                        <td>{{ mini_finance.currency }} {{ row.profit }}</td>
+                                        <td>{{ row.benefit_ratio }}%</td>
+                                        <td>
+                                            <span class="badge {% if row.status == 'Profitable' %}text-bg-success{% else %}text-bg-warning{% endif %}">
+                                                {{ row.status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-muted small mb-0 mt-3">
+                        Virtual SaaS benchmark: keep Free as a controlled acquisition channel, Plus/Professional as the cash engine, and Enterprise as high-margin only when delivery cost stays visible.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Cash Engine & Supplier Costs</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-6"><div class="metric-tile"><span>30-day gross revenue</span><strong>{{ mini_finance.currency }} {{ mini_finance.gross_revenue_30_days }}</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>Refunds</span><strong>{{ mini_finance.currency }} {{ mini_finance.refunds_total }}</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>Supplier costs</span><strong>{{ mini_finance.currency }} {{ mini_finance.supplier_expense_total }}</strong></div></div>
+                        <div class="col-6"><div class="metric-tile"><span>Estimated profit</span><strong>{{ mini_finance.currency }} {{ mini_finance.estimated_profit_30_days }}</strong></div></div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Supplier / Cost</th>
+                                    <th>Type</th>
+                                    <th class="text-end">Monthly</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for expense in mini_finance.supplier_expenses %}
+                                    <tr>
+                                        <td>{{ expense.name }}</td>
+                                        <td><span class="badge text-bg-light border">{{ expense.type }}</span></td>
+                                        <td class="text-end">{{ mini_finance.currency }} {{ expense.amount }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-muted small mb-0 mt-3">
+                        These supplier numbers are a mini planning estimate. Replace them with real expense records when the finance module grows.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Cash & Balance Snapshot</h2>
+                </div>
+                <div class="card-body">
+                    <div class="provider-row">
+                        <span>Cash estimate</span>
+                        <strong>{{ mini_finance.currency }} {{ mini_finance.balance_sheet.cash_estimate }}</strong>
+                    </div>
+                    <div class="provider-row">
+                        <span>Accounts receivable</span>
+                        <strong>{{ mini_finance.currency }} {{ mini_finance.balance_sheet.accounts_receivable }}</strong>
+                    </div>
+                    <div class="provider-row">
+                        <span>Total current assets</span>
+                        <strong>{{ mini_finance.currency }} {{ mini_finance.balance_sheet.current_assets }}</strong>
+                    </div>
+                    <div class="provider-row">
+                        <span>Monthly supplier obligations</span>
+                        <strong>{{ mini_finance.currency }} {{ mini_finance.balance_sheet.monthly_supplier_obligations }}</strong>
+                    </div>
+                    <div class="provider-row">
+                        <span>Deferred service liability</span>
+                        <strong>{{ mini_finance.currency }} {{ mini_finance.balance_sheet.deferred_service_liability }}</strong>
+                    </div>
+                    <div class="provider-row">
+                        <span>Accounts payable</span>
+                        <strong>{{ mini_finance.currency }} {{ mini_finance.balance_sheet.accounts_payable }}</strong>
+                    </div>
+                    <div class="provider-row">
+                        <span>Tax accrual</span>
+                        <strong>{{ mini_finance.currency }} {{ mini_finance.balance_sheet.tax_accrual }}</strong>
+                    </div>
+                    <div class="provider-row">
+                        <span>Total current liabilities</span>
+                        <strong>{{ mini_finance.currency }} {{ mini_finance.balance_sheet.current_liabilities }}</strong>
+                    </div>
+                    <div class="provider-row">
+                        <span>Owner equity estimate</span>
+                        <strong>{{ mini_finance.currency }} {{ mini_finance.balance_sheet.owner_equity_estimate }}</strong>
+                    </div>
+                    <p class="text-muted small mb-0 mt-3">
+                        This is a management snapshot for decisions, not statutory accounts. It helps spot cash pressure, supplier cost creep, and weak revenue early.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Compatibility Snapshot</h2>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0 small">
+                        <dt class="col-5">Python</dt><dd class="col-7">{{ system.python }}</dd>
+                        <dt class="col-5">Django</dt><dd class="col-7">{{ system.django }}</dd>
+                        <dt class="col-5">Database</dt><dd class="col-7 text-capitalize">{{ system.database }}</dd>
+                        <dt class="col-5">DEBUG</dt><dd class="col-7">{{ system.debug }}</dd>
+                        <dt class="col-5">Allowed hosts</dt><dd class="col-7">{{ system.allowed_hosts }}</dd>
+                        <dt class="col-5">Email backend</dt><dd class="col-7 text-break">{{ system.email_backend }}</dd>
+                        <dt class="col-5">Static URL</dt><dd class="col-7">{{ system.static_url }}</dd>
+                        <dt class="col-5">Media URL</dt><dd class="col-7">{{ system.media_url }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Provider Readiness</h2>
+                </div>
+                <div class="card-body">
+                    <div class="provider-row">
+                        <span>Stripe live mode</span>
+                        <strong>{% if provider_readiness.stripe_live %}Ready{% else %}Not ready{% endif %}</strong>
+                    </div>
+                    <div class="provider-row">
+                        <span>Stripe mock mode</span>
+                        <strong>{% if provider_readiness.stripe_mock %}On{% else %}Off{% endif %}</strong>
+                    </div>
+                    <div class="provider-row">
+                        <span>SumUp keys</span>
+                        <strong>{% if provider_readiness.sumup %}Ready{% else %}Missing{% endif %}</strong>
+                    </div>
+                    <div class="provider-row">
+                        <span>Receipt email</span>
+                        <strong>{% if provider_readiness.email_console %}Console only{% else %}Configured{% endif %}</strong>
+                    </div>
+                    <p class="text-muted small mb-0 mt-3">
+                        The customer can still see one clean Pay Now button. This page tells the admin which provider is actually ready behind the scenes.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

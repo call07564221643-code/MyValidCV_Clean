@@ -1,0 +1,13 @@
+.git/
+.agents/
+.venv/
+db.sqlite3
+media/
+staticfiles/
+project_structure.txt
+structure.txt
+tatus
+test_ats.py
+test_ats_full.py
+**/__pycache__/
+**/*.pyc

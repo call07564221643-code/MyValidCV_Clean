@@ -46,6 +46,7 @@ class JobRole(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [models.Index(fields=["user", "-created_at"], name="job_user_created_idx")]
 
     def __str__(self):
         if self.company:
@@ -104,6 +105,7 @@ class ATSResult(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [models.Index(fields=["user", "-created_at"], name="result_user_created_idx")]
 
     def __str__(self):
         return f"{self.cv.title} - {self.job_title} - {self.score}%"
@@ -119,6 +121,7 @@ class GeneratedCV(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [models.Index(fields=["user", "-created_at"], name="gencv_user_created_idx")]
 
     def __str__(self):
         return self.title
@@ -134,6 +137,7 @@ class ApplicationReminder(models.Model):
 
     class Meta:
         ordering = ["reminder_date", "-created_at"]
+        indexes = [models.Index(fields=["user", "is_sent", "reminder_date"], name="reminder_user_sent_idx")]
 
     def __str__(self):
         return f"{self.job_role} reminder on {self.reminder_date}"
@@ -148,6 +152,7 @@ class EnterpriseBatch(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [models.Index(fields=["user", "-created_at"], name="batch_user_created_idx")]
 
     def __str__(self):
         return self.title

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Enterprise Bulk Analysis - MyValidCV{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-md-5">
+                    <div class="mb-4">
+                        <span class="badge bg-success mb-2">Enterprise</span>
+                        <h1 class="h3 fw-bold mb-2">Bulk CV Analysis</h1>
+                        <p class="text-muted mb-0">
+                            Upload up to 200 CVs and compare them against one job role. MyValidCV will rank candidates by ATS match.
+                        </p>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">{{ form.non_field_errors.0 }}</div>
+                        {% endif %}
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.batch_title.label_tag }}
+                                {{ form.batch_title }}
+                                {% if form.batch_title.errors %}<div class="invalid-feedback d-block">{{ form.batch_title.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.job_title.label_tag }}
+                                {{ form.job_title }}
+                                <small class="text-muted">{{ form.job_title.help_text }}</small>
+                                {% if form.job_title.errors %}<div class="invalid-feedback d-block">{{ form.job_title.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.company.label_tag }}
+                                {{ form.company }}
+                                <small class="text-muted">Optional. MyValidCV can infer this from the advert when available.</small>
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.cv_files.label_tag }}
+                                {{ form.cv_files }}
+                                <small class="text-muted">{{ form.cv_files.help_text }}</small>
+                                {% if form.cv_files.errors %}<div class="invalid-feedback d-block">{{ form.cv_files.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="form-label d-block">Job source</label>
+                            <div class="d-flex flex-wrap gap-3">
+                                {% for radio in form.source_type %}
+                                    <label class="form-check-label border rounded px-3 py-2">
+                                        {{ radio.tag }} {{ radio.choice_label }}
+                                    </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            {{ form.job_description.label_tag }}
+                            {{ form.job_description }}
+                            <small class="text-muted">Required only when using pasted job text.</small>
+                            {% if form.job_description.errors %}<div class="invalid-feedback d-block">{{ form.job_description.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-7">
+                                {{ form.job_url.label_tag }}
+                                {{ form.job_url }}
+                                {% if form.job_url.errors %}<div class="invalid-feedback d-block">{{ form.job_url.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-5">
+                                {{ form.job_file.label_tag }}
+                                {{ form.job_file }}
+                                {% if form.job_file.errors %}<div class="invalid-feedback d-block">{{ form.job_file.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            {{ form.notes.label_tag }}
+                            {{ form.notes }}
+                        </div>
+
+                        <div class="d-flex gap-2 flex-wrap mt-4">
+                            <button type="submit" class="btn btn-success">Create Ranked Report</button>
+                            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Back to Dashboard</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

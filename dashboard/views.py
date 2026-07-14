@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
+from django.db.models import Count
 from accounts.models import SocialAuthProvider, UserProfile
 from ats.models import ApplicationReminder, ATSResult, CV, EnterpriseBatch, GeneratedCV, JobRole
 from payments.models import Invoice, PaymentTransaction, Refund
@@ -10,17 +12,19 @@ from subscriptions.models import CustomerSubscription, SubscriptionPlan
 def dashboard(request):
     """User dashboard showing uploaded CVs and recent ATS analyses."""
     user_profile, _created = UserProfile.objects.get_or_create(user=request.user)
-    recent_results = ATSResult.objects.filter(user=request.user).select_related('cv')[:5]
-    uploaded_cvs = CV.objects.filter(user=request.user)[:5]
-    saved_jobs = JobRole.objects.filter(user=request.user)[:5]
+    recent_results = list(ATSResult.objects.filter(user=request.user).select_related('cv')[:5])
+    uploaded_cvs = list(CV.objects.filter(user=request.user)[:5])
+    saved_jobs = JobRole.objects.filter(user=request.user).annotate(result_count=Count('results'))[:5]
     reminders = ApplicationReminder.objects.filter(user=request.user, is_sent=False).select_related('job_role')[:5]
-    generated_cvs = GeneratedCV.objects.filter(user=request.user)[:5]
-    enterprise_batches = EnterpriseBatch.objects.filter(user=request.user)[:5]
+    generated_cvs = GeneratedCV.objects.filter(user=request.user).select_related('ats_result')[:5]
+    enterprise_batches = EnterpriseBatch.objects.filter(user=request.user).select_related('job_role').annotate(candidate_count=Count('candidate_results'))[:5]
     is_owner = request.user.is_superuser
     social_providers = SocialAuthProvider.objects.all() if is_owner else SocialAuthProvider.objects.none()
     admin_stats = {}
     if is_owner:
-        admin_stats = {
+        admin_stats = cache.get('owner-dashboard-stats')
+        if admin_stats is None:
+            admin_stats = {
             'users': UserProfile.objects.count(),
             'active_subscriptions': CustomerSubscription.objects.filter(status='active').count(),
             'payments': PaymentTransaction.objects.count(),
@@ -29,7 +33,8 @@ def dashboard(request):
             'plans': SubscriptionPlan.objects.filter(is_active=True).count(),
             'ats_results': ATSResult.objects.count(),
             'enterprise_batches': EnterpriseBatch.objects.count(),
-        }
+            }
+            cache.set('owner-dashboard-stats', admin_stats, 60)
 
     limit = user_profile.get_analysis_limit()
     usage_percent = 0
@@ -49,7 +54,7 @@ def dashboard(request):
         'is_owner': is_owner,
         'is_enterprise': is_owner or user_profile.plan == 'enterprise',
         'dashboard_scope': 'owner' if is_owner else user_profile.plan,
-        'show_demo_preview': not uploaded_cvs.exists() and not recent_results.exists(),
+        'show_demo_preview': not uploaded_cvs and not recent_results,
         'demo_metrics': {
             'skills': 78,
             'keywords': 72,

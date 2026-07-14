@@ -208,31 +208,56 @@ class ATSEngine:
         Validate if text looks like a real CV.
         Returns (is_valid, reason).
         """
+        text = (text or "").strip()
         text_lower = text.lower()
-        text_lines = text.strip().split('\n')
+        text_lines = [line.strip() for line in text.splitlines() if line.strip()]
+        words = re.findall(r"[a-zA-Z][a-zA-Z'+-]*", text)
 
-        # Check minimum length (CV should have substantial content)
-        if len(text) < 500:
-            return False, "CV is too short (minimum 500 characters)"
+        if len(text) < 450 or len(words) < 80:
+            return False, "The uploaded document is too short to be a usable CV. Upload a complete CV with contact details, skills, experience, and education."
 
-        # Check for common CV sections
-        cv_indicators = [
-            'experience', 'education', 'skill', 'summary', 'objective',
-            'qualification', 'employment', 'work', 'project'
+        alpha_chars = sum(1 for char in text if char.isalpha())
+        if alpha_chars / max(len(text), 1) < 0.45:
+            return False, "The document text could not be read clearly. Upload a text-based PDF, DOCX, or TXT CV rather than a scanned image."
+
+        contact_patterns = [
+            r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
+            r"(\+?\d[\d\s().-]{7,}\d)",
+            r"linkedin\.com/in/",
         ]
-        has_cv_section = any(indicator in text_lower for indicator in cv_indicators)
-
-        if not has_cv_section:
-            return False, "No CV sections found (missing: experience, education, skills)"
-
-        # Check for email or contact info
-        has_contact = bool(re.search(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text))
+        has_contact = any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in contact_patterns)
         if not has_contact:
-            return False, "No contact information (email) found"
+            return False, "The document does not include clear contact details. Add an email address, phone number, or LinkedIn profile to the CV."
 
-        # Check line variety (should have headers, content, etc.)
-        if len(text_lines) < 10:
-            return False, "CV structure appears incomplete"
+        section_groups = {
+            "profile": ["profile", "summary", "objective", "personal statement"],
+            "skills": ["skills", "core skills", "technical skills", "competencies"],
+            "experience": ["experience", "employment", "work history", "career history", "projects"],
+            "education": ["education", "qualification", "qualifications", "certification", "certifications", "training"],
+        }
+        matched_sections = [
+            section for section, keywords in section_groups.items()
+            if any(keyword in text_lower for keyword in keywords)
+        ]
+        if len(matched_sections) < 2:
+            return False, "This does not look like a structured CV. Include at least two sections such as Profile, Skills, Experience, Education, or Projects."
+
+        cv_keywords = [
+            "managed", "led", "developed", "delivered", "supported", "created",
+            "implemented", "improved", "coordinated", "analysed", "analyzed",
+            "reported", "trained", "customer", "team", "system", "project",
+            "responsible", "achievement", "skills", "experience", "education",
+        ]
+        keyword_hits = [keyword for keyword in cv_keywords if keyword in text_lower]
+        if len(keyword_hits) < 3:
+            return False, "The document is missing normal CV evidence keywords. Add responsibilities, achievements, skills, and work or project evidence."
+
+        job_ad_markers = ["apply now", "job type", "salary", "benefits", "responsibilities include", "the successful candidate"]
+        if any(marker in text_lower for marker in job_ad_markers) and "education" not in text_lower and "employment" not in text_lower:
+            return False, "This looks more like a job advert than a CV. Upload your CV, then paste or attach the job advert separately."
+
+        if len(text_lines) < 8:
+            return False, "CV structure appears incomplete. Use separate lines or headings for contact, profile, skills, experience, and education."
 
         return True, "Valid CV"
 

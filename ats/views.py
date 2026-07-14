@@ -133,7 +133,9 @@ def fetch_job_url_text(url):
     """Best-effort job advert fetch for simple public pages."""
     try:
         request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(request, timeout=8) as response:
+        # Keep this best-effort request short so a slow job board does not tie
+        # up a web worker for most of Gunicorn's request timeout.
+        with urllib.request.urlopen(request, timeout=4) as response:
             html = response.read(300000).decode("utf-8", errors="ignore")
         text = re.sub(r"<(script|style).*?</\1>", " ", html, flags=re.DOTALL | re.IGNORECASE)
         text = re.sub(r"<[^>]+>", " ", text)

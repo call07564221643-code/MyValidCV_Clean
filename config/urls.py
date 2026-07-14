@@ -15,6 +15,8 @@ urlpatterns = [
     path('', include('payments.urls')),
     path('dashboard/', include('dashboard.urls')),
     path('ats/', include('ats.urls')),
+    path('accounts/', include('allauth.urls')),
+    path('analytics/', include('analytics.urls')),
 
 ]
 

@@ -239,8 +239,8 @@
 
         <div class="auth-panel">
             <div class="auth-card">
-                <h2>Log in</h2>
-                <p>Use your account or continue with Google or LinkedIn.</p>
+                <h2>{% block auth_heading %}Log in{% endblock %}</h2>
+                <p>{% block auth_intro %}Use your account or continue with Google or LinkedIn.{% endblock %}</p>
 
                 <div class="oauth-grid">
                     <a class="oauth-button" href="{% url 'social_login_start' 'google' %}?next={{ next|urlencode }}">
@@ -252,11 +252,11 @@
                                 <path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.1-3.1C17.5 2.1 15 1 12 1 7.6 1 3.8 3.6 2 7.4l3.5 2.8C6.4 7.4 9 5.4 12 5.4z"/>
                             </svg>
                         </span>
-                        Sign in with Google
+                        {% block google_label %}Sign in with Google{% endblock %}
                     </a>
                     <a class="oauth-button" href="{% url 'social_login_start' 'linkedin' %}?next={{ next|urlencode }}">
                         <span class="oauth-logo oauth-linkedin" aria-hidden="true">in</span>
-                        Sign in with LinkedIn
+                        {% block linkedin_label %}Sign in with LinkedIn{% endblock %}
                     </a>
                 </div>
 
@@ -272,15 +272,16 @@
                             {% if field.errors %}
                                 <div class="invalid-feedback d-block">{{ field.errors.0 }}</div>
                             {% endif %}
+                            {% if field.help_text %}
+                                <small class="form-text text-muted d-block mt-1">{{ field.help_text|safe }}</small>
+                            {% endif %}
                         </div>
                     {% endfor %}
-                    <button type="submit" class="wf-btn wf-btn-primary auth-submit">Log in</button>
+                    <button type="submit" class="wf-btn wf-btn-primary auth-submit">{% block auth_submit %}Log in{% endblock %}</button>
                 </form>
 
-                <p class="auth-switch">
-                    Don't have an account?
-                    <a href="{% url 'register' %}?next={{ next|urlencode }}">Sign up</a>
-                </p>
+                <p class="auth-switch">{% block auth_switch %}Don't have an account?
+                    <a href="{% url 'register' %}?next={{ next|urlencode }}">Sign up</a>{% endblock %}</p>
             </div>
         </div>
     </div>

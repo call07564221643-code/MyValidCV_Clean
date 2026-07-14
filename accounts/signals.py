@@ -13,5 +13,6 @@ def create_user_profile(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
-    """Save UserProfile when User is saved."""
-    instance.profile.save()
+    """Save UserProfile when User is saved, creating one for older users."""
+    profile, _created = UserProfile.objects.get_or_create(user=instance)
+    profile.save()
