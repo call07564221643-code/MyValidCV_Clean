@@ -26,13 +26,13 @@ class UserProfile(models.Model):
         return f"{self.user.username} - {self.plan}"
 
     def get_analysis_limit(self) -> int:
-        """Get daily analysis limit based on plan."""
+        """Get the monthly validation allowance for the active plan."""
         if self.plan == 'free':
-            return 2
-        elif self.plan in ('plus', 'professional'):
             return 5
+        elif self.plan in ('plus', 'professional'):
+            return 20
         elif self.plan == 'enterprise':
-            return 200  # monthly, simplified
+            return 50
         return 0
 
     def get_cv_limit(self) -> int:
@@ -40,14 +40,15 @@ class UserProfile(models.Model):
         if self.plan == 'free':
             return 1
         elif self.plan in ('plus', 'professional'):
-            return 10
+            return 1
         elif self.plan == 'enterprise':
-            return 200
+            return 50
         return 1
 
     def reset_daily_usage_if_needed(self) -> None:
-        """Reset daily counters after the user's first action on a new day."""
-        if self.last_reset.date() != timezone.localdate():
+        """Reset the legacy usage counter at the start of a new calendar month."""
+        today = timezone.localdate()
+        if (self.last_reset.year, self.last_reset.month) != (today.year, today.month):
             self.analyses_today = 0
             self.last_reset = timezone.now()
             self.save(update_fields=['analyses_today', 'last_reset'])

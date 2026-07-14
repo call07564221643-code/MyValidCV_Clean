@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block title %}Login - MyValidCV{% endblock %}
+{% block meta_description %}Log in to MyValidCV to check CV compatibility, review ATS results, and manage your applications.{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/mvcv-wireframe.css' %}">
@@ -33,37 +34,6 @@
         padding: 1.35rem 1.35rem 0;
     }
 
-    .auth-timeline {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 0.75rem;
-        margin-top: 0;
-    }
-
-    .auth-timeline-step {
-        border: 1px solid var(--wf-border);
-        border-radius: 14px;
-        background: #ffffff;
-        padding: 0.9rem;
-        min-height: 92px;
-    }
-
-    .auth-timeline-step span {
-        display: grid;
-        place-items: center;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        background: var(--wf-primary-soft);
-        color: var(--wf-primary);
-        font-size: 0.78rem;
-        font-weight: 850;
-        margin-bottom: 0.6rem;
-    }
-
-    .auth-timeline-step strong {
-        font-size: 0.78rem;
-    }
 
     .auth-panel {
         display: flex;
@@ -200,9 +170,6 @@
             padding: 1.1rem 1.1rem 0;
         }
 
-        .auth-timeline {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
     }
 
     @media (max-width: 560px) {
@@ -214,9 +181,6 @@
             padding: 1.2rem;
         }
 
-        .auth-timeline {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
     }
 </style>
 {% endblock %}
@@ -226,15 +190,8 @@
     <div class="auth-frame">
         <aside class="auth-preview" aria-label="MyValidCV workflow">
             <a class="wf-logo" href="{% url 'home' %}" aria-label="MyValidCV home">
-                <span class="wf-logo-mark">M</span>
-                <span>MyValidCV</span>
+                <span class="wf-logo-text">MyValid<span>CV</span></span>
             </a>
-            <div class="auth-timeline" aria-label="MyValidCV workflow">
-                <div class="auth-timeline-step"><span>1</span><strong>Upload CV</strong></div>
-                <div class="auth-timeline-step"><span>2</span><strong>Job role</strong></div>
-                <div class="auth-timeline-step"><span>3</span><strong>Validate</strong></div>
-                <div class="auth-timeline-step"><span>4</span><strong>Improve</strong></div>
-            </div>
         </aside>
 
         <div class="auth-panel">

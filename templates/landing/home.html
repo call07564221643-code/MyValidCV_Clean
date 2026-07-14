@@ -2,6 +2,8 @@
 {% load static %}
 
 {% block title %}MyValidCV - Validate Your CV with AI{% endblock %}
+{% block meta_description %}Upload your CV and compare it with a job description, advert, or role. Get an ATS compatibility score and practical improvements with MyValidCV.{% endblock %}
+{% block og_title %}MyValidCV - Check Your CV Against Any Job{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/mvcv-wireframe.css' %}">
@@ -216,9 +218,54 @@
         padding: 0 4rem 1.25rem;
     }
 
+    .landing-timeline {
+        --timeline-green: #16a34a;
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin: 0 4rem 2rem;
+        padding: 1.2rem 0 2rem;
+    }
+
+    .landing-timeline::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 4px;
+        border-radius: 999px;
+        background: var(--timeline-green);
+    }
+
+    .landing-timeline-step {
+        position: relative;
+        text-align: center;
+        padding: 0 0.6rem 1.4rem;
+    }
+
+    .landing-timeline-number {
+        width: 42px;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin-bottom: 0.7rem;
+        background: var(--timeline-green);
+        color: #fff;
+        font-weight: 800;
+        box-shadow: 0 0 0 6px #dcfce7;
+    }
+
+    .landing-timeline-step strong,
+    .landing-timeline-step small { display: block; }
+    .landing-timeline-step strong { color: var(--wf-text); }
+    .landing-timeline-step small { margin-top: 0.3rem; color: var(--wf-muted); }
+
     .landing-feature {
         padding: 1rem;
-        min-height: 142px;
+        min-height: 220px;
     }
 
     .landing-feature-icon {
@@ -323,6 +370,8 @@
             padding-inline: 2rem;
         }
 
+        .landing-timeline { margin-inline: 2rem; }
+
         .landing-security,
         .landing-auth-note {
             margin-inline: 2rem;
@@ -385,6 +434,18 @@
             padding: 0 1rem 1rem;
         }
 
+        .landing-timeline {
+            grid-template-columns: 1fr;
+            gap: 0.8rem;
+            margin: 0 1rem 1.5rem;
+            padding-bottom: 1.2rem;
+        }
+
+        .landing-timeline-step { text-align: left; padding: 0.35rem 0; }
+        .landing-timeline-number { margin: 0 0.8rem 0 0; }
+        .landing-timeline-step strong { display: inline; }
+        .landing-timeline-step small { margin-left: 3.6rem; }
+
         .landing-security {
             align-items: stretch;
             flex-direction: column;
@@ -409,13 +470,11 @@
         <header class="landing-nav">
             <div class="landing-nav-left">
                 <a class="wf-logo" href="{% url 'home' %}" aria-label="MyValidCV home">
-                    <span class="wf-logo-mark">M</span>
-                    <span>MyValidCV</span>
+                    <span class="wf-logo-text">MyValid<span>CV</span></span>
                 </a>
                 <nav class="landing-nav-links" aria-label="Primary navigation">
                     <a href="#features">Features</a>
                     <a href="{% url 'pricing' %}">Plans</a>
-                    <a href="{% url 'pricing' %}">Enterprise</a>
                 </nav>
             </div>
             <div class="landing-nav-actions">
@@ -443,9 +502,9 @@
                 <p>Upload your CV, add a job role, validate the match, and improve before you apply.</p>
                 <div class="landing-hero-actions">
                     {% if user.is_authenticated and workspace_available %}
-                        <a class="wf-btn wf-btn-primary" href="{% url 'home' %}#validate">Validate Your CV Now</a>
+                        <a class="wf-btn wf-btn-primary" href="{% url 'dashboard' %}">Start Now</a>
                     {% else %}
-                        <a class="wf-btn wf-btn-primary" href="{% url 'register' %}?next={% url 'home' %}">Validate Your CV Now</a>
+                        <a class="wf-btn wf-btn-primary" href="{% url 'register' %}?next={% url 'home' %}">Start Now</a>
                     {% endif %}
                 </div>
             </div>
@@ -474,26 +533,45 @@
             </div>
         </section>
 
+        <section class="landing-timeline" aria-label="How MyValidCV works">
+            <div class="landing-timeline-step">
+                <span class="landing-timeline-number">1</span><strong>Upload CV</strong>
+                <small>Add your current CV securely.</small>
+            </div>
+            <div class="landing-timeline-step">
+                <span class="landing-timeline-number">2</span><strong>Add job role</strong>
+                <small>Paste a role, URL, or job advert.</small>
+            </div>
+            <div class="landing-timeline-step">
+                <span class="landing-timeline-number">3</span><strong>Validate</strong>
+                <small>See your ATS and compatibility results.</small>
+            </div>
+            <div class="landing-timeline-step">
+                <span class="landing-timeline-number">4</span><strong>Improve</strong>
+                <small>Act on clear, tailored recommendations.</small>
+            </div>
+        </section>
+
         <section id="features" class="landing-feature-grid">
             <article class="wf-card landing-feature">
                 <div class="landing-feature-icon">AI</div>
-                <strong>AI CV Analysis</strong>
-                <p>Advanced AI analyses your CV against job descriptions and recruiter expectations.</p>
+                <strong>AI CV Analysis for Job Applications</strong>
+                <p>Use AI-powered CV analysis to compare your experience, qualifications, and achievements with a specific job description. Identify relevant evidence, missing information, and areas recruiters may expect before submitting your application.</p>
             </article>
             <article class="wf-card landing-feature">
                 <div class="landing-feature-icon">AT</div>
-                <strong>ATS Compatibility</strong>
-                <p>Ensure your CV passes Applicant Tracking Systems used by top companies.</p>
+                <strong>ATS CV Compatibility Checker</strong>
+                <p>Check how well your CV matches the language and requirements of a job advert. Review important skills, role-specific keywords, formatting considerations, and compatibility signals commonly evaluated by Applicant Tracking Systems.</p>
             </article>
             <article class="wf-card landing-feature">
                 <div class="landing-feature-icon">CV</div>
-                <strong>Smart Suggestions</strong>
-                <p>Get personalised recommendations to improve your content, skills, and impact.</p>
+                <strong>Personalised CV Improvement Suggestions</strong>
+                <p>Receive practical CV recommendations based on the role you want. Strengthen relevant experience, clarify professional achievements, improve skills presentation, and focus every section on truthful evidence that supports your application.</p>
             </article>
             <article class="wf-card landing-feature">
                 <div class="landing-feature-icon">IN</div>
-                <strong>Instant Results</strong>
-                <p>Receive detailed feedback and a match score in seconds.</p>
+                <strong>Instant CV and Job Match Results</strong>
+                <p>View your CV-to-job compatibility score and detailed feedback on the same page. Understand matched strengths, missing requirements, ATS readiness, and priority improvements so you can prepare a more focused application.</p>
             </article>
         </section>
 
@@ -502,7 +580,7 @@
                 <div class="landing-security-icon">S</div>
                 <div>
                     <strong>Your data is secure and private</strong>
-                    <span id="privacy">We use enterprise-grade security to protect your personal information.</span>
+                    <span id="privacy">We use strong security controls to protect your personal information.</span>
                 </div>
             </div>
             {% if user.is_authenticated and workspace_available %}

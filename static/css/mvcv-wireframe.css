@@ -91,6 +91,14 @@ body {
     letter-spacing: -0.02em;
 }
 
+.wf-logo-text {
+    color: #1f3374;
+}
+
+.wf-logo-text span {
+    color: #9fb8ff;
+}
+
 .wf-logo-mark {
     width: 24px;
     height: 24px;

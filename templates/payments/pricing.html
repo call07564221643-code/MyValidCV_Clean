@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}Plans - MyValidCV{% endblock %}
+{% block meta_description %}Compare MyValidCV plans for individual job seekers and enterprise hiring teams, from free ATS checks to bulk CV screening.{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -211,7 +212,7 @@
     <div class="container">
         <div class="plans-hero">
             <h1>Choose the plan that fits your job search.</h1>
-            <p>The workflow stays simple on every plan: upload CV, paste job, validate, improve, apply.</p>
+            <p>Transparent monthly plans for individual job seekers and hiring teams. Choose the usage and application support you need.</p>
         </div>
 
         <div class="row g-4 align-items-stretch">
@@ -221,16 +222,16 @@
                         <div class="plan-body">
                             {% if plan.code == "free" %}
                                 <span class="plan-badge">Start free</span>
-                                <h2>Free</h2>
-                                <p class="plan-desc">Check your first applications and see what recruiters may notice.</p>
+                                <h2>Individual Free</h2>
+                                <p class="plan-desc">A simple way to test your CV against roles before applying.</p>
                             {% elif plan.code == "enterprise" %}
                                 <span class="plan-badge">For hiring teams</span>
                                 <h2>Enterprise</h2>
-                                <p class="plan-desc">Compare many CVs against one role and export shortlist-ready reports.</p>
+                                <p class="plan-desc">Screen candidate CVs against vacancies in a dedicated recruiter dashboard.</p>
                             {% else %}
                                 <span class="plan-badge">Most popular</span>
-                                <h2>Plus</h2>
-                                <p class="plan-desc">Validate more roles and download improved CV drafts for active applications.</p>
+                                <h2>Individual Plus</h2>
+                                <p class="plan-desc">More applications, tailored CV rewriting, and a cover letter for each tested role.</p>
                             {% endif %}
 
                             <div class="plan-price">
@@ -242,18 +243,35 @@
                             </div>
 
                             <ul class="plan-features">
-                                <li>{{ plan.cv_limit }} saved CV{% if plan.cv_limit != 1 %}s{% endif %}</li>
-                                <li>{{ plan.daily_analysis_limit }} daily validation{% if plan.daily_analysis_limit != 1 %}s{% endif %}</li>
-                                <li>Job text, URL, or advert upload</li>
-                                {% if plan.includes_generated_cv %}<li>Suggested CV draft after validation</li>{% endif %}
-                                {% if plan.includes_deadline_alerts %}<li>Optional deadline reminders</li>{% endif %}
-                                {% if plan.includes_enterprise_reports %}<li>{{ plan.monthly_bulk_cv_limit }} monthly bulk CV reports</li>{% endif %}
+                                {% if plan.code == "free" %}
+                                    <li>Register with email, Google, or LinkedIn</li>
+                                    <li>Upload and securely store 1 CV for up to 30 days</li>
+                                    <li>Test up to 5 job roles each month</li>
+                                    <li>Use a job title, description, URL, or advert</li>
+                                    <li>View CV-to-job compatibility and ATS results on the same page</li>
+                                    <li>Clear recommendations before you apply</li>
+                                {% elif plan.code == "enterprise" %}
+                                    <li>Dedicated enterprise screening dashboard</li>
+                                    <li>Bulk upload and screen up to 50 CVs each month</li>
+                                    <li>Compare candidates against job offers</li>
+                                    <li>Ranked compatibility and ATS screening results</li>
+                                    <li>CV files retained for no longer than 30 days</li>
+                                    <li>No candidate CV rewriting or cover-letter generation</li>
+                                {% else %}
+                                    <li>Register with email, Google, or LinkedIn</li>
+                                    <li>Upload and securely store your CV for up to 30 days</li>
+                                    <li>Test up to 20 job roles each month</li>
+                                    <li>Use a job title, description, URL, or advert</li>
+                                    <li>Full compatibility and ATS results</li>
+                                    <li>Tailored CV rewrite for each tested role</li>
+                                    <li>Tailored cover letter for each tested role</li>
+                                {% endif %}
                             </ul>
                         </div>
 
                         <div class="plan-action">
                             {% if user.is_authenticated %}
-                                <form method="post" action="{% url 'start_checkout' plan.code %}">
+                                <form method="post" action="{% url 'start_stripe_checkout' plan.code %}">
                                     {% csrf_token %}
                                     {% if plan.price > 0 %}
                                         <input type="text" name="discount_code" class="form-control mb-2" placeholder="Discount code, optional">

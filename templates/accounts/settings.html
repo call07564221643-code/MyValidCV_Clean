@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Account Settings - MyValidCV{% endblock %}
+{% block meta_description %}Manage your MyValidCV account details and review your current membership.{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-xl-6">
+            <div class="mb-4">
+                <span class="text-uppercase small fw-bold text-muted">Account</span>
+                <h1 class="h2 fw-bold mt-1">Settings</h1>
+                <p class="text-muted mb-0">Manage your personal details and account information.</p>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                        <span class="text-muted">Current account</span>
+                        <span class="badge bg-primary text-capitalize">{% if profile %}{{ profile.plan }}{% else %}Free{% endif %}</span>
+                    </div>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {% for field in form %}
+                            <div class="mb-3">
+                                {{ field.label_tag }}
+                                {{ field }}
+                                {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors.0 }}</div>{% endif %}
+                            </div>
+                        {% endfor %}
+                        <button class="btn btn-primary" type="submit">Save settings</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

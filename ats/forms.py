@@ -147,7 +147,7 @@ class EnterpriseBulkAnalysisForm(forms.Form):
         widget=forms.FileInput(attrs={"class": "form-control", "accept": ".pdf,.docx,.txt"})
     )
     cv_files = MultipleFileField(
-        help_text="Upload up to 200 CV files for this enterprise batch."
+        help_text="Upload up to 50 CV files for this enterprise batch."
     )
     notes = forms.CharField(
         required=False,
@@ -156,8 +156,8 @@ class EnterpriseBulkAnalysisForm(forms.Form):
 
     def clean_cv_files(self):
         cv_files = self.cleaned_data["cv_files"]
-        if len(cv_files) > 200:
-            raise forms.ValidationError("Enterprise Starter allows up to 200 CVs per monthly batch.")
+        if len(cv_files) > 50:
+            raise forms.ValidationError("The Enterprise plan allows up to 50 CVs per monthly batch.")
         return cv_files
 
     def clean(self):

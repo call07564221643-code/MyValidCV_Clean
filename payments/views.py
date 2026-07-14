@@ -7,11 +7,12 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
-from django.http import HttpResponseBadRequest, JsonResponse
+from django.http import Http404, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 from accounts.models import UserProfile
 from subscriptions.models import CustomerSubscription, DiscountCode, SubscriptionPlan
@@ -20,11 +21,14 @@ from .models import Invoice, PaymentTransaction, PaymentWebhookLog
 from .services import (
     StripeAPIError,
     StripeConfigurationError,
+    StripeSignatureError,
     SumUpAPIError,
     SumUpConfigurationError,
     create_stripe_checkout_session,
     create_sumup_checkout,
     retrieve_sumup_checkout,
+    retrieve_stripe_checkout_session,
+    verify_stripe_signature,
 )
 
 
@@ -113,13 +117,23 @@ def start_checkout(request, plan_code):
 
 
 @login_required(login_url="login")
+@require_POST
 def start_stripe_checkout(request, plan_code):
     plan = get_object_or_404(SubscriptionPlan, code=plan_code, is_active=True)
+    discount = None
     amount = plan.price
+    code = request.POST.get("discount_code", "").strip()
+    if code:
+        discount = DiscountCode.objects.filter(code__iexact=code).first()
+        if not discount or not discount.is_valid_now():
+            messages.error(request, "This discount code is not valid.")
+            return redirect("pricing")
+        amount = discount.apply_to(amount)
 
     transaction = PaymentTransaction.objects.create(
         user=request.user,
         plan=plan,
+        discount_code=discount,
         amount=amount,
         currency=plan.currency,
         provider="stripe",
@@ -144,14 +158,18 @@ def start_stripe_checkout(request, plan_code):
         return render(request, "payments/stripe_mock_checkout.html", demo_checkout_context(transaction))
 
     success_url = request.build_absolute_uri(reverse("stripe_success", args=[transaction.checkout_reference]))
+    success_url = f"{success_url}?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = request.build_absolute_uri(reverse("pricing"))
     try:
         session = create_stripe_checkout_session(transaction, success_url, cancel_url)
     except StripeConfigurationError:
-        messages.warning(request, "Live card checkout is not connected yet. Demo checkout is available.")
-        return render(request, "payments/stripe_mock_checkout.html", demo_checkout_context(transaction))
-    except StripeAPIError as exc:
-        messages.error(request, str(exc))
+        if settings.STRIPE_MOCK_MODE:
+            messages.warning(request, "Live card checkout is not connected yet. Demo checkout is available.")
+            return render(request, "payments/stripe_mock_checkout.html", demo_checkout_context(transaction))
+        messages.error(request, "Stripe checkout is not configured. Please contact support.")
+        return redirect("pricing")
+    except StripeAPIError:
+        messages.error(request, "Stripe checkout could not be started. Please try again.")
         return redirect("pricing")
 
     transaction.provider_checkout_id = session.get("id", "")
@@ -167,6 +185,8 @@ def start_stripe_checkout(request, plan_code):
 
 @login_required(login_url="login")
 def stripe_mock_checkout(request, checkout_reference):
+    if not settings.STRIPE_MOCK_MODE:
+        raise Http404("Demo checkout is disabled.")
     transaction = get_object_or_404(PaymentTransaction, checkout_reference=checkout_reference, user=request.user)
     if request.method == "POST":
         card_number = request.POST.get("card_number", "").replace(" ", "")
@@ -226,15 +246,32 @@ def stripe_mock_checkout(request, checkout_reference):
 @login_required(login_url="login")
 def stripe_success(request, checkout_reference):
     transaction = get_object_or_404(PaymentTransaction, checkout_reference=checkout_reference, user=request.user)
-    activate_paid_transaction(transaction, raw_response={"stripe_success_return": True})
-    messages.success(request, "Payment confirmed. Your subscription is active.")
-    return redirect("payment_receipt", checkout_reference=transaction.checkout_reference)
+    session_id = request.GET.get("session_id", "")
+    if not session_id or session_id != transaction.provider_checkout_id:
+        messages.warning(request, "Payment is awaiting Stripe confirmation.")
+        return render(request, "payments/payment_pending.html", {"transaction": transaction})
+    try:
+        session = retrieve_stripe_checkout_session(session_id)
+    except (StripeConfigurationError, StripeAPIError):
+        messages.warning(request, "Payment is awaiting Stripe confirmation.")
+        return render(request, "payments/payment_pending.html", {"transaction": transaction})
+    reference = session.get("metadata", {}).get("checkout_reference", "")
+    if reference == str(transaction.checkout_reference) and session.get("payment_status") == "paid":
+        activate_paid_transaction(transaction, raw_response=session)
+        messages.success(request, "Payment confirmed. Your subscription is active.")
+        return redirect("payment_receipt", checkout_reference=transaction.checkout_reference)
+    messages.warning(request, "Payment has not been confirmed by Stripe yet.")
+    return render(request, "payments/payment_pending.html", {"transaction": transaction})
 
 
 @csrf_exempt
 def stripe_webhook(request):
     if request.method != "POST":
         return HttpResponseBadRequest("POST required")
+    try:
+        verify_stripe_signature(request.body, request.headers.get("Stripe-Signature", ""))
+    except StripeSignatureError:
+        return HttpResponseBadRequest("Invalid Stripe signature")
     try:
         payload = json.loads(request.body.decode("utf-8") or "{}")
     except json.JSONDecodeError:
@@ -252,7 +289,12 @@ def stripe_webhook(request):
         checkout_reference=checkout_reference,
         payload=payload,
     )
-    if payload.get("type") == "checkout.session.completed" and checkout_reference:
+    checkout_session = payload.get("data", {}).get("object", {})
+    if (
+        payload.get("type") == "checkout.session.completed"
+        and checkout_reference
+        and checkout_session.get("payment_status") == "paid"
+    ):
         transaction = PaymentTransaction.objects.filter(checkout_reference=checkout_reference).first()
         if transaction:
             activate_paid_transaction(transaction, raw_response=payload)

@@ -282,7 +282,7 @@ Original CV Content Reference
 
 
 def can_download_generated_cv(user):
-    return user.is_superuser or get_user_profile(user).plan in ("plus", "professional", "enterprise")
+    return user.is_superuser or get_user_profile(user).plan in ("plus", "professional")
 
 
 def score_breakdown(score, matched, missing):
@@ -454,7 +454,7 @@ def analyse_cv(request):
     if request.method == "POST":
         form = ATSAnalysisForm(request.user, request.POST, request.FILES)
         if not profile.can_run_analysis():
-            messages.error(request, f"You have used today's {profile.get_analysis_limit()} analysis limit for your {profile.plan} plan.")
+            messages.error(request, f"You have used this month's {profile.get_analysis_limit()} analysis limit for your {profile.plan} plan.")
             return redirect("dashboard")
         if form.is_valid():
             cv = save_inline_cv(request, form)
@@ -504,13 +504,14 @@ def analyse_cv(request):
                 status="completed",
             )
 
-            GeneratedCV.objects.create(
-                user=request.user,
-                original_cv=cv,
-                ats_result=result,
-                title=f"{cv.title} tailored for {job_title}",
-                content=build_generated_cv(cv, result, matched, missing),
-            )
+            if can_download_generated_cv(request.user):
+                GeneratedCV.objects.create(
+                    user=request.user,
+                    original_cv=cv,
+                    ats_result=result,
+                    title=f"{cv.title} tailored for {job_title}",
+                    content=build_generated_cv(cv, result, matched, missing),
+                )
 
             if job_role.deadline:
                 reminder_date = max(timezone.localdate(), job_role.deadline - timedelta(days=2))
@@ -522,7 +523,10 @@ def analyse_cv(request):
                 )
 
             profile.record_analysis()
-            messages.success(request, "ATS analysis complete. A tailored CV draft was generated.")
+            if can_download_generated_cv(request.user):
+                messages.success(request, "ATS analysis complete. Your tailored CV draft is ready.")
+            else:
+                messages.success(request, "ATS analysis complete. Your compatibility results are ready.")
             return redirect("ats_result", result_id=result.id)
     else:
         initial = {}

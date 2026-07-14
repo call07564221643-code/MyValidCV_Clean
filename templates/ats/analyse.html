@@ -6,9 +6,8 @@
 <section class="mvcv-workspace">
     <aside class="mvcv-sidebar">
         <div class="mvcv-sidebar-top">
-            <a href="{% url 'home' %}" class="mvcv-brand-mark">
-                <span>M</span>
-                <strong>MyValidCV</strong>
+            <a href="{% url 'home' %}" class="mvcv-brand-mark mvcv-brand-inline">
+                <strong>MyValid<span>CV</span></strong>
             </a>
             <a href="{% url 'home' %}#composer" class="mvcv-new-action">Validate CV</a>
         </div>
@@ -21,7 +20,6 @@
             <a href="{% url 'dashboard' %}">Applications</a>
             <a href="{% url 'pricing' %}">Plan and usage</a>
             {% if is_enterprise %}
-                <a href="{% url 'enterprise_bulk' %}">Enterprise reports</a>
             {% endif %}
             {% if user.is_superuser %}
                 <a href="{% url 'admin:index' %}">Owner control</a>
@@ -55,7 +53,7 @@
         <div class="mvcv-sidebar-footer">
             <div>
                 <strong>{{ profile.plan|title }} plan</strong>
-                <small>{{ profile.analyses_today }} / {{ profile.get_analysis_limit }} validations used today</small>
+                <small>{{ profile.analyses_today }} / {{ profile.get_analysis_limit }} validations used this month</small>
             </div>
             <a href="{% url 'pricing' %}">Upgrade</a>
         </div>
@@ -66,7 +64,7 @@
             <button class="mvcv-mobile-menu" type="button" data-bs-toggle="collapse" data-bs-target="#mobileWorkspaceNav">Menu</button>
             <div>
                 <strong>CV validation</strong>
-                <span>{{ profile.plan|title }} &middot; {{ profile.analyses_today }} / {{ profile.get_analysis_limit }} today</span>
+                <span>{{ profile.plan|title }} &middot; {{ profile.analyses_today }} / {{ profile.get_analysis_limit }} this month</span>
             </div>
             <select class="form-select form-select-sm mvcv-account-select" aria-label="Account type">
                 <option selected>{{ profile.plan|title }} job seeker</option>
@@ -80,7 +78,6 @@
             <a href="{% url 'dashboard' %}">Reports</a>
             <a href="{% url 'upload_cv' %}">Saved CVs</a>
             <a href="{% url 'pricing' %}">Plans</a>
-            {% if is_enterprise %}<a href="{% url 'enterprise_bulk' %}">Enterprise</a>{% endif %}
         </div>
 
         <div class="mvcv-chat-scroll">
@@ -192,7 +189,7 @@
                     </div>
                     <div class="mvcv-empty-card">
                         <strong>Limits</strong>
-                        <span>Free: 2 daily validations. Plus: 5 daily validations and downloads.</span>
+                        <span>Free: 5 monthly validations. Plus: 20 monthly validations, tailored CV rewrites, and cover letters.</span>
                     </div>
                 </div>
             {% endif %}

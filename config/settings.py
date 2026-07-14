@@ -196,7 +196,14 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 # Database
-if os.environ.get('DATABASE_URL'):
+if env_bool('TEST_USE_SQLITE', False):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'test.sqlite3',
+        }
+    }
+elif os.environ.get('DATABASE_URL'):
     DATABASES = {
         'default': database_from_url(os.environ['DATABASE_URL'])
     }
@@ -286,7 +293,7 @@ SUMUP_WEBHOOK_SECRET = os.environ.get('SUMUP_WEBHOOK_SECRET', '')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
-STRIPE_MOCK_MODE = os.environ.get('STRIPE_MOCK_MODE', '1') == '1'
+STRIPE_MOCK_MODE = env_bool('STRIPE_MOCK_MODE', True)
 
 # Email receipts
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')

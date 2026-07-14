@@ -316,9 +316,9 @@ class Command(BaseCommand):
 
     def ensure_core_reference_data(self):
         plans = [
-            ("free", "Free", Decimal("0.00"), 1, 2, 0),
-            ("plus", "Plus", Decimal("7.99"), 10, 5, 0),
-            ("enterprise", "Enterprise Starter", Decimal("199.00"), 200, 200, 200),
+            ("free", "Free", Decimal("0.00"), 1, 5, 0),
+            ("plus", "Plus", Decimal("4.99"), 1, 20, 0),
+            ("enterprise", "Enterprise", Decimal("49.00"), 50, 50, 50),
         ]
         for order, (code, name, price, cv_limit, daily_limit, bulk_limit) in enumerate(plans, start=1):
             SubscriptionPlan.objects.update_or_create(
@@ -332,7 +332,7 @@ class Command(BaseCommand):
                     "cv_limit": cv_limit,
                     "daily_analysis_limit": daily_limit,
                     "monthly_bulk_cv_limit": bulk_limit,
-                    "includes_generated_cv": code != "free",
+                    "includes_generated_cv": code == "plus",
                     "includes_job_url": code != "free",
                     "includes_deadline_alerts": code != "free",
                     "includes_enterprise_reports": code == "enterprise",

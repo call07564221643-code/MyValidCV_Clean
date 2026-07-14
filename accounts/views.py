@@ -1,3 +1,6 @@
+from urllib.parse import urlencode
+
+from django.conf import settings
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
@@ -5,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.urls import reverse
-from .forms import CustomUserCreationForm, CustomAuthenticationForm
+from .forms import CustomUserCreationForm, CustomAuthenticationForm, UserSettingsForm
 from .models import SocialAuthProvider
 
 
@@ -111,6 +114,21 @@ def logout_view(request):
     logout(request)
     messages.success(request, 'You have been logged out.')
     return redirect('home')
+
+
+@login_required(login_url='login')
+@require_http_methods(['GET', 'POST'])
+def settings_view(request):
+    """Let every customer manage their basic account details."""
+    form = UserSettingsForm(request.POST or None, instance=request.user)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Your account settings have been updated.')
+        return redirect('account_settings')
+    return render(request, 'accounts/settings.html', {
+        'form': form,
+        'profile': getattr(request.user, 'profile', None),
+    })
 from urllib.parse import urlencode
 
 from django.conf import settings
