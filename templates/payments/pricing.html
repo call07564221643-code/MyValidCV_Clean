@@ -37,6 +37,8 @@
 
     .plan-card {
         height: 100%;
+        display: flex;
+        flex-direction: column;
         border: 1px solid #e2e8f0;
         border-radius: 22px;
         background: #ffffff;
@@ -50,6 +52,7 @@
     }
 
     .plan-body {
+        flex: 1 1 auto;
         padding: 1.45rem;
     }
 
@@ -118,9 +121,19 @@
     }
 
     .plan-action {
+        flex: 0 0 auto;
         padding: 1.25rem 1.45rem 1.45rem;
         border-top: 1px solid #e2e8f0;
         background: #fbfdff;
+    }
+
+    .discount-slot {
+        min-height: 38px;
+        margin-bottom: 0.5rem;
+    }
+
+    .discount-slot.form-control {
+        margin-bottom: 0.5rem;
     }
 
     .payment-strip {
@@ -244,7 +257,6 @@
 
                             <ul class="plan-features">
                                 {% if plan.code == "free" %}
-                                    <li>Register with email, Google, or LinkedIn</li>
                                     <li>Upload and securely store 1 CV for up to 30 days</li>
                                     <li>Test up to 5 job roles each month</li>
                                     <li>Use a job title, description, URL, or advert</li>
@@ -258,7 +270,6 @@
                                     <li>CV files retained for no longer than 30 days</li>
                                     <li>No candidate CV rewriting or cover-letter generation</li>
                                 {% else %}
-                                    <li>Register with email, Google, or LinkedIn</li>
                                     <li>Upload and securely store your CV for up to 30 days</li>
                                     <li>Test up to 20 job roles each month</li>
                                     <li>Use a job title, description, URL, or advert</li>
@@ -274,7 +285,9 @@
                                 <form method="post" action="{% url 'start_stripe_checkout' plan.code %}">
                                     {% csrf_token %}
                                     {% if plan.price > 0 %}
-                                        <input type="text" name="discount_code" class="form-control mb-2" placeholder="Discount code, optional">
+                                        <input type="text" name="discount_code" class="form-control discount-slot" placeholder="Discount code, optional">
+                                    {% else %}
+                                        <div class="discount-slot" aria-hidden="true"></div>
                                     {% endif %}
                                     <button class="btn btn-primary w-100" type="submit">
                                         {% if plan.price == 0 %}Activate Free{% else %}Pay Now{% endif %}
