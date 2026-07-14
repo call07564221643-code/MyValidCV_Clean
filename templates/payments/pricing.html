@@ -1,323 +1,288 @@
 {% extends "base.html" %}
 
-{% block title %}Pricing - MyValidCV{% endblock %}
+{% block title %}Plans - MyValidCV{% endblock %}
 
 {% block extra_css %}
 <style>
-    :root {
-        --price-navy: #1f3374;
-        --price-soft: #eef3ff;
-        --price-bg: #f8fafc;
-        --price-card: #ffffff;
-        --price-ink: #0f172a;
-        --price-muted: #64748b;
-        --price-line: #e2e8f0;
-    }
-
-    .pricing-shell {
+    .plans-shell {
         min-height: calc(100vh - 84px);
-        background: linear-gradient(180deg, #ffffff 0%, var(--price-bg) 100%);
-        padding: 2.6rem 0 3.5rem;
+        padding: 3rem 0 4rem;
+        background:
+            radial-gradient(circle at 14% 8%, rgba(79, 70, 229, 0.08), transparent 28%),
+            linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
     }
 
-    .pricing-hero {
-        max-width: 860px;
-        margin: 0 auto 2rem;
+    .plans-hero {
+        max-width: 780px;
+        margin: 0 auto 2.2rem;
         text-align: center;
     }
 
-    .pricing-kicker {
-        color: var(--price-navy);
-        font-size: 0.78rem;
-        font-weight: 780;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        margin-bottom: 0.55rem;
-    }
-
-    .pricing-hero h1 {
-        color: var(--price-ink);
-        font-size: clamp(2.2rem, 5vw, 4rem);
-        font-weight: 700;
+    .plans-hero h1 {
+        color: #0f172a;
+        font-size: clamp(2rem, 4vw, 3.45rem);
+        font-weight: 760;
         letter-spacing: -0.055em;
-        margin-bottom: 0.7rem;
+        margin-bottom: 0.75rem;
     }
 
-    .pricing-hero p {
-        color: var(--price-muted);
-        font-size: 1.05rem;
-        margin: 0;
+    .plans-hero p {
+        color: #64748b;
+        font-size: 1.02rem;
+        line-height: 1.65;
+        margin: 0 auto;
+        max-width: 620px;
     }
 
-    .pricing-promise {
-        display: inline-flex;
-        gap: 0.6rem;
-        flex-wrap: wrap;
-        justify-content: center;
-        margin-top: 1rem;
-    }
-
-    .pricing-promise span {
-        border: 1px solid var(--price-line);
-        border-radius: 999px;
-        background: #ffffff;
-        color: var(--price-muted);
-        font-size: 0.82rem;
-        font-weight: 650;
-        padding: 0.45rem 0.7rem;
-    }
-
-    .pricing-card {
-        position: relative;
+    .plan-card {
         height: 100%;
-        border: 1px solid var(--price-line);
-        border-radius: 20px;
-        background: var(--price-card);
-        box-shadow: 0 18px 46px rgba(15, 23, 42, 0.07);
+        border: 1px solid #e2e8f0;
+        border-radius: 22px;
+        background: #ffffff;
+        box-shadow: 0 18px 52px rgba(15, 23, 42, 0.07);
         overflow: hidden;
     }
 
-    .pricing-card.featured {
-        border-color: rgba(31, 51, 116, 0.28);
-        box-shadow: 0 24px 62px rgba(31, 51, 116, 0.14);
+    .plan-card.featured {
+        border-color: rgba(79, 70, 229, 0.35);
+        box-shadow: 0 24px 70px rgba(79, 70, 229, 0.16);
     }
 
-    .pricing-card-body {
-        padding: 1.25rem;
+    .plan-body {
+        padding: 1.45rem;
     }
 
-    .pricing-label {
+    .plan-badge {
         display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0.25rem 0.7rem;
         border-radius: 999px;
-        background: var(--price-soft);
-        color: var(--price-navy);
+        background: #eef2ff;
+        color: #4f46e5;
         font-size: 0.78rem;
-        font-weight: 760;
-        padding: 0.4rem 0.65rem;
+        font-weight: 750;
         margin-bottom: 1rem;
     }
 
-    .pricing-card h2 {
-        color: var(--price-ink);
-        font-size: 1.35rem;
-        font-weight: 740;
-        margin-bottom: 0.35rem;
+    .plan-card h2 {
+        color: #0f172a;
+        font-size: 1.45rem;
+        font-weight: 760;
+        margin-bottom: 0.4rem;
     }
 
-    .pricing-outcome {
-        color: var(--price-muted);
+    .plan-desc {
         min-height: 3rem;
+        color: #64748b;
+        line-height: 1.55;
+        margin-bottom: 1rem;
+    }
+
+    .plan-price {
+        color: #0f172a;
+        font-size: 2.35rem;
+        font-weight: 780;
+        letter-spacing: -0.045em;
         margin-bottom: 1.1rem;
     }
 
-    .pricing-price {
-        color: var(--price-ink);
-        font-size: 2.25rem;
-        font-weight: 760;
-        letter-spacing: -0.04em;
-        margin-bottom: 1rem;
-    }
-
-    .pricing-price span {
-        color: var(--price-muted);
-        font-size: 0.95rem;
+    .plan-price small {
+        color: #64748b;
+        font-size: 0.92rem;
         font-weight: 600;
         letter-spacing: 0;
     }
 
-    .pricing-features {
+    .plan-features {
         display: grid;
-        gap: 0.65rem;
-        margin: 0 0 1.15rem;
-        padding: 0;
+        gap: 0.7rem;
         list-style: none;
+        margin: 0;
+        padding: 0;
     }
 
-    .pricing-features li {
+    .plan-features li {
         display: flex;
-        gap: 0.55rem;
-        color: var(--price-ink);
-        font-size: 0.93rem;
+        gap: 0.65rem;
+        color: #172033;
+        font-size: 0.92rem;
     }
 
-    .pricing-features li::before {
-        content: "";
-        flex: 0 0 8px;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--price-navy);
-        margin-top: 0.5rem;
+    .plan-features li::before {
+        content: "✓";
+        color: #14b8a6;
+        font-weight: 900;
+        line-height: 1.25;
     }
 
-    .pricing-note {
-        border-top: 1px solid var(--price-line);
-        color: var(--price-muted);
-        font-size: 0.86rem;
-        padding-top: 1rem;
-    }
-
-    .pricing-footer {
-        border-top: 1px solid var(--price-line);
+    .plan-action {
+        padding: 1.25rem 1.45rem 1.45rem;
+        border-top: 1px solid #e2e8f0;
         background: #fbfdff;
-        padding: 1.25rem;
     }
 
-    .pricing-proof {
-        max-width: 980px;
-        margin: 1.5rem auto 0;
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 0.8rem;
-    }
-
-    .pricing-proof div {
-        border: 1px solid var(--price-line);
-        border-radius: 16px;
-        background: var(--price-card);
+    .payment-strip {
+        max-width: 920px;
+        margin: 2rem auto 0;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        background: #ffffff;
         padding: 1rem;
+        box-shadow: 0 14px 44px rgba(15, 23, 42, 0.05);
     }
 
-    .pricing-proof strong {
-        color: var(--price-ink);
-        display: block;
-        margin-bottom: 0.25rem;
+    .payment-strip h2 {
+        color: #0f172a;
+        font-size: 1rem;
+        font-weight: 760;
+        margin: 0 0 0.85rem;
+        text-align: center;
     }
 
-    .pricing-proof span {
-        color: var(--price-muted);
-        font-size: 0.9rem;
+    .gateway-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .gateway-pill {
+        display: grid;
+        place-items: center;
+        min-height: 54px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #f8fafc;
+        color: #334155;
+        font-weight: 760;
+        font-size: 0.86rem;
+    }
+
+    .gateway-pill span {
+        color: #4f46e5;
     }
 
     @media (prefers-color-scheme: dark) {
-        :root {
-            --price-navy: #9fb8ff;
-            --price-soft: #20335f;
-            --price-bg: #0f172a;
-            --price-card: #111c33;
-            --price-ink: #f8fafc;
-            --price-muted: #cbd5e1;
-            --price-line: #273449;
+        .plans-shell {
+            background: linear-gradient(180deg, #0b1224 0%, #0f172a 100%);
         }
 
-        .pricing-shell {
-            background: linear-gradient(180deg, #0b1224 0%, var(--price-bg) 100%);
+        .plans-hero h1,
+        .plan-card h2,
+        .plan-price,
+        .payment-strip h2 {
+            color: #f8fafc;
         }
 
-        .pricing-footer,
-        .pricing-promise span {
+        .plans-hero p,
+        .plan-desc,
+        .plan-price small {
+            color: #cbd5e1;
+        }
+
+        .plan-card,
+        .payment-strip {
+            background: #111c33;
+            border-color: #273449;
+        }
+
+        .plan-action,
+        .gateway-pill {
             background: #0b1224;
+            border-color: #273449;
+        }
+
+        .plan-features li,
+        .gateway-pill {
+            color: #e2e8f0;
         }
     }
 
-    @media (max-width: 991px) {
-        .pricing-proof {
-            grid-template-columns: 1fr;
+    @media (max-width: 768px) {
+        .gateway-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<section class="pricing-shell">
+<section class="plans-shell">
     <div class="container">
-        <div class="pricing-hero">
-            <div class="pricing-kicker">Simple pricing</div>
-            <h1>Choose how often you want to apply stronger.</h1>
-            <p>MyValidCV keeps the same fast workflow on every plan: upload CV, paste job, validate, improve, apply.</p>
-            <div class="pricing-promise" aria-label="Pricing trust points">
-                <span>Provider-neutral Pay Now checkout</span>
-                <span>Receipts after payment</span>
-                <span>No invented experience</span>
-            </div>
+        <div class="plans-hero">
+            <h1>Choose the plan that fits your job search.</h1>
+            <p>The workflow stays simple on every plan: upload CV, paste job, validate, improve, apply.</p>
         </div>
 
         <div class="row g-4 align-items-stretch">
             {% for plan in plans %}
                 <div class="col-lg-4">
-                    <div class="pricing-card {% if plan.code == 'plus' or plan.code == 'professional' %}featured{% endif %}">
-                        <div class="pricing-card-body">
+                    <article class="plan-card {% if plan.code == 'plus' %}featured{% endif %}">
+                        <div class="plan-body">
                             {% if plan.code == "free" %}
-                                <span class="pricing-label">Check if this works for you</span>
-                                <h2>{{ plan.name }}</h2>
-                                <p class="pricing-outcome">Validate your first applications and understand whether your CV is ready before paying.</p>
+                                <span class="plan-badge">Start free</span>
+                                <h2>Free</h2>
+                                <p class="plan-desc">Check your first applications and see what recruiters may notice.</p>
                             {% elif plan.code == "enterprise" %}
-                                <span class="pricing-label">Shortlist candidates faster</span>
-                                <h2>{{ plan.name }}</h2>
-                                <p class="pricing-outcome">Rank multiple CVs against one vacancy and export a clearer hiring shortlist.</p>
+                                <span class="plan-badge">For hiring teams</span>
+                                <h2>Enterprise</h2>
+                                <p class="plan-desc">Compare many CVs against one role and export shortlist-ready reports.</p>
                             {% else %}
-                                <span class="pricing-label">Apply with stronger CVs</span>
-                                <h2>{{ plan.name }}</h2>
-                                <p class="pricing-outcome">Validate more roles, preview suggested improvements, and download tailored CV drafts.</p>
+                                <span class="plan-badge">Most popular</span>
+                                <h2>Plus</h2>
+                                <p class="plan-desc">Validate more roles and download improved CV drafts for active applications.</p>
                             {% endif %}
 
-                            <div class="pricing-price">
+                            <div class="plan-price">
                                 {% if plan.price == 0 %}
-                                    Free
+                                    £0 <small>/month</small>
                                 {% else %}
-                                    {{ plan.currency }} {{ plan.price }}<span>/{{ plan.billing_interval }}</span>
+                                    £{{ plan.price }} <small>/{{ plan.billing_interval }}</small>
                                 {% endif %}
                             </div>
 
-                            <ul class="pricing-features">
+                            <ul class="plan-features">
                                 <li>{{ plan.cv_limit }} saved CV{% if plan.cv_limit != 1 %}s{% endif %}</li>
                                 <li>{{ plan.daily_analysis_limit }} daily validation{% if plan.daily_analysis_limit != 1 %}s{% endif %}</li>
-                                {% if plan.includes_job_url %}<li>Paste job text, URL, or upload an advert</li>{% endif %}
+                                <li>Job text, URL, or advert upload</li>
                                 {% if plan.includes_generated_cv %}<li>Suggested CV draft after validation</li>{% endif %}
-                                {% if plan.includes_deadline_alerts %}<li>Optional application deadline reminders</li>{% endif %}
-                                {% if plan.includes_enterprise_reports %}<li>{{ plan.monthly_bulk_cv_limit }} bulk CV analyses per month</li>{% endif %}
+                                {% if plan.includes_deadline_alerts %}<li>Optional deadline reminders</li>{% endif %}
+                                {% if plan.includes_enterprise_reports %}<li>{{ plan.monthly_bulk_cv_limit }} monthly bulk CV reports</li>{% endif %}
                             </ul>
-
-                            <div class="pricing-note">
-                                {% if plan.code == "free" %}
-                                    Best for testing one CV against real jobs before deciding whether to upgrade.
-                                {% elif plan.code == "enterprise" %}
-                                    Best for hiring teams comparing candidates against the same role requirements.
-                                {% else %}
-                                    Best for active job seekers applying to several roles and needing downloadable drafts.
-                                {% endif %}
-                            </div>
                         </div>
 
-                        <div class="pricing-footer">
+                        <div class="plan-action">
                             {% if user.is_authenticated %}
                                 <form method="post" action="{% url 'start_checkout' plan.code %}">
                                     {% csrf_token %}
                                     {% if plan.price > 0 %}
-                                        <label class="form-label small text-muted" for="discount-{{ plan.code }}">Discount code</label>
-                                        <input id="discount-{{ plan.code }}" type="text" name="discount_code" class="form-control mb-2" placeholder="Optional">
+                                        <input type="text" name="discount_code" class="form-control mb-2" placeholder="Discount code, optional">
                                     {% endif %}
-                                    <button type="submit" class="btn btn-primary w-100">
+                                    <button class="btn btn-primary w-100" type="submit">
                                         {% if plan.price == 0 %}Activate Free{% else %}Pay Now{% endif %}
                                     </button>
                                 </form>
                             {% else %}
-                                <a href="{% url 'register' %}?next={% url 'pricing' %}" class="btn btn-primary w-100">Create Account</a>
+                                <a class="btn btn-primary w-100" href="{% url 'register' %}?next={% url 'pricing' %}">
+                                    {% if plan.price == 0 %}Sign up{% else %}Create account to pay{% endif %}
+                                </a>
                             {% endif %}
                         </div>
-                    </div>
-                </div>
-            {% empty %}
-                <div class="col-12">
-                    <div class="alert alert-info">No active plans are configured yet. Add Subscription Plans in Django admin.</div>
+                    </article>
                 </div>
             {% endfor %}
         </div>
 
-        <div class="pricing-proof">
-            <div>
-                <strong>Why not just a score?</strong>
-                <span>Reports explain what recruiters may notice, why the CV is weak, and what to fix first.</span>
+        <section class="payment-strip" aria-label="Accepted payment methods">
+            <h2>Card and wallet payments are processed securely at checkout.</h2>
+            <div class="gateway-grid">
+                <div class="gateway-pill"><span>Pay</span>Pal</div>
+                <div class="gateway-pill">Mastercard</div>
+                <div class="gateway-pill">Credit Cards</div>
+                <div class="gateway-pill">Amazon Pay</div>
+                <div class="gateway-pill">Google Pay</div>
             </div>
-            <div>
-                <strong>When should I upgrade?</strong>
-                <span>Upgrade only when you need more daily validations or downloadable tailored CV drafts.</span>
-            </div>
-            <div>
-                <strong>For teams</strong>
-                <span>Enterprise reports compare many CVs against one vacancy so shortlisting is faster and more consistent.</span>
-            </div>
-        </div>
+        </section>
     </div>
 </section>
 {% endblock %}

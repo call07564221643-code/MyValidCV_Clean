@@ -4,8 +4,8 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-admin.site.site_header = 'MVCV Admin'
-admin.site.site_title = 'MVCV Admin'
+admin.site.site_header = 'MyValidCV Admin'
+admin.site.site_title = 'MyValidCV Admin'
 admin.site.index_title = 'MyValidCV Control Panel'
 
 urlpatterns = [

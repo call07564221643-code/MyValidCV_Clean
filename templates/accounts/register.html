@@ -17,10 +17,8 @@
     }
 
     .auth-frame {
-        width: min(1120px, 100%);
-        min-height: 720px;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(340px, 410px);
+        width: min(520px, 100%);
+        display: block;
         border: 1px solid var(--wf-border);
         border-radius: 16px;
         background: rgba(255, 255, 255, 0.96);
@@ -31,35 +29,15 @@
     .auth-preview {
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        padding: 3rem;
-        background:
-            radial-gradient(circle at 30% 25%, rgba(91, 77, 245, 0.10), transparent 28%),
-            #fbfbff;
-        border-right: 1px solid var(--wf-border);
-    }
-
-    .auth-preview h1 {
-        max-width: 520px;
-        margin: 1.4rem 0 1rem;
-        font-size: clamp(2.2rem, 5vw, 4rem);
-        line-height: 1;
-        letter-spacing: -0.06em;
-        font-weight: 820;
-    }
-
-    .auth-preview p {
-        max-width: 470px;
-        color: var(--wf-muted);
-        line-height: 1.65;
-        margin: 0;
+        gap: 1.1rem;
+        padding: 1.35rem 1.35rem 0;
     }
 
     .auth-timeline {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 0.75rem;
-        margin-top: 2rem;
+        margin-top: 0;
     }
 
     .auth-timeline-step {
@@ -90,7 +68,7 @@
     .auth-panel {
         display: flex;
         align-items: center;
-        padding: 2rem;
+        padding: 1.35rem;
     }
 
     .auth-card {
@@ -218,19 +196,8 @@
     }
 
     @media (max-width: 900px) {
-        .auth-frame {
-            grid-template-columns: 1fr;
-            min-height: auto;
-        }
-
         .auth-preview {
-            border-right: 0;
-            border-bottom: 1px solid var(--wf-border);
-            padding: 1.4rem;
-        }
-
-        .auth-preview h1 {
-            font-size: 2rem;
+            padding: 1.1rem 1.1rem 0;
         }
 
         .auth-timeline {
@@ -248,7 +215,7 @@
         }
 
         .auth-timeline {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 </style>
@@ -257,13 +224,11 @@
 {% block content %}
 <section class="auth-shell">
     <div class="auth-frame">
-        <aside class="auth-preview">
+        <aside class="auth-preview" aria-label="MyValidCV workflow">
             <a class="wf-logo" href="{% url 'home' %}" aria-label="MyValidCV home">
                 <span class="wf-logo-mark">M</span>
                 <span>MyValidCV</span>
             </a>
-            <h1>Create your account</h1>
-            <p>Join MyValidCV and start validating your CV against job ads, URLs, and role descriptions.</p>
             <div class="auth-timeline" aria-label="MyValidCV workflow">
                 <div class="auth-timeline-step"><span>1</span><strong>Upload CV</strong></div>
                 <div class="auth-timeline-step"><span>2</span><strong>Job role</strong></div>
