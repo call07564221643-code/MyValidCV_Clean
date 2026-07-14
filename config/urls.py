@@ -4,10 +4,15 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+admin.site.site_header = 'MVCV Admin'
+admin.site.site_title = 'MVCV Admin'
+admin.site.index_title = 'MyValidCV Control Panel'
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
     path('', include('accounts.urls')),
+    path('', include('payments.urls')),
     path('dashboard/', include('dashboard.urls')),
     path('ats/', include('ats.urls')),
 

@@ -436,7 +436,7 @@
                     <a class="dash-owner-tile" href="{% url 'admin:index' %}"><span>Subscriptions</span><strong>{{ admin_stats.active_subscriptions }}</strong><small>Active customer plans</small></a>
                     <a class="dash-owner-tile" href="{% url 'admin:index' %}"><span>Invoices</span><strong>{{ admin_stats.open_invoices }}</strong><small>Open billing items</small></a>
                     <a class="dash-owner-tile" href="{% url 'admin:index' %}"><span>Refunds</span><strong>{{ admin_stats.refunds }}</strong><small>Refund records</small></a>
-                    <a class="dash-owner-tile" href="{% url 'website_health' %}"><span>Health</span><strong>{{ admin_stats.ats_results }}</strong><small>ATS and site reports</small></a>
+                    <a class="dash-owner-tile" href="{% url 'admin:index' %}"><span>Health</span><strong>{{ admin_stats.ats_results }}</strong><small>ATS and site reports</small></a>
                     <a class="dash-owner-tile" href="{% url 'enterprise_bulk' %}"><span>Enterprise</span><strong>{{ admin_stats.enterprise_batches }}</strong><small>Bulk reports</small></a>
                 </div>
             </div>
