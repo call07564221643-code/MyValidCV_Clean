@@ -29,7 +29,7 @@ class StripeCheckoutTests(TestCase):
             currency="GBP",
         )
 
-    @override_settings(STRIPE_MOCK_MODE=True)
+    @override_settings(DEBUG=True, STRIPE_MOCK_MODE=True)
     def test_plan_button_route_opens_stripe_mock_checkout(self):
         response = self.client.post(reverse("start_stripe_checkout", args=[self.plan.code]))
         self.assertEqual(response.status_code, 200)

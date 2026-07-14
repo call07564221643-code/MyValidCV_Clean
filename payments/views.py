@@ -187,10 +187,11 @@ def start_stripe_checkout(request, plan_code):
     return redirect("pricing")
 
 
-@login_required(login_url="login")
 def stripe_mock_checkout(request, checkout_reference):
-    if not settings.STRIPE_MOCK_MODE:
-        raise Http404("Demo checkout is disabled.")
+    if not settings.DEBUG or not settings.STRIPE_MOCK_MODE:
+        raise Http404("This checkout route is unavailable.")
+    if not request.user.is_authenticated:
+        return redirect(f"{reverse('login')}?next={request.path}")
     transaction = get_object_or_404(PaymentTransaction, checkout_reference=checkout_reference, user=request.user)
     if request.method == "POST":
         card_number = request.POST.get("card_number", "").replace(" ", "")
