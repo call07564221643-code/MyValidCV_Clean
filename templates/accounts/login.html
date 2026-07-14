@@ -60,6 +60,7 @@
 
     .oauth-grid {
         display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0.7rem;
         margin-bottom: 1.2rem;
     }
@@ -179,6 +180,11 @@
 
         .auth-panel {
             padding: 1.2rem;
+        }
+
+        .oauth-button {
+            padding-inline: 0.5rem;
+            font-size: 0.76rem;
         }
 
     }

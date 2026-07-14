@@ -32,3 +32,21 @@ class CustomerNavigationTests(TestCase):
         response = self.client.get(reverse('home'))
         self.assertContains(response, 'Start Now')
         self.assertNotContains(response, '>Enterprise<', html=False)
+
+    def test_free_dashboard_does_not_show_bulk_analysis(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('dashboard'))
+        self.assertNotContains(response, 'Bulk analysis')
+        self.assertNotContains(response, 'New bulk analysis')
+
+    def test_login_redirects_to_dashboard(self):
+        response = self.client.post(reverse('login'), {
+            'username': 'customer',
+            'password': 'password',
+        })
+        self.assertRedirects(response, reverse('dashboard'))
+
+    def test_authenticated_user_cannot_return_to_login(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('login'))
+        self.assertRedirects(response, reverse('dashboard'))

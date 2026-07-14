@@ -37,6 +37,8 @@ def get_social_auth_providers():
 @require_http_methods(['GET', 'POST'])
 def register(request):
     """User registration."""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
     redirect_to = safe_next_url(request)
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -63,6 +65,8 @@ def register(request):
 @require_http_methods(['GET', 'POST'])
 def login_view(request):
     """User login."""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
     redirect_to = safe_next_url(request)
     if request.method == 'POST':
         form = CustomAuthenticationForm(request, data=request.POST)
