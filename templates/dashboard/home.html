@@ -24,6 +24,30 @@
         padding: 2.25rem 0 3rem;
     }
 
+    .dash-shell.dash-enterprise {
+        --dash-navy: #0f766e;
+        --dash-navy-dark: #115e59;
+        --dash-soft: #e6fffb;
+        --dash-bg: #f0fdfa;
+        --dash-line: #b9e8e2;
+        background:
+            radial-gradient(circle at 88% 4%, rgba(15, 118, 110, 0.13), transparent 28%),
+            linear-gradient(180deg, #ffffff 0%, var(--dash-bg) 100%);
+    }
+
+    .dash-enterprise-mark {
+        display: inline-grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        margin-right: 0.4rem;
+        border-radius: 8px;
+        background: #0f766e;
+        color: #ffffff;
+        font-size: 0.72rem;
+        vertical-align: middle;
+    }
+
     .dash-hero {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
@@ -102,6 +126,45 @@
         height: 100%;
         border-radius: inherit;
         background: var(--dash-navy);
+    }
+
+    .dash-usage-alert {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin: 1rem 0 0;
+        border-radius: 14px;
+    }
+
+    .dash-service-panel {
+        margin-top: 1rem;
+    }
+
+    .dash-service-list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+        list-style: none;
+        margin: 0.9rem 0 0;
+        padding: 0;
+    }
+
+    .dash-service-list li {
+        padding: 0.75rem;
+        border: 1px solid var(--dash-line);
+        border-radius: 12px;
+        background: var(--dash-soft);
+        color: var(--dash-ink);
+        font-size: 0.88rem;
+        font-weight: 650;
+    }
+
+    .dash-service-list li::before {
+        content: "✓";
+        margin-right: 0.45rem;
+        color: var(--dash-navy);
+        font-weight: 900;
     }
 
     .dash-next {
@@ -321,6 +384,10 @@
         .dash-owner-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+
+        .dash-service-list {
+            grid-template-columns: 1fr;
+        }
     }
 
     @media (max-width: 575px) {
@@ -340,16 +407,21 @@
 {% endblock %}
 
 {% block content %}
-<section class="dash-shell">
+<section class="dash-shell {% if is_enterprise %}dash-enterprise{% endif %}">
     <div class="container">
         <div class="dash-hero">
             <div>
-                <div class="dash-kicker">{{ dashboard_scope|title }} dashboard</div>
-                <h1>Know if your CV is ready.</h1>
-                <p class="mb-0">Pick up where you left off: validate a job, improve the CV, and apply with more confidence.</p>
+                <div class="dash-kicker">{% if is_enterprise %}<span class="dash-enterprise-mark" aria-hidden="true">E</span>{% endif %}{{ dashboard_scope|title }} dashboard</div>
+                {% if is_enterprise %}
+                    <h1>Enterprise candidate intelligence.</h1>
+                    <p class="mb-0">Screen candidate CVs, monitor monthly usage, and open ranked hiring reports from one workspace.</p>
+                {% else %}
+                    <h1>Know if your CV is ready.</h1>
+                    <p class="mb-0">Pick up where you left off: validate a job, improve the CV, and apply with more confidence.</p>
+                {% endif %}
             </div>
             <div class="dash-actions">
-                <a href="{% url 'home' %}#composer" class="btn btn-primary">Validate CV</a>
+                <a href="{% url 'ats_analyse' %}" class="btn btn-primary">Validate CV</a>
                 <a href="{% url 'upload_cv' %}" class="btn btn-outline-primary">Manage CVs</a>
                 {% if is_enterprise %}
                     <a href="{% url 'enterprise_bulk' %}" class="btn btn-outline-primary">Bulk analysis</a>
@@ -358,31 +430,61 @@
         </div>
 
         <div class="row g-3">
-            <div class="col-6 col-xl-3">
+            <div class="col-6 col-xl-2">
                 <div class="dash-card">
                     <span>Current plan</span>
                     <strong class="text-capitalize">{{ plan }}</strong>
                 </div>
             </div>
-            <div class="col-6 col-xl-3">
+            <div class="col-6 col-xl-2">
                 <div class="dash-card">
-                    <span>Daily usage</span>
-                    <strong>{{ analyses_today }} / {{ limit }}</strong>
-                    <div class="dash-progress" aria-label="Daily usage"><div style="width: {{ usage_percent }}%;"></div></div>
+                    <span>Status</span>
+                    <strong class="text-capitalize">{{ subscription_status }}</strong>
                 </div>
             </div>
-            <div class="col-6 col-xl-3">
+            <div class="col-6 col-xl-2">
                 <div class="dash-card">
-                    <span>Saved CVs</span>
-                    <strong>{{ uploaded_cvs|length }}</strong>
+                    <span>{{ usage_label }}</span>
+                    <strong>{{ usage_count }} / {{ limit }}</strong>
+                    <div class="dash-progress" aria-label="Monthly usage"><div style="width: {{ usage_percent }}%;"></div></div>
                 </div>
             </div>
-            <div class="col-6 col-xl-3">
+            <div class="col-6 col-xl-2">
                 <div class="dash-card">
-                    <span>Generated drafts</span>
-                    <strong>{{ generated_cvs|length }}</strong>
+                    <span>Uses remaining</span>
+                    <strong>{{ remaining_usage }}</strong>
                 </div>
             </div>
+            <div class="col-6 col-xl-2">
+                <div class="dash-card">
+                    <span>Subscription started</span>
+                    <strong class="fs-6">{{ subscription_started|date:"d M Y" }}</strong>
+                </div>
+            </div>
+            <div class="col-6 col-xl-2">
+                <div class="dash-card">
+                    <span>{{ renewal_label }}</span>
+                    <strong class="fs-6">{{ next_renewal|date:"d M Y" }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-{{ usage_alert_level }} dash-usage-alert" role="status">
+            <span>{{ usage_alert }}</span>
+            {% if usage_alert_level != 'info' and not is_enterprise %}<a href="{% url 'pricing' %}" class="alert-link">Review plans</a>{% endif %}
+        </div>
+
+        <div class="dash-panel dash-service-panel">
+            <div class="dash-section-head mt-0 mb-0">
+                <div>
+                    <h2>{{ plan|title }} plan services</h2>
+                    <p class="dash-muted mb-0">The features and monthly allowance currently active for this account.</p>
+                </div>
+                {% if is_enterprise %}<span class="badge rounded-pill text-bg-success">Enterprise access</span>{% endif %}
+            </div>
+            <ul class="dash-service-list">
+                {% for feature in service_features %}<li>{{ feature }}</li>{% endfor %}
+            </ul>
         </div>
 
         <div class="dash-next">
@@ -399,13 +501,13 @@
                         <p>Your latest report is for <strong>{{ latest.job_title }}</strong>. Review the recruiter view, then validate another job if you are applying to multiple roles.</p>
                         <div class="dash-actions justify-content-start">
                             <a href="{% url 'ats_result' latest.id %}" class="btn btn-primary">Open latest report</a>
-                            <a href="{% url 'home' %}?cv={{ latest.cv.id }}#composer" class="btn btn-outline-primary">Validate another job</a>
+                            <a href="{% url 'ats_analyse' %}?cv={{ latest.cv.id }}" class="btn btn-outline-primary">Validate another job</a>
                         </div>
                     {% endwith %}
                 {% else %}
                     <p>Upload a CV, paste a job description or URL, then get a recruiter-focused report instantly.</p>
                     <div class="dash-actions justify-content-start">
-                        <a href="{% url 'home' %}#composer" class="btn btn-primary">Validate my CV</a>
+                        <a href="{% url 'ats_analyse' %}" class="btn btn-primary">Validate my CV</a>
                         <a href="{% url 'upload_cv' %}" class="btn btn-outline-primary">Upload CV first</a>
                     </div>
                 {% endif %}
@@ -460,7 +562,7 @@
                                             <small class="text-danger">Needs a stronger CV format before analysis.</small>
                                         {% endif %}
                                     </div>
-                                    <a href="{% url 'home' %}?cv={{ cv.id }}#composer" class="btn btn-sm btn-outline-primary">Use</a>
+                                    <a href="{% url 'ats_analyse' %}?cv={{ cv.id }}" class="btn btn-sm btn-outline-primary">Use</a>
                                 </div>
                             {% endfor %}
                         </div>
@@ -478,7 +580,7 @@
                 <div class="dash-panel h-100">
                     <div class="dash-section-head mt-0">
                         <h2>Recent readiness reports</h2>
-                        <a href="{% url 'home' %}#composer" class="btn btn-sm btn-outline-primary">New validation</a>
+                        <a href="{% url 'ats_analyse' %}" class="btn btn-sm btn-outline-primary">New validation</a>
                     </div>
                     {% if recent_results %}
                         <div class="dash-list">
@@ -510,7 +612,7 @@
                         <div class="dash-empty">
                             <strong>No validation reports yet.</strong>
                             <p class="mb-2">Run your first check to see what recruiters may notice and what to improve.</p>
-                            <a href="{% url 'home' %}#composer" class="btn btn-sm btn-primary">Run validation</a>
+                            <a href="{% url 'ats_analyse' %}" class="btn btn-sm btn-primary">Run validation</a>
                         </div>
                     {% endif %}
                 </div>

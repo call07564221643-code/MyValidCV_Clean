@@ -96,18 +96,59 @@
     }
 
     html[data-theme="auto"] {
+        color-scheme: light;
         --primary: rgba(31, 51, 116, 0.62);
         --secondary: rgba(31, 51, 116, 0.10);
         --accent: #1f3374;
         --primary-fg: #101a33;
         --body-fg: #212529;
         --body-bg: #f8f9fa;
+        --body-quiet-color: #4b5563;
+        --body-loud-color: #111827;
         --link-fg: #17233f;
+        --link-hover-color: #1f3374;
         --link-selected-fg: #1f3374;
+        --hairline-color: #d8dee8;
+        --border-color: #cbd5e1;
+        --darkened-bg: #eef2f7;
+        --selected-bg: #e6ecfb;
+        --selected-row: #eef3ff;
         --header-color: #101a33;
         --header-branding-color: #101a33;
         --header-bg: rgba(255, 255, 255, 0.92);
         --breadcrumbs-bg: rgba(31, 51, 116, 0.10);
+        --button-fg: #ffffff;
+        --button-bg: #1f3374;
+        --button-hover-bg: #17275f;
+        --default-button-bg: #1f3374;
+        --default-button-hover-bg: #17275f;
+    }
+
+    html[data-theme="auto"] body,
+    html[data-theme="auto"] #content,
+    html[data-theme="auto"] #content-main,
+    html[data-theme="auto"] .dashboard #content {
+        background-color: #f8f9fa;
+        color: #212529;
+    }
+
+    html[data-theme="auto"] .module,
+    html[data-theme="auto"] .form-row,
+    html[data-theme="auto"] .submit-row,
+    html[data-theme="auto"] table,
+    html[data-theme="auto"] thead,
+    html[data-theme="auto"] tbody,
+    html[data-theme="auto"] tr,
+    html[data-theme="auto"] td,
+    html[data-theme="auto"] th {
+        color: #212529;
+    }
+
+    html[data-theme="auto"] #user-tools,
+    html[data-theme="auto"] #user-tools a,
+    html[data-theme="auto"] #logout-form button,
+    html[data-theme="auto"] .theme-toggle {
+        color: #1f3374;
     }
 
     html[data-theme="auto"] #header {

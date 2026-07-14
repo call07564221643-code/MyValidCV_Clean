@@ -84,6 +84,11 @@ class ATSAnalysisForm(forms.Form):
         input_formats=["%d/%m/%Y", "%Y-%m-%d"],
         widget=forms.DateInput(format="%d/%m/%Y", attrs={"class": "form-control", "placeholder": "dd/mm/yyyy"})
     )
+    email_reminder = forms.BooleanField(
+        required=False,
+        label="Email me before the application deadline",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(*args, **kwargs)

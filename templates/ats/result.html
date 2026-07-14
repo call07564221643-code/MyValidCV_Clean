@@ -327,12 +327,21 @@
                 </p>
             </div>
             <div class="report-actions">
-                <a href="{% url 'home' %}?cv={{ result.cv.id }}#composer" class="btn btn-primary">Validate another job</a>
+                <a href="{% url 'ats_analyse' %}?cv={{ result.cv.id }}" class="btn btn-primary">Validate another job</a>
                 {% if result.generated_cv and can_download %}
                     <a href="{% url 'download_generated_cv' result.id %}" class="btn btn-outline-primary">Download suggested CV</a>
                 {% elif result.generated_cv %}
                     <a href="#suggestedCv" class="btn btn-outline-primary">Preview suggested CV</a>
                 {% endif %}
+            </div>
+        </div>
+        <div class="report-card mt-4">
+            <div class="report-card-pad d-flex justify-content-between align-items-start gap-3 flex-wrap border-bottom">
+                <div><h2 class="h5 mb-1">Cover-letter draft</h2><p class="report-muted mb-0">Included with Plus. Personalise and verify it before applying.</p></div>
+                {% if result.generated_cover_letter and can_download %}<a href="{% url 'download_cover_letter' result.id %}" class="btn btn-primary btn-sm">Download TXT</a>{% endif %}
+            </div>
+            <div class="report-card-pad">
+                {% if result.generated_cover_letter %}<pre class="draft-output">{{ result.generated_cover_letter.content }}</pre>{% else %}<p class="report-muted mb-0">Upgrade to Plus to generate a tailored CV rewrite and cover letter for each validation.</p>{% endif %}
             </div>
         </div>
 

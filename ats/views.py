@@ -19,11 +19,13 @@ from .models import (
     CVStorage,
     EnterpriseBatch,
     EnterpriseCandidateResult,
+    GeneratedCoverLetter,
     GeneratedCV,
     JobRole,
 )
 from accounts.models import UserProfile
 from core.services import ats_engine
+from subscriptions.models import CustomerSubscription
 
 
 SKILLS = [
@@ -204,18 +206,15 @@ def infer_deadline(form, job_description):
     if explicit_deadline:
         return explicit_deadline
 
-    patterns = [
-        r"\b(?:deadline|closing date|apply by)\s*[:\-]?\s*(\d{1,2}/\d{1,2}/\d{4})",
-        r"\b(?:deadline|closing date|apply by)\s*[:\-]?\s*(\d{4}-\d{1,2}-\d{1,2})",
-        r"\b(\d{1,2}/\d{1,2}/\d{4})\b",
-        r"\b(\d{4}-\d{1,2}-\d{1,2})\b",
-    ]
+    label = r"(?:deadline|closing date|applications? close|apply by|apply before|last day to apply)"
+    date_value = r"(\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{1,2}-\d{1,2}|\d{1,2}\s+[A-Za-z]+\s+\d{4}|[A-Za-z]+\s+\d{1,2},?\s+\d{4})"
+    patterns = [rf"\b{label}\s*[:\-]?\s*{date_value}"]
     for pattern in patterns:
         match = re.search(pattern, job_description, flags=re.IGNORECASE)
         if not match:
             continue
         value = match.group(1)
-        for date_format in ("%d/%m/%Y", "%Y-%m-%d"):
+        for date_format in ("%d/%m/%Y", "%Y-%m-%d", "%d %B %Y", "%d %b %Y", "%B %d, %Y", "%b %d, %Y", "%B %d %Y", "%b %d %Y"):
             try:
                 return datetime.strptime(value, date_format).date()
             except ValueError:
@@ -224,7 +223,35 @@ def infer_deadline(form, job_description):
 
 
 def user_can_use_enterprise(user):
-    return user.is_superuser or get_user_profile(user).plan == "enterprise"
+    if user.is_superuser:
+        return True
+    subscription = CustomerSubscription.objects.filter(
+        user=user,
+        status="active",
+        plan__code="enterprise",
+    ).first()
+    if not subscription:
+        return False
+    return not subscription.current_period_end or subscription.current_period_end > timezone.now()
+
+
+def active_enterprise_subscription(user):
+    subscription = CustomerSubscription.objects.filter(
+        user=user,
+        status="active",
+        plan__code="enterprise",
+    ).select_related("plan").first()
+    if subscription and (not subscription.current_period_end or subscription.current_period_end > timezone.now()):
+        return subscription
+    return None
+
+
+def enterprise_monthly_usage(user):
+    month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    return EnterpriseCandidateResult.objects.filter(
+        batch__user=user,
+        created_at__gte=month_start,
+    ).count()
 
 
 def calculate_score(cv_text, job_description):
@@ -278,6 +305,25 @@ Recommended CV Changes
 
 Original CV Content Reference
 {cv_text[:2500]}
+"""
+
+
+def build_cover_letter(user, result, matched):
+    name = user.get_full_name().strip() or user.username
+    company = result.job_role.company or "Hiring Manager"
+    strengths = ", ".join(matched[:4]) if matched else "the relevant experience described in my CV"
+    return f"""Dear Hiring Manager,
+
+I am applying for the {result.job_title} position at {company}. My CV demonstrates experience relevant to this opportunity, particularly {strengths}.
+
+I am interested in this role because it offers the opportunity to apply these strengths to the priorities described in the job advert. I would welcome the chance to discuss the evidence in my CV and how I could contribute to your team.
+
+Thank you for considering my application.
+
+Yours sincerely,
+{name}
+
+Draft note: personalise this letter and verify every statement before sending.
 """
 
 
@@ -412,7 +458,7 @@ def upload_cv(request):
             cv.save()
             refresh_cv_storage(request.user)
             messages.success(request, "CV uploaded successfully.")
-            return redirect(f"{reverse('home')}?cv={cv.id}#composer")
+            return redirect(f"{reverse('ats_analyse')}?cv={cv.id}")
     else:
         form = CVUploadForm()
 
@@ -421,13 +467,6 @@ def upload_cv(request):
 
 @login_required(login_url="login")
 def analyse_cv(request):
-    if request.method == "GET":
-        target = reverse("home")
-        query_string = request.META.get("QUERY_STRING")
-        if query_string:
-            target = f"{target}?{query_string}"
-        return redirect(f"{target}#composer")
-
     user_cvs = CV.objects.filter(user=request.user)
     profile = get_user_profile(request.user)
     inline_result = None
@@ -449,7 +488,7 @@ def analyse_cv(request):
         }
 
     def render_home_workspace(form):
-        return render(request, "landing/home.html", workspace_context(form))
+        return render(request, "ats/analyse.html", workspace_context(form))
 
     if request.method == "POST":
         form = ATSAnalysisForm(request.user, request.POST, request.FILES)
@@ -512,14 +551,20 @@ def analyse_cv(request):
                     title=f"{cv.title} tailored for {job_title}",
                     content=build_generated_cv(cv, result, matched, missing),
                 )
+                GeneratedCoverLetter.objects.create(
+                    user=request.user,
+                    ats_result=result,
+                    title=f"Cover letter for {job_title}",
+                    content=build_cover_letter(request.user, result, matched),
+                )
 
-            if job_role.deadline:
+            if job_role.deadline and form.cleaned_data.get("email_reminder"):
                 reminder_date = max(timezone.localdate(), job_role.deadline - timedelta(days=2))
                 ApplicationReminder.objects.create(
                     user=request.user,
                     job_role=job_role,
                     reminder_date=reminder_date,
-                    note="Apply before the job deadline.",
+                    note=f"Apply before {job_role.deadline:%d %B %Y}.",
                 )
 
             profile.record_analysis()
@@ -572,6 +617,18 @@ def download_generated_cv(request, result_id):
 
 
 @login_required(login_url="login")
+def download_cover_letter(request, result_id):
+    result = get_object_or_404(ATSResult, id=result_id, user=request.user)
+    if not can_download_generated_cv(request.user):
+        messages.error(request, "Cover-letter generation is available on the Plus plan.")
+        return redirect("ats_result", result_id=result.id)
+    letter = get_object_or_404(GeneratedCoverLetter, ats_result=result, user=request.user)
+    response = HttpResponse(letter.content, content_type="text/plain")
+    response["Content-Disposition"] = f'attachment; filename="mvcv-cover-letter-{result.id}.txt"'
+    return response
+
+
+@login_required(login_url="login")
 def enterprise_bulk_upload(request):
     if not user_can_use_enterprise(request.user):
         messages.error(request, "Enterprise bulk analysis is available on the Enterprise plan.")
@@ -584,6 +641,16 @@ def enterprise_bulk_upload(request):
             if not cv_files:
                 form.add_error("cv_files", "Upload at least one CV file.")
                 return render(request, "ats/enterprise_bulk.html", {"form": form})
+            if not request.user.is_superuser:
+                subscription = active_enterprise_subscription(request.user)
+                monthly_limit = subscription.plan.monthly_bulk_cv_limit if subscription else 0
+                remaining = max(0, monthly_limit - enterprise_monthly_usage(request.user))
+                if len(cv_files) > remaining:
+                    form.add_error(
+                        "cv_files",
+                        f"Your Enterprise plan has {remaining} of {monthly_limit} monthly CV scans remaining.",
+                    )
+                    return render(request, "ats/enterprise_bulk.html", {"form": form})
 
             job_description = build_job_description(form)
             if len(job_description.strip()) < 30:

@@ -7,9 +7,12 @@ from .models import (
     CVStorage,
     EnterpriseBatch,
     EnterpriseCandidateResult,
+    GeneratedCoverLetter,
     GeneratedCV,
     JobRole,
 )
+
+admin.site.register(GeneratedCoverLetter)
 
 
 @admin.register(CVStorage)

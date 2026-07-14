@@ -9,11 +9,11 @@
             <a href="{% url 'home' %}" class="mvcv-brand-mark mvcv-brand-inline">
                 <strong>MyValid<span>CV</span></strong>
             </a>
-            <a href="{% url 'home' %}#composer" class="mvcv-new-action">Validate CV</a>
+            <a href="{% url 'ats_analyse' %}" class="mvcv-new-action">Validate CV</a>
         </div>
 
         <nav class="mvcv-side-nav">
-            <a class="active" href="{% url 'home' %}#composer">Validate CV</a>
+            <a class="active" href="{% url 'ats_analyse' %}">Validate CV</a>
             <a href="{% url 'dashboard' %}">Reports</a>
             <a href="{% url 'upload_cv' %}">Saved CVs</a>
             <a href="{% url 'dashboard' %}">Generated drafts</a>
@@ -41,7 +41,7 @@
         <div class="mvcv-sidebar-section">
             <div class="mvcv-sidebar-heading">Saved CVs</div>
             {% for cv in saved_cvs %}
-                <a class="mvcv-history-item" href="{% url 'home' %}?cv={{ cv.id }}#composer">
+                <a class="mvcv-history-item" href="{% url 'ats_analyse' %}?cv={{ cv.id }}">
                     <span>{{ cv.title|truncatechars:30 }}</span>
                     <small>Use this CV</small>
                 </a>
@@ -74,7 +74,7 @@
         </div>
 
         <div class="collapse mvcv-mobile-collapse" id="mobileWorkspaceNav">
-            <a href="{% url 'home' %}#composer">Validate</a>
+            <a href="{% url 'ats_analyse' %}">Validate</a>
             <a href="{% url 'dashboard' %}">Reports</a>
             <a href="{% url 'upload_cv' %}">Saved CVs</a>
             <a href="{% url 'pricing' %}">Plans</a>
@@ -250,6 +250,10 @@
                         <label class="form-label">Deadline</label>
                         {{ form.deadline }}
                         <small class="text-muted">Reminder is created two days before.</small>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">{{ form.email_reminder }} <label class="form-check-label" for="{{ form.email_reminder.id_for_label }}">{{ form.email_reminder.label }}</label></div>
+                        <small class="text-muted">We detect “deadline”, “closing date”, “apply by”, “apply before”, and “last day to apply” dates from the advert. You can also enter the date above.</small>
                     </div>
                 </div>
             </div>

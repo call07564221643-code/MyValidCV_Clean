@@ -1,6 +1,11 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
+
+from subscriptions.models import CustomerSubscription, SubscriptionPlan
 
 
 @override_settings(SECURE_SSL_REDIRECT=False)
@@ -50,3 +55,32 @@ class CustomerNavigationTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse('login'))
         self.assertRedirects(response, reverse('dashboard'))
+
+    def test_active_enterprise_subscription_enables_enterprise_dashboard(self):
+        plan = SubscriptionPlan.objects.create(
+            code='enterprise',
+            name='Enterprise',
+            price='49.00',
+            monthly_bulk_cv_limit=50,
+        )
+        CustomerSubscription.objects.create(
+            user=self.user,
+            plan=plan,
+            status='active',
+            current_period_end=timezone.now() + timedelta(days=30),
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('dashboard'))
+        self.assertContains(response, 'Enterprise candidate intelligence')
+        self.assertContains(response, 'Bulk analysis')
+        self.assertContains(response, 'Enterprise access')
+        self.assertContains(response, 'Subscription started')
+        self.assertContains(response, 'Next payment renewal')
+
+    def test_profile_label_without_active_subscription_does_not_enable_bulk(self):
+        self.user.profile.plan = 'enterprise'
+        self.user.profile.save(update_fields=['plan'])
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('dashboard'))
+        self.assertNotContains(response, 'Bulk analysis')
+        self.assertContains(response, 'Free plan services')

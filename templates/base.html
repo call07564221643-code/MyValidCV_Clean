@@ -39,6 +39,13 @@
             color: var(--mvcv-nav-text) !important;
         }
 
+        /* Authenticated account navigation needs stronger contrast and hierarchy. */
+        .navbar .account-nav .nav-link,
+        .navbar .account-nav .btn {
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
         .navbar .nav-link:hover,
         .navbar .nav-link:focus,
         .navbar .nav-link.active {
@@ -66,6 +73,53 @@
         .btn-primary:focus {
             background: #17275f;
             border-color: #17275f;
+        }
+
+        .site-footer {
+            margin-top: auto;
+            border-top: 1px solid var(--mvcv-card-border);
+            background: var(--mvcv-card-bg);
+            color: var(--mvcv-muted);
+        }
+
+        .site-footer-inner {
+            min-height: 76px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding-block: 1rem;
+        }
+
+        .site-footer p {
+            margin: 0;
+            font-size: 0.84rem;
+        }
+
+        .site-footer-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .site-footer-nav a {
+            color: inherit;
+            font-size: 0.8rem;
+            font-weight: 650;
+            text-decoration: none;
+        }
+
+        .site-footer-nav a:hover,
+        .site-footer-nav a:focus {
+            color: #1f3374;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 576px) {
+            .site-footer-inner {
+                align-items: flex-start;
+                flex-direction: column;
+            }
         }
 
         @media (prefers-color-scheme: dark) {
@@ -162,7 +216,7 @@
             </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-lg-center">
+                <ul class="navbar-nav ms-auto align-items-lg-center {% if user.is_authenticated %}account-nav{% endif %}">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Reports</a>
@@ -210,12 +264,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="bg-light border-top mt-5 py-4">
-        <div class="container text-center text-muted">
-            <p class="mb-0">&copy; 2026 MyValidCV. CV upload and ATS analysis for job seekers.</p>
-            <small>Logged-in users can save CVs, run ATS analyses, and review results from the dashboard.</small>
-        </div>
-    </footer>
+    {% include "includes/footer.html" %}
     {% endblock %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

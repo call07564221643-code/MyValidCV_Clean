@@ -127,6 +127,20 @@ class GeneratedCV(models.Model):
         return self.title
 
 
+class GeneratedCoverLetter(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="generated_cover_letters")
+    ats_result = models.OneToOneField(ATSResult, on_delete=models.CASCADE, related_name="generated_cover_letter")
+    title = models.CharField(max_length=180)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title
+
+
 class ApplicationReminder(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="application_reminders")
     job_role = models.ForeignKey(JobRole, on_delete=models.CASCADE, related_name="reminders")

@@ -1,0 +1,15 @@
+<footer class="site-footer" aria-label="Website footer">
+    <div class="container site-footer-inner">
+        <p>&copy; {% now "Y" %} MyValidCV. All rights reserved.</p>
+        <nav class="site-footer-nav" aria-label="Footer navigation">
+            <a href="{% url 'home' %}#features">Features</a>
+            <a href="{% url 'home' %}#privacy">Privacy</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}">Reports</a>
+            {% else %}
+                <a href="{% url 'pricing' %}">Plans</a>
+                <a href="{% url 'login' %}">Log in</a>
+            {% endif %}
+        </nav>
+    </div>
+</footer>
