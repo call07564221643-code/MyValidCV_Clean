@@ -108,6 +108,7 @@ class Refund(models.Model):
 
 class PaymentWebhookLog(models.Model):
     provider = models.CharField(max_length=20, default="sumup")
+    event_id = models.CharField(max_length=120, null=True, blank=True, unique=True)
     event_type = models.CharField(max_length=120, blank=True)
     checkout_reference = models.CharField(max_length=90, blank=True)
     payload = models.JSONField(default=dict, blank=True)

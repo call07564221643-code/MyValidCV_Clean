@@ -11,21 +11,22 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
         "price",
         "currency",
         "billing_interval",
+        "stripe_price_id",
         "cv_limit",
         "daily_analysis_limit",
         "monthly_bulk_cv_limit",
         "is_active",
     )
     list_filter = ("is_active", "billing_interval", "currency")
-    search_fields = ("name", "code", "description")
+    search_fields = ("name", "code", "description", "stripe_price_id")
     list_editable = ("is_active", "price", "cv_limit", "daily_analysis_limit", "monthly_bulk_cv_limit")
 
 
 @admin.register(CustomerSubscription)
 class CustomerSubscriptionAdmin(admin.ModelAdmin):
-    list_display = ("user", "plan", "status", "started_at", "current_period_end", "updated_at")
+    list_display = ("user", "plan", "status", "stripe_subscription_id", "started_at", "current_period_end", "updated_at")
     list_filter = ("status", "plan", "started_at")
-    search_fields = ("user__username", "user__email", "plan__name")
+    search_fields = ("user__username", "user__email", "plan__name", "stripe_customer_id", "stripe_subscription_id")
     autocomplete_fields = ("user", "plan")
     actions = ("mark_active", "mark_cancelled", "mark_past_due")
 

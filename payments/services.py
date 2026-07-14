@@ -94,16 +94,25 @@ def create_stripe_checkout_session(transaction, success_url, cancel_url):
         raise StripeConfigurationError("STRIPE_SECRET_KEY is not configured.")
 
     payload = {
-        "mode": "payment",
+        "mode": "subscription",
         "success_url": success_url,
         "cancel_url": cancel_url,
         "client_reference_id": transaction.checkout_reference,
-        "line_items[0][price_data][currency]": transaction.currency.lower(),
-        "line_items[0][price_data][product_data][name]": f"MyValidCV {transaction.plan.name}",
-        "line_items[0][price_data][unit_amount]": str(int(transaction.amount * 100)),
         "line_items[0][quantity]": "1",
         "metadata[checkout_reference]": transaction.checkout_reference,
+        "subscription_data[metadata][checkout_reference]": transaction.checkout_reference,
     }
+    if transaction.user.email:
+        payload["customer_email"] = transaction.user.email
+    if transaction.plan.stripe_price_id:
+        payload["line_items[0][price]"] = transaction.plan.stripe_price_id
+    else:
+        payload.update({
+            "line_items[0][price_data][currency]": transaction.currency.lower(),
+            "line_items[0][price_data][product_data][name]": f"MyValidCV {transaction.plan.name}",
+            "line_items[0][price_data][unit_amount]": str(int(transaction.amount * 100)),
+            "line_items[0][price_data][recurring][interval]": transaction.plan.billing_interval,
+        })
 
     request = urllib.request.Request(
         "https://api.stripe.com/v1/checkout/sessions",
@@ -111,6 +120,7 @@ def create_stripe_checkout_session(transaction, success_url, cancel_url):
         headers={
             "Authorization": f"Bearer {settings.STRIPE_SECRET_KEY}",
             "Content-Type": "application/x-www-form-urlencoded",
+            "Idempotency-Key": f"mvcv-checkout-{transaction.checkout_reference}",
         },
         method="POST",
     )

@@ -1,12 +1,13 @@
 import json
 import re
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone as datetime_timezone
 from decimal import Decimal
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
+from django.db import IntegrityError, transaction as db_transaction
 from django.http import Http404, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -256,8 +257,18 @@ def stripe_success(request, checkout_reference):
         messages.warning(request, "Payment is awaiting Stripe confirmation.")
         return render(request, "payments/payment_pending.html", {"transaction": transaction})
     reference = session.get("metadata", {}).get("checkout_reference", "")
-    if reference == str(transaction.checkout_reference) and session.get("payment_status") == "paid":
-        activate_paid_transaction(transaction, raw_response=session)
+    if (
+        reference == str(transaction.checkout_reference)
+        and session.get("mode") == "subscription"
+        and session.get("payment_status") in ("paid", "no_payment_required")
+        and session.get("status") == "complete"
+    ):
+        activate_paid_transaction(
+            transaction,
+            raw_response=session,
+            stripe_customer_id=session.get("customer", "") or "",
+            stripe_subscription_id=session.get("subscription", "") or "",
+        )
         messages.success(request, "Payment confirmed. Your subscription is active.")
         return redirect("payment_receipt", checkout_reference=transaction.checkout_reference)
     messages.warning(request, "Payment has not been confirmed by Stripe yet.")
@@ -277,29 +288,72 @@ def stripe_webhook(request):
     except json.JSONDecodeError:
         return HttpResponseBadRequest("Invalid JSON")
 
-    checkout_reference = (
-        payload.get("data", {})
-        .get("object", {})
-        .get("metadata", {})
-        .get("checkout_reference", "")
-    )
-    log = PaymentWebhookLog.objects.create(
-        provider="stripe",
-        event_type=payload.get("type", ""),
-        checkout_reference=checkout_reference,
-        payload=payload,
-    )
-    checkout_session = payload.get("data", {}).get("object", {})
-    if (
-        payload.get("type") == "checkout.session.completed"
-        and checkout_reference
-        and checkout_session.get("payment_status") == "paid"
-    ):
-        transaction = PaymentTransaction.objects.filter(checkout_reference=checkout_reference).first()
-        if transaction:
-            activate_paid_transaction(transaction, raw_response=payload)
+    event_id = payload.get("id")
+    event_type = payload.get("type", "")
+    stripe_object = payload.get("data", {}).get("object", {})
+    checkout_reference = stripe_object.get("metadata", {}).get("checkout_reference", "")
+    if not event_id or not event_type:
+        return HttpResponseBadRequest("Invalid Stripe event")
+    try:
+        log, created = PaymentWebhookLog.objects.get_or_create(
+            event_id=event_id,
+            defaults={
+                "provider": "stripe",
+                "event_type": event_type,
+                "checkout_reference": checkout_reference,
+                "payload": payload,
+            },
+        )
+    except IntegrityError:
+        return JsonResponse({"ok": True, "duplicate": True})
+    if not created:
+        return JsonResponse({"ok": True, "duplicate": True})
+
+    try:
+        if event_type in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
+            if checkout_reference and stripe_object.get("payment_status") in ("paid", "no_payment_required"):
+                payment = PaymentTransaction.objects.filter(
+                    checkout_reference=checkout_reference,
+                    provider="stripe",
+                ).first()
+                if payment:
+                    session_id = stripe_object.get("id", "")
+                    if payment.provider_checkout_id and session_id != payment.provider_checkout_id:
+                        raise ValueError("Checkout Session does not match the payment transaction.")
+                    if not payment.provider_checkout_id:
+                        payment.provider_checkout_id = session_id
+                        payment.save(update_fields=["provider_checkout_id", "updated_at"])
+                    activate_paid_transaction(
+                        payment,
+                        raw_response=payload,
+                        stripe_customer_id=stripe_object.get("customer", "") or "",
+                        stripe_subscription_id=stripe_object.get("subscription", "") or "",
+                    )
+                    log.is_processed = True
+        elif event_type == "checkout.session.expired":
+            PaymentTransaction.objects.filter(
+                checkout_reference=checkout_reference,
+                provider="stripe",
+                status="pending",
+            ).update(status="cancelled")
             log.is_processed = True
-            log.save(update_fields=["is_processed"])
+        elif event_type in ("customer.subscription.updated", "customer.subscription.deleted"):
+            sync_stripe_subscription(stripe_object, deleted=event_type.endswith("deleted"))
+            log.is_processed = True
+        elif event_type == "invoice.paid":
+            stripe_subscription_id = stripe_invoice_subscription_id(stripe_object)
+            set_subscription_active(stripe_subscription_id)
+            log.is_processed = True
+        elif event_type == "invoice.payment_failed":
+            stripe_subscription_id = stripe_invoice_subscription_id(stripe_object)
+            set_subscription_inactive(stripe_subscription_id, "past_due")
+            log.is_processed = True
+    except Exception as exc:
+        log.error = str(exc)
+        log.save(update_fields=["error"])
+        return JsonResponse({"ok": False}, status=500)
+
+    log.save(update_fields=["is_processed"])
     return JsonResponse({"ok": True})
 
 
@@ -403,26 +457,38 @@ def send_receipt_email(transaction):
     return "sent" if sent else "failed"
 
 
-def activate_paid_transaction(transaction, raw_response=None):
-    if transaction.status == "paid" and getattr(transaction, "invoice", None) and transaction.invoice.receipt_email_status == "sent":
-        return transaction
-
+@db_transaction.atomic
+def activate_paid_transaction(
+    transaction,
+    raw_response=None,
+    stripe_customer_id="",
+    stripe_subscription_id="",
+    current_period_end=None,
+):
+    transaction = PaymentTransaction.objects.select_for_update().select_related("user", "plan").get(pk=transaction.pk)
+    was_paid = transaction.status == "paid"
     paid_at = timezone.now()
     transaction.status = "paid"
     if raw_response is not None:
         transaction.raw_response = raw_response
-    transaction.save(update_fields=["status", "raw_response", "updated_at"])
+    if stripe_subscription_id:
+        transaction.provider_transaction_id = stripe_subscription_id
+    transaction.save(update_fields=["status", "raw_response", "provider_transaction_id", "updated_at"])
 
-    next_payment_date = next_payment_date_from_plan(transaction.plan, paid_at)
-    subscription, _created = CustomerSubscription.objects.update_or_create(
+    next_payment_date = current_period_end or next_payment_date_from_plan(transaction.plan, paid_at)
+    subscription, created = CustomerSubscription.objects.get_or_create(
         user=transaction.user,
-        defaults={
-            "plan": transaction.plan,
-            "status": "active",
-            "started_at": paid_at,
-            "current_period_end": next_payment_date,
-        },
+        defaults={"plan": transaction.plan, "started_at": paid_at},
     )
+    subscription.plan = transaction.plan
+    subscription.status = "active"
+    subscription.cancelled_at = None
+    subscription.current_period_end = next_payment_date
+    if stripe_customer_id:
+        subscription.stripe_customer_id = stripe_customer_id
+    if stripe_subscription_id:
+        subscription.stripe_subscription_id = stripe_subscription_id
+    subscription.save()
     transaction.subscription = subscription
     transaction.save(update_fields=["subscription", "updated_at"])
 
@@ -436,12 +502,103 @@ def activate_paid_transaction(transaction, raw_response=None):
         transaction.invoice.next_payment_date = next_payment_date
         transaction.invoice.receipt_email = transaction.user.email
         transaction.invoice.save(update_fields=["status", "paid_at", "next_payment_date", "receipt_email"])
-        email_status = send_receipt_email(transaction)
-        transaction.invoice.receipt_email_status = email_status
-        if email_status == "sent":
-            transaction.invoice.receipt_sent_at = timezone.now()
-        transaction.invoice.save(update_fields=["receipt_email_status", "receipt_sent_at"])
+        if not was_paid or transaction.invoice.receipt_email_status != "sent":
+            email_status = send_receipt_email(transaction)
+            transaction.invoice.receipt_email_status = email_status
+            if email_status == "sent":
+                transaction.invoice.receipt_sent_at = timezone.now()
+            transaction.invoice.save(update_fields=["receipt_email_status", "receipt_sent_at"])
 
-    if transaction.discount_code:
+    if transaction.discount_code and not was_paid:
         transaction.discount_code.redemptions += 1
         transaction.discount_code.save(update_fields=["redemptions"])
+    return transaction
+
+
+def stripe_timestamp(value):
+    if not value:
+        return None
+    try:
+        return datetime.fromtimestamp(int(value), tz=datetime_timezone.utc)
+    except (TypeError, ValueError, OSError):
+        return None
+
+
+def stripe_invoice_subscription_id(stripe_object):
+    subscription = stripe_object.get("subscription", "")
+    if isinstance(subscription, dict):
+        return subscription.get("id", "")
+    if subscription:
+        return subscription
+    parent = stripe_object.get("parent", {}) or {}
+    details = parent.get("subscription_details", {}) or {}
+    nested = details.get("subscription", "")
+    return nested.get("id", "") if isinstance(nested, dict) else nested
+
+
+@db_transaction.atomic
+def sync_stripe_subscription(stripe_object, deleted=False):
+    stripe_subscription_id = stripe_object.get("id", "")
+    checkout_reference = stripe_object.get("metadata", {}).get("checkout_reference", "")
+    subscription = CustomerSubscription.objects.select_for_update().filter(
+        stripe_subscription_id=stripe_subscription_id
+    ).select_related("user").first()
+    if not subscription and checkout_reference:
+        payment = PaymentTransaction.objects.filter(checkout_reference=checkout_reference).select_related("subscription").first()
+        subscription = payment.subscription if payment else None
+    if not subscription:
+        return
+
+    stripe_status = "cancelled" if deleted else stripe_object.get("status", "")
+    status_map = {
+        "active": "active",
+        "trialing": "trialing",
+        "past_due": "past_due",
+        "unpaid": "past_due",
+        "canceled": "cancelled",
+        "cancelled": "cancelled",
+        "incomplete_expired": "expired",
+    }
+    subscription.status = status_map.get(stripe_status, subscription.status)
+    subscription.stripe_subscription_id = stripe_subscription_id or subscription.stripe_subscription_id
+    subscription.stripe_customer_id = stripe_object.get("customer", "") or subscription.stripe_customer_id
+    subscription.current_period_end = stripe_timestamp(stripe_object.get("current_period_end")) or subscription.current_period_end
+    if subscription.status in ("cancelled", "expired"):
+        subscription.cancelled_at = timezone.now()
+    subscription.save()
+    profile, _created = UserProfile.objects.get_or_create(user=subscription.user)
+    profile.plan = subscription.plan.code if subscription.status in ("active", "trialing") else "free"
+    profile.save(update_fields=["plan"])
+
+
+@db_transaction.atomic
+def set_subscription_inactive(stripe_subscription_id, status):
+    if not stripe_subscription_id:
+        return
+    subscription = CustomerSubscription.objects.select_for_update().filter(
+        stripe_subscription_id=stripe_subscription_id
+    ).select_related("user").first()
+    if not subscription:
+        return
+    subscription.status = status
+    subscription.save(update_fields=["status", "updated_at"])
+    profile, _created = UserProfile.objects.get_or_create(user=subscription.user)
+    profile.plan = "free"
+    profile.save(update_fields=["plan"])
+
+
+@db_transaction.atomic
+def set_subscription_active(stripe_subscription_id):
+    if not stripe_subscription_id:
+        return
+    subscription = CustomerSubscription.objects.select_for_update().filter(
+        stripe_subscription_id=stripe_subscription_id
+    ).select_related("user", "plan").first()
+    if not subscription:
+        return
+    subscription.status = "active"
+    subscription.cancelled_at = None
+    subscription.save(update_fields=["status", "cancelled_at", "updated_at"])
+    profile, _created = UserProfile.objects.get_or_create(user=subscription.user)
+    profile.plan = subscription.plan.code
+    profile.save(update_fields=["plan"])

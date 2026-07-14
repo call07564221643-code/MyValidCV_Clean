@@ -7,6 +7,11 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/mvcv-wireframe.css' %}">
 <style>
+    /* Authentication pages intentionally use a focused, logo-free form layout. */
+    body > .navbar {
+        display: none;
+    }
+
     .auth-shell {
         min-height: 100vh;
         display: grid;
@@ -55,7 +60,7 @@
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0.7rem;
-        margin-bottom: 1.2rem;
+        margin: 0 0 1.2rem;
     }
 
     .oauth-button {

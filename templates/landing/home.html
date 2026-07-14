@@ -103,7 +103,7 @@
         max-width: 560px;
         margin: 0;
         color: #374151;
-        font-size: clamp(2.125rem, 4.93vw, 3.91rem);
+        font-size: clamp(1.9125rem, 4.437vw, 3.519rem);
         line-height: 1.02;
         letter-spacing: -0.055em;
         font-weight: 820;
@@ -114,6 +114,7 @@
         text-shadow: 0 1px 1px rgba(31, 41, 55, 0.08);
     }
 
+    .landing-copy h1 .landing-heading-cv,
     .landing-copy h1 .landing-heading-ai {
         color: #9fb8ff;
         background: none;
@@ -160,14 +161,14 @@
     .landing-card-stack {
         position: relative;
         width: min(470px, 100%);
-        min-height: 410px;
+        min-height: 430px;
     }
 
     .landing-cv-card {
         position: absolute;
-        top: 1.25rem;
-        left: 0;
-        z-index: 2;
+        top: 0.75rem;
+        left: 2%;
+        z-index: 3;
         width: min(350px, 78%);
         padding: 1.35rem;
         border-radius: 18px;
@@ -242,16 +243,24 @@
 
     .landing-match-card {
         position: absolute;
-        top: 60%;
-        left: 70%;
-        z-index: 3;
-        transform: translateX(-30%);
-        width: 210px;
-        padding: 1rem;
+        top: 13.25rem;
+        left: 53%;
+        z-index: 2;
+        width: 220px;
+        padding: 1.15rem;
         border-radius: 15px;
         background: #ffffff;
         border: 1px solid var(--wf-border);
         box-shadow: var(--wf-card-shadow);
+    }
+
+    .landing-match-card::before {
+        content: "Job match report";
+        display: block;
+        margin-bottom: 0.35rem;
+        color: #1f3374;
+        font-size: 0.84rem;
+        font-weight: 850;
     }
 
     .landing-match-card div {
@@ -309,9 +318,9 @@
         left: 12.5%;
         right: 12.5%;
         top: calc(1.2rem + 20px);
-        height: 3px;
+        height: 1px;
         border-radius: 999px;
-        background: #c8d7ff;
+        background: var(--timeline-blue);
         z-index: 0;
     }
 
@@ -474,7 +483,7 @@
         }
 
         .landing-copy h1 {
-            font-size: 1.95rem;
+            font-size: 1.755rem;
         }
 
         .landing-copy p {
@@ -545,7 +554,7 @@
             bottom: 1.8rem;
             left: 20px;
             right: auto;
-            width: 3px;
+            width: 1px;
             height: auto;
         }
 
@@ -617,7 +626,7 @@
 
         <section class="landing-hero">
             <div class="landing-copy">
-                <h1>Validate Your CV with <span class="landing-heading-ai">AI</span></h1>
+                <h1>Validate Your <span class="landing-heading-cv">CV</span> with <span class="landing-heading-ai">AI</span></h1>
                 <div class="card landing-copy-card">
                     <p>Upload your CV and compare it with the exact job you want. Add a job title, paste a job description, use a vacancy URL, or upload an advert to see how closely your experience and skills match the role.</p>
                     <p>MyValidCV reviews ATS compatibility, relevant keywords, professional experience, and missing requirements. You receive a clear CV-to-job match score with practical recommendations, helping you improve your application before sending it to a recruiter.</p>
@@ -635,7 +644,7 @@
                 <div class="landing-card-stack">
                     <div class="landing-cv-card">
                         <div class="landing-cv-head">
-                            <span class="landing-cv-title">Mr. Wade A.<small>Mini CV</small></span>
+                            <span class="landing-cv-title">Wade A. Mini<small>Candidate CV</small></span>
                             <div class="landing-score">85</div>
                         </div>
                         <ul class="landing-cv-features" aria-label="CV sections reviewed">

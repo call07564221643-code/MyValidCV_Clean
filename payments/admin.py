@@ -87,7 +87,7 @@ class RefundAdmin(admin.ModelAdmin):
 
 @admin.register(PaymentWebhookLog)
 class PaymentWebhookLogAdmin(admin.ModelAdmin):
-    list_display = ("provider", "event_type", "checkout_reference", "is_processed", "created_at")
+    list_display = ("provider", "event_id", "event_type", "checkout_reference", "is_processed", "created_at")
     list_filter = ("provider", "event_type", "is_processed", "created_at")
-    search_fields = ("checkout_reference", "error")
+    search_fields = ("event_id", "checkout_reference", "error")
     readonly_fields = ("payload", "created_at")

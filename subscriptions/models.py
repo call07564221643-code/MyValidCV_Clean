@@ -25,6 +25,11 @@ class SubscriptionPlan(models.Model):
     includes_deadline_alerts = models.BooleanField(default=False)
     includes_enterprise_reports = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    stripe_price_id = models.CharField(
+        max_length=120,
+        blank=True,
+        help_text="Optional Stripe Price ID. If blank, Checkout creates recurring price data from this plan.",
+    )
     sort_order = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -50,6 +55,8 @@ class CustomerSubscription(models.Model):
     current_period_end = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
     admin_notes = models.TextField(blank=True)
+    stripe_customer_id = models.CharField(max_length=120, blank=True, db_index=True)
+    stripe_subscription_id = models.CharField(max_length=120, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

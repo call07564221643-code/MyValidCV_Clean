@@ -1,15 +1,29 @@
 <footer class="site-footer" aria-label="Website footer">
     <div class="container site-footer-inner">
-        <p>&copy; {% now "Y" %} MyValidCV. All rights reserved.</p>
-        <nav class="site-footer-nav" aria-label="Footer navigation">
+        <section aria-label="About MyValidCV">
+            <div class="site-footer-brand">MyValid<span>CV</span></div>
+            <p class="mt-2">AI-supported CV-to-job comparison, ATS compatibility insights, tailored CV improvements, and application support for job seekers.</p>
+            <address class="mt-2">Online service based in the United Kingdom<br><a href="mailto:support@myvalidcv.com">support@myvalidcv.com</a></address>
+        </section>
+        <nav class="site-footer-nav" aria-label="Product navigation">
+            <h2>Product</h2>
             <a href="{% url 'home' %}#features">Features</a>
-            <a href="{% url 'home' %}#privacy">Privacy</a>
+            <a href="{% url 'pricing' %}">Plans</a>
             {% if user.is_authenticated %}
                 <a href="{% url 'dashboard' %}">Reports</a>
             {% else %}
-                <a href="{% url 'pricing' %}">Plans</a>
                 <a href="{% url 'login' %}">Log in</a>
             {% endif %}
         </nav>
+        <nav class="site-footer-nav" aria-label="Information navigation">
+            <h2>Information</h2>
+            <a href="{% url 'home' %}#security">Security and privacy</a>
+            <a href="{% url 'home' %}#features">How it works</a>
+            <a href="mailto:support@myvalidcv.com">Contact support</a>
+        </nav>
+    </div>
+    <div class="container site-footer-bottom">
+        <p>&copy; {% now "Y" %} MyValidCV. All rights reserved.</p>
+        <p>Results are guidance and do not guarantee interviews or employment.</p>
     </div>
 </footer>
