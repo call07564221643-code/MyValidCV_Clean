@@ -33,7 +33,67 @@ from .services import (
 )
 
 
+def ensure_default_subscription_plans():
+    defaults = [
+        {
+            "code": "free",
+            "name": "Free",
+            "description": "Start with one CV and two daily validations.",
+            "price": Decimal("0.00"),
+            "currency": "GBP",
+            "billing_interval": "month",
+            "cv_limit": 1,
+            "daily_analysis_limit": 2,
+            "monthly_bulk_cv_limit": 0,
+            "includes_generated_cv": False,
+            "includes_job_url": True,
+            "includes_deadline_alerts": True,
+            "includes_enterprise_reports": False,
+            "sort_order": 10,
+        },
+        {
+            "code": "plus",
+            "name": "Plus",
+            "description": "For active job seekers who need more validations and CV drafts.",
+            "price": Decimal("7.99"),
+            "currency": "GBP",
+            "billing_interval": "month",
+            "cv_limit": 5,
+            "daily_analysis_limit": 5,
+            "monthly_bulk_cv_limit": 0,
+            "includes_generated_cv": True,
+            "includes_job_url": True,
+            "includes_deadline_alerts": True,
+            "includes_enterprise_reports": False,
+            "sort_order": 20,
+        },
+        {
+            "code": "enterprise",
+            "name": "Enterprise",
+            "description": "For hiring teams comparing many CVs against one role.",
+            "price": Decimal("49.00"),
+            "currency": "GBP",
+            "billing_interval": "month",
+            "cv_limit": 200,
+            "daily_analysis_limit": 50,
+            "monthly_bulk_cv_limit": 200,
+            "includes_generated_cv": True,
+            "includes_job_url": True,
+            "includes_deadline_alerts": True,
+            "includes_enterprise_reports": True,
+            "sort_order": 30,
+        },
+    ]
+    for plan in defaults:
+        SubscriptionPlan.objects.update_or_create(
+            code=plan["code"],
+            defaults={**plan, "is_active": True},
+        )
+
+
 def pricing(request):
+    """Stage 1 of payment: ensure plans exist, then display them."""
+    ensure_default_subscription_plans()
     plans = SubscriptionPlan.objects.filter(is_active=True, code__in=["free", "plus", "enterprise"])
     return render(request, "payments/pricing.html", {"plans": plans})
 
