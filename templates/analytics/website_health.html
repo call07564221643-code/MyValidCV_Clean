@@ -322,15 +322,11 @@
                         <strong>{% if provider_readiness.stripe_mock %}On{% else %}Off{% endif %}</strong>
                     </div>
                     <div class="provider-row">
-                        <span>SumUp keys</span>
-                        <strong>{% if provider_readiness.sumup %}Ready{% else %}Missing{% endif %}</strong>
-                    </div>
-                    <div class="provider-row">
                         <span>Receipt email</span>
                         <strong>{% if provider_readiness.email_console %}Console only{% else %}Configured{% endif %}</strong>
                     </div>
                     <p class="text-muted small mb-0 mt-3">
-                        The customer can still see one clean Pay Now button. This page tells the admin which provider is actually ready behind the scenes.
+                        Customers use one Stripe-hosted Pay Now flow. This panel reports whether production billing is ready.
                     </p>
                 </div>
             </div>

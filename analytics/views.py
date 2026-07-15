@@ -128,7 +128,6 @@ def website_health(request):
     provider_readiness = {
         "stripe_live": bool(getattr(settings, "STRIPE_SECRET_KEY", "")) and not getattr(settings, "STRIPE_MOCK_MODE", True),
         "stripe_mock": getattr(settings, "STRIPE_MOCK_MODE", True),
-        "sumup": bool(getattr(settings, "SUMUP_ACCESS_TOKEN", "")) and bool(getattr(settings, "SUMUP_MERCHANT_CODE", "")),
         "email_console": "console" in getattr(settings, "EMAIL_BACKEND", ""),
     }
 
@@ -287,9 +286,9 @@ def website_health(request):
         ),
         _check(
             "Payment provider readiness",
-            "ok" if provider_readiness["stripe_live"] or provider_readiness["sumup"] else "warning",
-            "Live provider is configured." if provider_readiness["stripe_live"] or provider_readiness["sumup"] else "Only demo/mock payment mode appears active.",
-            "Add live Stripe or SumUp keys when ready; keep the user-facing button as Pay Now.",
+            "ok" if provider_readiness["stripe_live"] else "warning",
+            "Stripe live mode is configured." if provider_readiness["stripe_live"] else "Stripe live credentials are incomplete.",
+            "Add the Stripe secret and webhook keys before accepting payments.",
             "Payments",
         ),
         _check(

@@ -2,10 +2,8 @@ from django.contrib import admin
 from django.utils import timezone
 
 from accounts.models import UserProfile
-from subscriptions.models import CustomerSubscription
-
 from .models import Invoice, PaymentTransaction, PaymentWebhookLog, Refund
-from .views import send_receipt_email
+from .views import activate_paid_transaction, send_receipt_email, set_subscription_inactive
 
 
 @admin.register(PaymentTransaction)
@@ -19,29 +17,27 @@ class PaymentTransactionAdmin(admin.ModelAdmin):
     @admin.action(description="Mark paid and activate selected user plans")
     def mark_paid_and_activate(self, request, queryset):
         for transaction in queryset.select_related("user", "plan"):
-            transaction.status = "paid"
-            transaction.save(update_fields=["status", "updated_at"])
-            subscription, _created = CustomerSubscription.objects.update_or_create(
-                user=transaction.user,
-                defaults={"plan": transaction.plan, "status": "active"},
-            )
-            transaction.subscription = subscription
-            transaction.save(update_fields=["subscription", "updated_at"])
-            profile, _profile_created = UserProfile.objects.get_or_create(user=transaction.user)
-            profile.plan = transaction.plan.code
-            profile.save(update_fields=["plan"])
-            if hasattr(transaction, "invoice"):
-                transaction.invoice.status = "paid"
-                transaction.invoice.paid_at = timezone.now()
-                transaction.invoice.save(update_fields=["status", "paid_at"])
+            activate_paid_transaction(transaction, raw_response={"manual_admin_activation": True})
 
     @admin.action(description="Mark selected payments failed")
     def mark_failed(self, request, queryset):
         queryset.update(status="failed")
 
-    @admin.action(description="Mark selected payments refunded")
+    @admin.action(description="Record refund and revoke associated local access")
     def mark_refunded(self, request, queryset):
-        queryset.update(status="refunded")
+        for transaction in queryset.select_related("subscription"):
+            transaction.status = "refunded"
+            transaction.save(update_fields=["status", "updated_at"])
+            if hasattr(transaction, "invoice"):
+                transaction.invoice.status = "refunded"
+                transaction.invoice.save(update_fields=["status"])
+            if transaction.subscription and transaction.subscription.stripe_subscription_id:
+                set_subscription_inactive(transaction.subscription.stripe_subscription_id, "cancelled")
+            elif transaction.subscription:
+                transaction.subscription.status = "cancelled"
+                transaction.subscription.cancelled_at = timezone.now()
+                transaction.subscription.save(update_fields=["status", "cancelled_at", "updated_at"])
+                UserProfile.objects.update_or_create(user=transaction.user, defaults={"plan": "free"})
 
 
 @admin.register(Invoice)

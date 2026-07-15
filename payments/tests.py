@@ -11,7 +11,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from accounts.models import UserProfile
-from subscriptions.models import CustomerSubscription, SubscriptionPlan
+from subscriptions.models import CustomerSubscription, DiscountCode, SubscriptionPlan
 
 from .models import PaymentTransaction
 from .services import create_stripe_checkout_session
@@ -74,6 +74,29 @@ class StripeCheckoutTests(TestCase):
             request.headers["Idempotency-key"],
             f"mvcv-checkout-{transaction.checkout_reference}",
         )
+
+    @override_settings(STRIPE_SECRET_KEY="sk_test_example")
+    @patch("payments.services.urllib.request.urlopen")
+    def test_discounted_checkout_uses_discounted_dynamic_price(self, urlopen):
+        self.plan.stripe_price_id = "price_full_amount"
+        self.plan.save(update_fields=["stripe_price_id"])
+        discount = DiscountCode.objects.create(code="HALF", percent_off=50)
+        transaction = PaymentTransaction.objects.create(
+            user=self.user,
+            plan=self.plan,
+            discount_code=discount,
+            provider="stripe",
+            amount=Decimal("2.50"),
+            currency="GBP",
+            status="pending",
+        )
+        response = MagicMock()
+        response.read.return_value = b'{"id":"cs_test","url":"https://checkout.stripe.test"}'
+        urlopen.return_value.__enter__.return_value = response
+        create_stripe_checkout_session(transaction, "https://example.test/success", "https://example.test/cancel")
+        payload = parse_qs(urlopen.call_args.args[0].data.decode())
+        self.assertNotIn("line_items[0][price]", payload)
+        self.assertEqual(payload["line_items[0][price_data][unit_amount]"], ["250"])
 
     @override_settings(STRIPE_MOCK_MODE=False, STRIPE_SECRET_KEY="sk_test_example")
     @patch("payments.views.retrieve_stripe_checkout_session")

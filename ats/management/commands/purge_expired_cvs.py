@@ -9,6 +9,11 @@ from ats.models import CV, EnterpriseCandidateResult
 
 
 class Command(BaseCommand):
+    """Enforce retention in both individual and Enterprise CV tables/files.
+
+    Defining this command does not schedule it. Production must invoke it using
+    Heroku Scheduler or another recurring worker at least daily/monthly.
+    """
     help = "Delete CV records and files older than the configured retention period."
 
     def add_arguments(self, parser):

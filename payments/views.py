@@ -23,77 +23,14 @@ from .services import (
     StripeAPIError,
     StripeConfigurationError,
     StripeSignatureError,
-    SumUpAPIError,
-    SumUpConfigurationError,
     create_stripe_checkout_session,
-    create_sumup_checkout,
-    retrieve_sumup_checkout,
     retrieve_stripe_checkout_session,
     verify_stripe_signature,
 )
 
 
-def ensure_default_subscription_plans():
-    defaults = [
-        {
-            "code": "free",
-            "name": "Free",
-            "description": "Start with one CV and two daily validations.",
-            "price": Decimal("0.00"),
-            "currency": "GBP",
-            "billing_interval": "month",
-            "cv_limit": 1,
-            "daily_analysis_limit": 2,
-            "monthly_bulk_cv_limit": 0,
-            "includes_generated_cv": False,
-            "includes_job_url": True,
-            "includes_deadline_alerts": True,
-            "includes_enterprise_reports": False,
-            "sort_order": 10,
-        },
-        {
-            "code": "plus",
-            "name": "Plus",
-            "description": "For active job seekers who need more validations and CV drafts.",
-            "price": Decimal("7.99"),
-            "currency": "GBP",
-            "billing_interval": "month",
-            "cv_limit": 5,
-            "daily_analysis_limit": 5,
-            "monthly_bulk_cv_limit": 0,
-            "includes_generated_cv": True,
-            "includes_job_url": True,
-            "includes_deadline_alerts": True,
-            "includes_enterprise_reports": False,
-            "sort_order": 20,
-        },
-        {
-            "code": "enterprise",
-            "name": "Enterprise",
-            "description": "For hiring teams comparing many CVs against one role.",
-            "price": Decimal("49.00"),
-            "currency": "GBP",
-            "billing_interval": "month",
-            "cv_limit": 200,
-            "daily_analysis_limit": 50,
-            "monthly_bulk_cv_limit": 200,
-            "includes_generated_cv": True,
-            "includes_job_url": True,
-            "includes_deadline_alerts": True,
-            "includes_enterprise_reports": True,
-            "sort_order": 30,
-        },
-    ]
-    for plan in defaults:
-        SubscriptionPlan.objects.update_or_create(
-            code=plan["code"],
-            defaults={**plan, "is_active": True},
-        )
-
-
 def pricing(request):
-    """Stage 1 of payment: ensure plans exist, then display them."""
-    ensure_default_subscription_plans()
+    """Stage 1 of payment: read the seeded plan catalogue without mutating it."""
     plans = SubscriptionPlan.objects.filter(is_active=True, code__in=["free", "plus", "enterprise"])
     return render(request, "payments/pricing.html", {"plans": plans})
 
@@ -113,76 +50,14 @@ def demo_checkout_context(transaction, form_data=None):
 
 
 @login_required(login_url="login")
-def start_checkout(request, plan_code):
-    plan = get_object_or_404(SubscriptionPlan, code=plan_code, is_active=True)
-    discount = None
-    amount = plan.price
-
-    if request.method == "POST":
-        code = request.POST.get("discount_code", "").strip()
-        if code:
-            discount = DiscountCode.objects.filter(code__iexact=code).first()
-            if not discount or not discount.is_valid_now():
-                messages.error(request, "This discount code is not valid.")
-                return redirect("pricing")
-            amount = discount.apply_to(amount)
-
-    transaction = PaymentTransaction.objects.create(
-        user=request.user,
-        plan=plan,
-        discount_code=discount,
-        amount=amount,
-        currency=plan.currency,
-        provider="sumup",
-        status="pending",
-    )
-    Invoice.objects.create(
-        user=request.user,
-        transaction=transaction,
-        invoice_number=f"MVCV-{transaction.id:06d}",
-        amount=amount,
-        currency=plan.currency,
-        status="open",
-    )
-
-    if amount == Decimal("0.00"):
-        activate_paid_transaction(transaction, raw_response={"discounted_to_zero": True})
-        messages.success(request, f"{plan.name} activated with your discount code.")
-        return redirect("payment_receipt", checkout_reference=transaction.checkout_reference)
-
-    return_url = request.build_absolute_uri(reverse("sumup_return", args=[transaction.checkout_reference]))
-    try:
-        checkout = create_sumup_checkout(transaction, return_url)
-    except SumUpConfigurationError:
-        if settings.STRIPE_MOCK_MODE:
-            transaction.provider = "stripe"
-            transaction.raw_response = {"internal_fallback": "card_checkout"}
-            transaction.save(update_fields=["provider", "raw_response", "updated_at"])
-            return render(request, "payments/stripe_mock_checkout.html", demo_checkout_context(transaction))
-        if settings.STRIPE_SECRET_KEY:
-            messages.info(request, "Please use the Stripe Pay Now button for secure hosted checkout.")
-            return redirect("pricing")
-        messages.warning(request, "Live card checkout is not connected yet. Configure payment credentials to take payments.")
-        return render(request, "payments/sumup_setup.html", {"transaction": transaction})
-    except SumUpAPIError as exc:
-        messages.error(request, "Payment checkout could not be started. Please try again or contact support.")
-        return redirect("pricing")
-
-    transaction.provider_checkout_id = checkout.get("id", "")
-    transaction.hosted_checkout_url = checkout.get("hosted_checkout_url", "")
-    transaction.raw_response = checkout
-    transaction.save(update_fields=["provider_checkout_id", "hosted_checkout_url", "raw_response", "updated_at"])
-
-    if transaction.hosted_checkout_url:
-        return redirect(transaction.hosted_checkout_url)
-
-    messages.error(request, "Payment checkout could not be started. Please try again.")
-    return redirect("pricing")
-
-
-@login_required(login_url="login")
 @require_POST
 def start_stripe_checkout(request, plan_code):
+    """Create the pending local payment/invoice, then redirect to Stripe.
+
+    Login and POST/CSRF protection establish who is paying. This view does not
+    grant service access; access is granted only after provider verification in
+    ``stripe_success`` or ``stripe_webhook`` calls ``activate_paid_transaction``.
+    """
     plan = get_object_or_404(SubscriptionPlan, code=plan_code, is_active=True)
     discount = None
     amount = plan.price
@@ -310,6 +185,7 @@ def stripe_mock_checkout(request, checkout_reference):
 
 @login_required(login_url="login")
 def stripe_success(request, checkout_reference):
+    """Verify the returning user's Checkout Session before activation."""
     transaction = get_object_or_404(PaymentTransaction, checkout_reference=checkout_reference, user=request.user)
     session_id = request.GET.get("session_id", "")
     if not session_id or session_id != transaction.provider_checkout_id:
@@ -341,6 +217,12 @@ def stripe_success(request, checkout_reference):
 
 @csrf_exempt
 def stripe_webhook(request):
+    """Process signed, idempotent Stripe lifecycle events server-to-server.
+
+    CSRF is intentionally exempt because Stripe cannot send a Django token;
+    ``verify_stripe_signature`` is the stronger provider authentication here.
+    The unique Stripe event ID prevents the same event being applied twice.
+    """
     if request.method != "POST":
         return HttpResponseBadRequest("POST required")
     try:
@@ -422,56 +304,6 @@ def stripe_webhook(request):
 
 
 @login_required(login_url="login")
-def sumup_return(request, checkout_reference):
-    transaction = get_object_or_404(PaymentTransaction, checkout_reference=checkout_reference, user=request.user)
-    if not transaction.provider_checkout_id:
-        return render(request, "payments/payment_pending.html", {"transaction": transaction})
-
-    try:
-        checkout = retrieve_sumup_checkout(transaction.provider_checkout_id)
-    except (SumUpConfigurationError, SumUpAPIError) as exc:
-        messages.warning(request, f"Payment created, but status could not be verified yet: {exc}")
-        return render(request, "payments/payment_pending.html", {"transaction": transaction})
-
-    status = str(checkout.get("status", "")).upper()
-    if status == "PAID":
-        activate_paid_transaction(transaction, raw_response=checkout)
-        messages.success(request, "Payment confirmed. Your subscription is active.")
-        return redirect("payment_receipt", checkout_reference=transaction.checkout_reference)
-
-    transaction.raw_response = checkout
-    transaction.save(update_fields=["raw_response", "updated_at"])
-    return render(request, "payments/payment_pending.html", {"transaction": transaction, "sumup_status": status})
-
-
-@csrf_exempt
-def sumup_webhook(request):
-    if request.method != "POST":
-        return HttpResponseBadRequest("POST required")
-
-    try:
-        payload = json.loads(request.body.decode("utf-8") or "{}")
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest("Invalid JSON")
-
-    checkout_reference = payload.get("checkout_reference") or payload.get("id", "")
-    log = PaymentWebhookLog.objects.create(
-        provider="sumup",
-        event_type=payload.get("event_type", payload.get("status", "")),
-        checkout_reference=checkout_reference,
-        payload=payload,
-    )
-
-    transaction = PaymentTransaction.objects.filter(checkout_reference=checkout_reference).first()
-    if transaction and str(payload.get("status", "")).upper() == "PAID":
-        activate_paid_transaction(transaction, raw_response=payload)
-        log.is_processed = True
-        log.save(update_fields=["is_processed"])
-
-    return JsonResponse({"ok": True})
-
-
-@login_required(login_url="login")
 def payment_receipt(request, checkout_reference):
     transaction = get_object_or_404(
         PaymentTransaction.objects.select_related("plan", "subscription", "invoice"),
@@ -529,6 +361,13 @@ def activate_paid_transaction(
     stripe_subscription_id="",
     current_period_end=None,
 ):
+    """Stage 3 of payment: atomically grant the purchased service level.
+
+    This is the central activation function. It marks payment/invoice paid,
+    creates or updates CustomerSubscription, copies the plan code to
+    UserProfile for ATS feature checks, and sends one receipt. Row locking and
+    the ``was_paid`` check make repeated provider notifications safe.
+    """
     transaction = PaymentTransaction.objects.select_for_update().select_related("user", "plan").get(pk=transaction.pk)
     was_paid = transaction.status == "paid"
     paid_at = timezone.now()

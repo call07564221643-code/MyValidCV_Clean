@@ -16,8 +16,15 @@
       "description": "Comma-separated public host names.",
       "value": ".herokuapp.com"
     },
+    "HEROKU_APP_NAME": {
+      "description": "Optional Heroku app name, without .herokuapp.com.",
+      "required": false
+    },
     "SECURE_SSL_REDIRECT": {
       "value": "True"
+    },
+    "SECURE_HSTS_SECONDS": {
+      "value": "31536000"
     },
     "CV_RETENTION_DAYS": {
       "description": "Rolling retention period for individual and enterprise CV files.",
@@ -50,6 +57,22 @@
     },
     "LINKEDIN_OAUTH_CLIENT_SECRET": {
       "required": false
+    },
+    "EMAIL_BACKEND": {
+      "description": "Use an SMTP/transactional backend in production.",
+      "value": "django.core.mail.backends.smtp.EmailBackend"
+    },
+    "DEFAULT_FROM_EMAIL": {
+      "value": "MyValidCV <support@myvalidcv.com>"
+    },
+    "EMAIL_HOST": {
+      "required": false
+    },
+    "EMAIL_HOST_USER": {
+      "required": false
+    },
+    "EMAIL_HOST_PASSWORD": {
+      "required": false
     }
   },
   "formation": {
@@ -72,6 +95,6 @@
     }
   ],
   "scripts": {
-    "postdeploy": "python manage.py seed_plans"
+    "postdeploy": "python manage.py check --deploy"
   }
 }

@@ -9,6 +9,8 @@ admin.site.site_title = 'MyValidCV Admin'
 admin.site.index_title = 'MyValidCV Control Panel'
 
 urlpatterns = [
+    # Project routing map: each include delegates a URL group to the app that
+    # owns its views, while all apps share the database configured in settings.
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
     path('', include('accounts.urls')),

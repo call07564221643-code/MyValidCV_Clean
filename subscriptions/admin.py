@@ -1,4 +1,7 @@
 from django.contrib import admin
+from django.utils import timezone
+
+from accounts.models import UserProfile
 
 from .models import CustomerSubscription, DiscountCode, SubscriptionPlan
 
@@ -13,13 +16,13 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
         "billing_interval",
         "stripe_price_id",
         "cv_limit",
-        "daily_analysis_limit",
+        "monthly_analysis_limit",
         "monthly_bulk_cv_limit",
         "is_active",
     )
     list_filter = ("is_active", "billing_interval", "currency")
     search_fields = ("name", "code", "description", "stripe_price_id")
-    list_editable = ("is_active", "price", "cv_limit", "daily_analysis_limit", "monthly_bulk_cv_limit")
+    list_editable = ("is_active", "price", "cv_limit", "monthly_analysis_limit", "monthly_bulk_cv_limit")
 
 
 @admin.register(CustomerSubscription)
@@ -32,15 +35,26 @@ class CustomerSubscriptionAdmin(admin.ModelAdmin):
 
     @admin.action(description="Mark selected subscriptions active")
     def mark_active(self, request, queryset):
-        queryset.update(status="active", cancelled_at=None)
+        for subscription in queryset.select_related("user", "plan"):
+            subscription.status = "active"
+            subscription.cancelled_at = None
+            subscription.save(update_fields=["status", "cancelled_at", "updated_at"])
+            UserProfile.objects.update_or_create(user=subscription.user, defaults={"plan": subscription.plan.code})
 
     @admin.action(description="Mark selected subscriptions cancelled")
     def mark_cancelled(self, request, queryset):
-        queryset.update(status="cancelled")
+        for subscription in queryset.select_related("user"):
+            subscription.status = "cancelled"
+            subscription.cancelled_at = timezone.now()
+            subscription.save(update_fields=["status", "cancelled_at", "updated_at"])
+            UserProfile.objects.update_or_create(user=subscription.user, defaults={"plan": "free"})
 
     @admin.action(description="Mark selected subscriptions past due")
     def mark_past_due(self, request, queryset):
-        queryset.update(status="past_due")
+        for subscription in queryset.select_related("user"):
+            subscription.status = "past_due"
+            subscription.save(update_fields=["status", "updated_at"])
+            UserProfile.objects.update_or_create(user=subscription.user, defaults={"plan": "free"})
 
 
 @admin.register(DiscountCode)

@@ -66,6 +66,16 @@ class CustomerNavigationTests(TestCase):
         response = self.client.get(reverse('login'))
         self.assertRedirects(response, reverse('dashboard'))
 
+    def test_registration_rejects_duplicate_email_case_insensitively(self):
+        response = self.client.post(reverse('register'), {
+            'username': 'another-customer',
+            'email': 'CUSTOMER@example.com',
+            'password1': 'Secure-password-2026!',
+            'password2': 'Secure-password-2026!',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'An account already uses this email address')
+
     def test_active_enterprise_subscription_enables_enterprise_dashboard(self):
         plan = SubscriptionPlan.objects.create(
             code='enterprise',

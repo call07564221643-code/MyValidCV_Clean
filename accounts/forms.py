@@ -18,6 +18,12 @@ class CustomUserCreationForm(UserCreationForm):
                 'placeholder': field.label
             })
 
+    def clean_email(self):
+        email = self.cleaned_data['email'].strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('An account already uses this email address.')
+        return email
+
 
 class CustomAuthenticationForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):

@@ -68,15 +68,17 @@ def database_from_url(database_url):
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key-change-in-production')
+SECRET_KEY = os.environ.get('SECRET_KEY', '')
+if not SECRET_KEY:
+    if os.environ.get('DYNO'):
+        raise RuntimeError('SECRET_KEY is required on Heroku.')
+    SECRET_KEY = 'django-insecure-local-development-only'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_bool('DEBUG', False)
 
-ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', '.herokuapp.com,localhost,127.0.0.1')
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 HEROKU_APP_NAME = os.environ.get('HEROKU_APP_NAME', '')
-if '.herokuapp.com' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('.herokuapp.com')
 if HEROKU_APP_NAME:
     ALLOWED_HOSTS.append(f'{HEROKU_APP_NAME}.herokuapp.com')
 
@@ -88,7 +90,10 @@ CSRF_TRUSTED_ORIGINS.extend(
 )
 CSRF_TRUSTED_ORIGINS = unique_list(CSRF_TRUSTED_ORIGINS)
 
-# Application definition
+# Stage 1 - application composition.
+# Django imports these apps at startup. An installed app can provide models,
+# migrations, admin screens and signals, but it receives web traffic only when
+# its URLs are included by config/urls.py.
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -104,21 +109,12 @@ INSTALLED_APPS = [
     
    # Local apps
     'core',
-    'backend',
     'accounts',
     'dashboard',
     'ats',
-    'ai',
     'subscriptions',
     'payments',
-    'organizations',
     'analytics',
-    'api',
-    'reviews',
-    'notifications',
-    'billing',
-    'career',
-    'jobs',
 ]
 
 MIDDLEWARE = [
@@ -195,7 +191,10 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-# Database
+# Stage 2 - shared database connection.
+# Every model in every installed app uses this `default` connection unless a
+# database router explicitly says otherwise (this project has no such router).
+# Heroku should supply DATABASE_URL, which selects PostgreSQL through psycopg.
 if env_bool('TEST_USE_SQLITE', False):
     DATABASES = {
         'default': {
@@ -203,6 +202,7 @@ if env_bool('TEST_USE_SQLITE', False):
             'NAME': BASE_DIR / 'test.sqlite3',
         }
     }
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
 elif os.environ.get('DATABASE_URL'):
     DATABASES = {
         'default': database_from_url(os.environ['DATABASE_URL'])
@@ -279,15 +279,11 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'home'
 
 # File upload settings
-FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+# Enterprise batches can contain up to 50 small CVs. Django streams files above
+# the per-file memory limit to temporary storage while bounding the full request.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 60 * 1024 * 1024
 CV_RETENTION_DAYS = int(os.environ.get('CV_RETENTION_DAYS', '30'))
-
-# SumUp payments
-SUMUP_API_BASE_URL = os.environ.get('SUMUP_API_BASE_URL', 'https://api.sumup.com')
-SUMUP_ACCESS_TOKEN = os.environ.get('SUMUP_ACCESS_TOKEN', '')
-SUMUP_MERCHANT_CODE = os.environ.get('SUMUP_MERCHANT_CODE', '')
-SUMUP_WEBHOOK_SECRET = os.environ.get('SUMUP_WEBHOOK_SECRET', '')
 
 # Stripe payments
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
@@ -312,7 +308,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = env_bool('SESSION_COOKIE_SECURE', not DEBUG)
 CSRF_COOKIE_SECURE = env_bool('CSRF_COOKIE_SECURE', not DEBUG)
 SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', not DEBUG)
-SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '0'))
+SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '0' if DEBUG else '31536000'))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', False)
 SECURE_HSTS_PRELOAD = env_bool('SECURE_HSTS_PRELOAD', False)
 

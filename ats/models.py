@@ -1,3 +1,10 @@
+"""Core product records for CV storage, matching and generated outputs.
+
+Ownership always starts at auth.User. Views must combine login checks with
+`user=request.user` filters; a foreign key describes ownership but does not by
+itself prevent a view from reading another user's object.
+"""
+
 import uuid
 
 from django.db import models
@@ -81,6 +88,7 @@ class CV(models.Model):
 
 
 class ATSResult(models.Model):
+    """Persisted CV-to-job comparison owned by one authenticated user."""
     STATUS_CHOICES = [
         ("queued", "Queued"),
         ("processing", "Processing"),
@@ -112,6 +120,7 @@ class ATSResult(models.Model):
 
 
 class GeneratedCV(models.Model):
+    """Plus/Professional draft linked one-to-one to its authorised ATS result."""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="generated_cvs")
     original_cv = models.ForeignKey(CV, on_delete=models.CASCADE, related_name="generated_versions")
     ats_result = models.OneToOneField(ATSResult, on_delete=models.CASCADE, related_name="generated_cv")
@@ -158,6 +167,7 @@ class ApplicationReminder(models.Model):
 
 
 class EnterpriseBatch(models.Model):
+    """Enterprise-owned bulk run; candidate rows cascade through this parent."""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="enterprise_batches")
     job_role = models.ForeignKey(JobRole, on_delete=models.CASCADE, related_name="enterprise_batches")
     title = models.CharField(max_length=180)

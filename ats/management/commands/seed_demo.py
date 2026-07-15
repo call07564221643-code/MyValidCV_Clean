@@ -96,8 +96,8 @@ class Command(BaseCommand):
             profile, created = UserProfile.objects.get_or_create(user=user)
             counters["profiles"] += int(created)
             profile.plan = plan_code
-            profile.analyses_today = 1 if plan_code == "free" else min(index % 5 + 1, profile.get_analysis_limit())
-            profile.save(update_fields=["plan", "analyses_today"])
+            profile.analyses_this_month = 1 if plan_code == "free" else min(index % 5 + 1, profile.get_analysis_limit())
+            profile.save(update_fields=["plan", "analyses_this_month"])
 
             storage, created = CVStorage.objects.get_or_create(
                 user=user,
@@ -330,7 +330,7 @@ class Command(BaseCommand):
                     "currency": "GBP",
                     "billing_interval": "month",
                     "cv_limit": cv_limit,
-                    "daily_analysis_limit": daily_limit,
+                    "monthly_analysis_limit": daily_limit,
                     "monthly_bulk_cv_limit": bulk_limit,
                     "includes_generated_cv": code == "plus",
                     "includes_job_url": code != "free",

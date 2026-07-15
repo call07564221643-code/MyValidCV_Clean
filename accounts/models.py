@@ -1,3 +1,9 @@
+"""Identity-adjacent database models.
+
+Django's built-in User remains the authentication source of truth. UserProfile
+adds product plan/usage data through a one-to-one foreign-key relationship.
+"""
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -8,13 +14,13 @@ class UserProfile(models.Model):
     PLAN_CHOICES = [
         ('free', 'Free'),
         ('plus', 'Plus'),
-        ('professional', 'Professional'),
         ('enterprise', 'Enterprise'),
     ]
 
+    # Database link: deleting the Django User also deletes this dependent profile.
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     plan = models.CharField(max_length=20, choices=PLAN_CHOICES, default='free')
-    analyses_today = models.IntegerField(default=0)
+    analyses_this_month = models.PositiveIntegerField(default=0)
     last_reset = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -26,41 +32,31 @@ class UserProfile(models.Model):
         return f"{self.user.username} - {self.plan}"
 
     def get_analysis_limit(self) -> int:
-        """Get the monthly validation allowance for the active plan."""
-        if self.plan == 'free':
-            return 5
-        elif self.plan in ('plus', 'professional'):
-            return 20
-        elif self.plan == 'enterprise':
-            return 50
-        return 0
+        """Compatibility wrapper around the central entitlement policy."""
+        from subscriptions.services import get_entitlements
+        return get_entitlements(self.user).analysis_limit
 
     def get_cv_limit(self) -> int:
-        """Get saved CV limit based on plan."""
-        if self.plan == 'free':
-            return 1
-        elif self.plan in ('plus', 'professional'):
-            return 1
-        elif self.plan == 'enterprise':
-            return 50
-        return 1
+        """Compatibility wrapper around the central entitlement policy."""
+        from subscriptions.services import get_entitlements
+        return get_entitlements(self.user).cv_limit
 
     def reset_daily_usage_if_needed(self) -> None:
         """Reset the legacy usage counter at the start of a new calendar month."""
         today = timezone.localdate()
         if (self.last_reset.year, self.last_reset.month) != (today.year, today.month):
-            self.analyses_today = 0
+            self.analyses_this_month = 0
             self.last_reset = timezone.now()
-            self.save(update_fields=['analyses_today', 'last_reset'])
+            self.save(update_fields=['analyses_this_month', 'last_reset'])
 
     def can_run_analysis(self) -> bool:
         self.reset_daily_usage_if_needed()
-        return self.analyses_today < self.get_analysis_limit()
+        return self.analyses_this_month < self.get_analysis_limit()
 
     def record_analysis(self) -> None:
         self.reset_daily_usage_if_needed()
-        self.analyses_today += 1
-        self.save(update_fields=['analyses_today', 'last_reset'])
+        self.analyses_this_month += 1
+        self.save(update_fields=['analyses_this_month', 'last_reset'])
 
 
 class SocialAuthProvider(models.Model):

@@ -13,6 +13,7 @@ from .models import SocialAuthProvider
 
 
 def safe_next_url(request, default='dashboard'):
+    """Accept local post-login destinations and reject open redirects."""
     next_url = request.POST.get('next') or request.GET.get('next')
     if next_url and url_has_allowed_host_and_scheme(
         next_url,
@@ -36,7 +37,11 @@ def get_social_auth_providers():
 
 @require_http_methods(['GET', 'POST'])
 def register(request):
-    """User registration."""
+    """Stage 1 of local registration: validate, create, authenticate, redirect.
+
+    ``form.save()`` writes Django's User row. Calling ``login`` creates the
+    authenticated session; the User post-save signal creates UserProfile.
+    """
     if request.user.is_authenticated:
         return redirect('dashboard')
     redirect_to = safe_next_url(request)
@@ -64,7 +69,7 @@ def register(request):
 
 @require_http_methods(['GET', 'POST'])
 def login_view(request):
-    """User login."""
+    """Authorise local credentials and establish Django's session cookie."""
     if request.user.is_authenticated:
         return redirect('dashboard')
     redirect_to = safe_next_url(request)
@@ -89,7 +94,12 @@ def login_view(request):
 
 
 def social_login_start(request, provider):
-    """Send configured providers into django-allauth's OAuth/OIDC flow."""
+    """Stage 1 of social auth: hand a configured provider to django-allauth.
+
+    Google uses OAuth2 and LinkedIn uses OIDC. The provider callback is handled
+    by allauth URLs in ``config.urls``; successful callbacks create/login the
+    Django User, after which the same UserProfile signal and dashboard apply.
+    """
     provider_key = provider.lower()
     provider_config = SocialAuthProvider.objects.filter(key=provider_key, is_active=True).first()
     fallback_labels = {'google': 'Google', 'linkedin': 'LinkedIn'}

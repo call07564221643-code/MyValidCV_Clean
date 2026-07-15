@@ -6,13 +6,17 @@ from .models import UserProfile
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
-    """Create UserProfile when User is created."""
+    """Stage 2 of registration: attach plan/usage data to a new auth User.
+
+    Django creates the core ``User`` first. This signal then creates the
+    one-to-one ``UserProfile`` used by dashboards and ATS allowance checks.
+    """
     if created:
         UserProfile.objects.create(user=instance)
 
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
-    """Save UserProfile when User is saved, creating one for older users."""
+    """Keep the profile link present when an existing auth User is saved."""
     profile, _created = UserProfile.objects.get_or_create(user=instance)
     profile.save()

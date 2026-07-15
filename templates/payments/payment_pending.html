@@ -11,7 +11,6 @@
                     <h1 class="h4 fw-bold">Payment status pending</h1>
                     <p class="text-muted">
                         Reference: <strong>{{ transaction.checkout_reference }}</strong>
-                        {% if sumup_status %}<br>Payment status: <strong>{{ sumup_status }}</strong>{% endif %}
                     </p>
                     <a href="{% url 'dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
                     <a href="{% url 'pricing' %}" class="btn btn-outline-secondary">Plans</a>

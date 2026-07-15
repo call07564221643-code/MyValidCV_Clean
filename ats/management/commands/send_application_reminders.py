@@ -7,6 +7,7 @@ from ats.models import ApplicationReminder
 
 
 class Command(BaseCommand):
+    """Send due database reminders; production must schedule this command."""
     help = "Email due application-deadline reminders and mark successful deliveries as sent."
 
     def handle(self, *args, **options):

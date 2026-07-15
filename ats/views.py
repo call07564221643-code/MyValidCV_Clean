@@ -1,6 +1,8 @@
 import re
 import urllib.request
 import csv
+import ipaddress
+import socket
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
@@ -24,8 +26,8 @@ from .models import (
     JobRole,
 )
 from accounts.models import UserProfile
-from core.services import ats_engine
-from subscriptions.models import CustomerSubscription
+from .engine import ats_engine
+from subscriptions.services import get_active_subscription, get_entitlements
 
 
 SKILLS = [
@@ -41,14 +43,12 @@ def get_user_profile(user):
 
 
 def storage_limit_for_user(user):
-    profile = get_user_profile(user)
     limits = {
         "free": 5 * 1024 * 1024,
         "plus": 50 * 1024 * 1024,
-        "professional": 50 * 1024 * 1024,
         "enterprise": 1024 * 1024 * 1024,
     }
-    return limits.get(profile.plan, limits["free"])
+    return limits.get(get_entitlements(user).code, limits["free"])
 
 
 def get_user_cv_storage(user):
@@ -68,6 +68,12 @@ def populate_cv_metadata(cv, uploaded_file, validation_status="valid", validatio
     cv.original_filename = uploaded_file.name[:255]
     cv.mime_type = getattr(uploaded_file, "content_type", "") or ""
     cv.file_size = getattr(uploaded_file, "size", 0) or 0
+    # Heroku's local filesystem is ephemeral. Keep the original bytes in
+    # PostgreSQL for the 30-day retention window so a dyno restart does not make
+    # an otherwise valid CV unreadable. The purge command deletes this row/data.
+    uploaded_file.seek(0)
+    cv.file_data = uploaded_file.read()
+    uploaded_file.seek(0)
     cv.validation_status = validation_status
     cv.is_valid_cv = validation_status == "valid"
     cv.validation_notes = validation_notes
@@ -81,7 +87,18 @@ def refresh_cv_storage(user):
 
 
 def extract_cv_text(cv):
-    """Extract text from a stored CV file, falling back to the title."""
+    """Extract stored bytes first, then storage backend file, then safe fallback."""
+    if cv.file_data:
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        stored_upload = SimpleUploadedFile(
+            cv.original_filename or cv.title,
+            bytes(cv.file_data),
+            content_type=cv.mime_type or "application/octet-stream",
+        )
+        try:
+            return ats_engine.extract_text_from_upload(stored_upload)
+        except Exception:
+            pass
     try:
         cv.file.open("rb")
         try:
@@ -131,13 +148,33 @@ def extract_job_file_text(uploaded_file):
             return ""
 
 
+def _validate_public_job_url(url):
+    """Reject local/private destinations to prevent server-side request forgery."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username or parsed.password:
+        raise ValueError("Only public HTTP(S) job URLs are allowed.")
+    for address in socket.getaddrinfo(parsed.hostname, parsed.port or 443, type=socket.SOCK_STREAM):
+        ip = ipaddress.ip_address(address[4][0])
+        if not ip.is_global:
+            raise ValueError("Private or local job URLs are not allowed.")
+    return url
+
+
+class _SafeJobRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        _validate_public_job_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def fetch_job_url_text(url):
-    """Best-effort job advert fetch for simple public pages."""
+    """Best-effort fetch of a public job advert with SSRF-safe redirects."""
     try:
+        _validate_public_job_url(url)
         request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         # Keep this best-effort request short so a slow job board does not tie
         # up a web worker for most of Gunicorn's request timeout.
-        with urllib.request.urlopen(request, timeout=4) as response:
+        opener = urllib.request.build_opener(_SafeJobRedirectHandler())
+        with opener.open(request, timeout=4) as response:
             html = response.read(300000).decode("utf-8", errors="ignore")
         text = re.sub(r"<(script|style).*?</\1>", " ", html, flags=re.DOTALL | re.IGNORECASE)
         text = re.sub(r"<[^>]+>", " ", text)
@@ -223,27 +260,13 @@ def infer_deadline(form, job_description):
 
 
 def user_can_use_enterprise(user):
-    if user.is_superuser:
-        return True
-    subscription = CustomerSubscription.objects.filter(
-        user=user,
-        status="active",
-        plan__code="enterprise",
-    ).first()
-    if not subscription:
-        return False
-    return not subscription.current_period_end or subscription.current_period_end > timezone.now()
+    """Authorise bulk tools from a current Enterprise subscription, not UI state."""
+    return get_entitlements(user).enterprise_reports
 
 
 def active_enterprise_subscription(user):
-    subscription = CustomerSubscription.objects.filter(
-        user=user,
-        status="active",
-        plan__code="enterprise",
-    ).select_related("plan").first()
-    if subscription and (not subscription.current_period_end or subscription.current_period_end > timezone.now()):
-        return subscription
-    return None
+    subscription = get_active_subscription(user)
+    return subscription if subscription and subscription.plan.code == "enterprise" else None
 
 
 def enterprise_monthly_usage(user):
@@ -328,7 +351,8 @@ Draft note: personalise this letter and verify every statement before sending.
 
 
 def can_download_generated_cv(user):
-    return user.is_superuser or get_user_profile(user).plan in ("plus", "professional")
+    """Authorise individual paid generation for Plus/Professional accounts."""
+    return get_entitlements(user).generated_documents
 
 
 def score_breakdown(score, matched, missing):
@@ -420,10 +444,10 @@ def save_inline_cv(request, form):
         form.add_error("cv_file", reason)
         return None
 
-    profile = get_user_profile(request.user)
+    entitlements = get_entitlements(request.user)
     cv_count = CV.objects.filter(user=request.user).count()
-    if cv_count >= profile.get_cv_limit():
-        form.add_error("cv_file", f"Your {profile.plan} plan has reached the saved CV limit.")
+    if cv_count >= entitlements.cv_limit:
+        form.add_error("cv_file", f"Your {entitlements.code} plan has reached the saved CV limit.")
         return None
 
     cv_title = form.cleaned_data.get("cv_title") or uploaded_cv.name.rsplit(".", 1)[0].replace("_", " ").replace("-", " ").title()
@@ -437,14 +461,15 @@ def save_inline_cv(request, form):
 @login_required(login_url="login")
 def upload_cv(request):
     profile = get_user_profile(request.user)
+    entitlements = get_entitlements(request.user)
     cv_count = CV.objects.filter(user=request.user).count()
-    if request.method != "POST" and cv_count >= profile.get_cv_limit():
-        messages.warning(request, f"Your {profile.plan} plan allows {profile.get_cv_limit()} saved CV(s). Upgrade to save more.")
+    if request.method != "POST" and cv_count >= entitlements.cv_limit:
+        messages.warning(request, f"Your {entitlements.code} plan allows {entitlements.cv_limit} saved CV(s). Upgrade to save more.")
 
     if request.method == "POST":
         form = CVUploadForm(request.POST, request.FILES)
-        if cv_count >= profile.get_cv_limit():
-            messages.error(request, f"Your {profile.plan} plan has reached the saved CV limit.")
+        if cv_count >= entitlements.cv_limit:
+            messages.error(request, f"Your {entitlements.code} plan has reached the saved CV limit.")
             return redirect("dashboard")
         if form.is_valid():
             cv_text = extract_uploaded_cv_text(form.cleaned_data["file"])
@@ -467,8 +492,16 @@ def upload_cv(request):
 
 @login_required(login_url="login")
 def analyse_cv(request):
+    """Run the authenticated individual CV-to-job workflow.
+
+    Stages: enforce monthly allowance; select/upload the user's CV; read the job
+    text/file/URL; create JobRole and ATSResult rows; create Plus-only CV and
+    cover-letter drafts; optionally schedule a deadline reminder; record usage.
+    Every subsequent result query is also restricted to ``request.user``.
+    """
     user_cvs = CV.objects.filter(user=request.user)
     profile = get_user_profile(request.user)
+    entitlements = get_entitlements(request.user)
     inline_result = None
     breakdown = None
 
@@ -484,7 +517,7 @@ def analyse_cv(request):
             "saved_cvs": CV.objects.filter(user=request.user)[:6],
             "generated_cvs": GeneratedCV.objects.filter(user=request.user).select_related("ats_result")[:6],
             "reminders": ApplicationReminder.objects.filter(user=request.user, is_sent=False).select_related("job_role")[:4],
-            "is_enterprise": request.user.is_superuser or profile.plan == "enterprise",
+            "is_enterprise": entitlements.enterprise_reports,
         }
 
     def render_home_workspace(form):
@@ -492,10 +525,16 @@ def analyse_cv(request):
 
     if request.method == "POST":
         form = ATSAnalysisForm(request.user, request.POST, request.FILES)
-        if not profile.can_run_analysis():
-            messages.error(request, f"You have used this month's {profile.get_analysis_limit()} analysis limit for your {profile.plan} plan.")
+        if profile.analyses_this_month >= entitlements.analysis_limit:
+            messages.error(request, f"You have used this month's {entitlements.analysis_limit} analysis limit for your {entitlements.code} plan.")
             return redirect("dashboard")
         if form.is_valid():
+            if form.cleaned_data["source_type"] == "url" and not entitlements.job_url:
+                form.add_error("job_url", "Job URL analysis is available on Plus plans. Paste the advert text on Free.")
+                return render_home_workspace(form)
+            if form.cleaned_data.get("email_reminder") and not entitlements.deadline_alerts:
+                form.add_error("email_reminder", "Deadline email alerts are available on Plus plans.")
+                return render_home_workspace(form)
             cv = save_inline_cv(request, form)
             if cv is None:
                 return render_home_workspace(form)
@@ -608,7 +647,7 @@ def result_detail(request, result_id):
 def download_generated_cv(request, result_id):
     result = get_object_or_404(ATSResult, id=result_id, user=request.user)
     if not can_download_generated_cv(request.user):
-        messages.error(request, "Download is available on Plus and Enterprise plans. You can still view the suggested CV draft here.")
+        messages.error(request, "Tailored CV generation is available on the Plus plan.")
         return redirect("ats_result", result_id=result.id)
     generated_cv = get_object_or_404(GeneratedCV, ats_result=result, user=request.user)
     response = HttpResponse(generated_cv.content, content_type="text/plain")
@@ -630,6 +669,7 @@ def download_cover_letter(request, result_id):
 
 @login_required(login_url="login")
 def enterprise_bulk_upload(request):
+    """Run Enterprise-only bulk ranking after subscription and quota checks."""
     if not user_can_use_enterprise(request.user):
         messages.error(request, "Enterprise bulk analysis is available on the Enterprise plan.")
         return redirect("dashboard")

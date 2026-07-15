@@ -1,5 +1,24 @@
+"""Input validation layer for CV, job advert and Enterprise uploads.
+
+Forms validate shape/file inputs. Views remain responsible for authentication,
+object ownership, plan entitlement, quotas and final database writes.
+"""
+
 from django import forms
 from .models import CV
+
+
+ALLOWED_DOCUMENT_EXTENSIONS = (".pdf", ".docx", ".txt")
+MAX_DOCUMENT_SIZE = 5 * 1024 * 1024
+
+
+def validate_document(uploaded_file):
+    filename = uploaded_file.name.lower()
+    if not filename.endswith(ALLOWED_DOCUMENT_EXTENSIONS):
+        raise forms.ValidationError("Upload a PDF, DOCX or TXT document.")
+    if uploaded_file.size > MAX_DOCUMENT_SIZE:
+        raise forms.ValidationError("Each document must be 5 MB or smaller.")
+    return uploaded_file
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -13,8 +32,10 @@ class MultipleFileField(forms.FileField):
 
     def clean(self, data, initial=None):
         if isinstance(data, (list, tuple)):
-            return [super(MultipleFileField, self).clean(item, initial) for item in data]
-        return [super().clean(data, initial)]
+            if len(data) > 50:
+                raise forms.ValidationError("Upload no more than 50 CVs in one batch.")
+            return [validate_document(super(MultipleFileField, self).clean(item, initial)) for item in data]
+        return [validate_document(super().clean(data, initial))]
 
 
 class CVUploadForm(forms.ModelForm):
@@ -26,6 +47,9 @@ class CVUploadForm(forms.ModelForm):
             "title": forms.TextInput(attrs={"class": "form-control", "placeholder": "e.g. Software Developer CV"}),
             "file": forms.FileInput(attrs={"class": "form-control", "accept": ".pdf,.docx,.txt"}),
         }
+
+    def clean_file(self):
+        return validate_document(self.cleaned_data["file"])
 
 
 class ATSAnalysisForm(forms.Form):
@@ -115,6 +139,14 @@ class ATSAnalysisForm(forms.Form):
             self.add_error("job_file", "Upload a job advert file.")
         return cleaned_data
 
+    def clean_cv_file(self):
+        upload = self.cleaned_data.get("cv_file")
+        return validate_document(upload) if upload else upload
+
+    def clean_job_file(self):
+        upload = self.cleaned_data.get("job_file")
+        return validate_document(upload) if upload else upload
+
 
 class EnterpriseBulkAnalysisForm(forms.Form):
     SOURCE_CHOICES = ATSAnalysisForm.SOURCE_CHOICES
@@ -164,6 +196,10 @@ class EnterpriseBulkAnalysisForm(forms.Form):
         if len(cv_files) > 50:
             raise forms.ValidationError("The Enterprise plan allows up to 50 CVs per monthly batch.")
         return cv_files
+
+    def clean_job_file(self):
+        upload = self.cleaned_data.get("job_file")
+        return validate_document(upload) if upload else upload
 
     def clean(self):
         cleaned_data = super().clean()

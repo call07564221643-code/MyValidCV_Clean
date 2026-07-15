@@ -1,3 +1,9 @@
+"""Commercial catalogue and the user's current subscription state.
+
+Payments writes these records after provider verification; dashboard and ATS
+read them to determine the user's effective service level.
+"""
+
 from decimal import Decimal
 
 from django.conf import settings
@@ -18,7 +24,10 @@ class SubscriptionPlan(models.Model):
     currency = models.CharField(max_length=3, default="GBP")
     billing_interval = models.CharField(max_length=20, choices=INTERVAL_CHOICES, default="month")
     cv_limit = models.PositiveIntegerField(default=1)
-    daily_analysis_limit = models.PositiveIntegerField(default=2)
+    monthly_analysis_limit = models.PositiveIntegerField(
+        default=5,
+        help_text="Monthly CV-to-job validation allowance.",
+    )
     monthly_bulk_cv_limit = models.PositiveIntegerField(default=0)
     includes_generated_cv = models.BooleanField(default=False)
     includes_job_url = models.BooleanField(default=False)
@@ -40,6 +49,7 @@ class SubscriptionPlan(models.Model):
 
 
 class CustomerSubscription(models.Model):
+    """One user's current plan, provider IDs, status and billing period."""
     STATUS_CHOICES = [
         ("trialing", "Trialing"),
         ("active", "Active"),
@@ -48,6 +58,8 @@ class CustomerSubscription(models.Model):
         ("expired", "Expired"),
     ]
 
+    # Cross-app links: auth User owns the subscription; PROTECT keeps a plan
+    # referenced by billing history from being accidentally deleted.
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="customer_subscription")
     plan = models.ForeignKey(SubscriptionPlan, on_delete=models.PROTECT, related_name="subscriptions")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")

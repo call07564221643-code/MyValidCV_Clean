@@ -1,3 +1,10 @@
+"""Local financial audit records linked to users and subscription catalogue.
+
+These tables do not process card data. They retain the local checkout reference,
+provider identifiers, status, invoice and webhook history needed to reconcile
+hosted payment activity with access granted inside MyValidCV.
+"""
+
 import uuid
 from decimal import Decimal
 
@@ -8,6 +15,7 @@ from subscriptions.models import CustomerSubscription, DiscountCode, Subscriptio
 
 
 class PaymentTransaction(models.Model):
+    """A user's attempt to purchase one SubscriptionPlan."""
     STATUS_CHOICES = [
         ("draft", "Draft"),
         ("pending", "Pending"),
@@ -18,20 +26,16 @@ class PaymentTransaction(models.Model):
     ]
 
     PROVIDER_CHOICES = [
-        ("sumup", "SumUp"),
         ("stripe", "Stripe"),
-        ("paypal", "PayPal"),
-        ("amazon_pay", "Amazon Pay"),
-        ("apple_pay", "Apple Pay"),
-        ("google_pay", "Google Pay"),
         ("manual", "Manual"),
     ]
 
+    # Cross-app database relationships used by activation and reporting.
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="payment_transactions")
     plan = models.ForeignKey(SubscriptionPlan, on_delete=models.PROTECT, related_name="payment_transactions")
     subscription = models.ForeignKey(CustomerSubscription, null=True, blank=True, on_delete=models.SET_NULL, related_name="payment_transactions")
     discount_code = models.ForeignKey(DiscountCode, null=True, blank=True, on_delete=models.SET_NULL, related_name="payment_transactions")
-    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES, default="sumup")
+    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES, default="stripe")
     checkout_reference = models.CharField(max_length=90, unique=True, default=uuid.uuid4)
     provider_checkout_id = models.CharField(max_length=120, blank=True)
     provider_transaction_id = models.CharField(max_length=120, blank=True)
@@ -107,7 +111,7 @@ class Refund(models.Model):
 
 
 class PaymentWebhookLog(models.Model):
-    provider = models.CharField(max_length=20, default="sumup")
+    provider = models.CharField(max_length=20, default="stripe")
     event_id = models.CharField(max_length=120, null=True, blank=True, unique=True)
     event_type = models.CharField(max_length=120, blank=True)
     checkout_reference = models.CharField(max_length=90, blank=True)

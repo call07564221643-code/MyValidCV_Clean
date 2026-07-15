@@ -312,7 +312,7 @@
                 <h1>Validate your <span>CV</span></h1>
                 <p>Choose a saved CV or upload one, then add the job advert as text, a URL, or a file. Your compatibility report opens immediately after validation.</p>
             </div>
-            <div class="validate-usage">{{ profile.plan|title }} &middot; {{ profile.analyses_today }}/{{ profile.get_analysis_limit }} used</div>
+            <div class="validate-usage">{{ profile.plan|title }} &middot; {{ profile.analyses_this_month }}/{{ profile.get_analysis_limit }} used</div>
         </header>
 
         {% if form.non_field_errors %}

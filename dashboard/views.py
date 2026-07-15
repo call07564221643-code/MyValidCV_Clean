@@ -9,11 +9,18 @@ from accounts.models import SocialAuthProvider, UserProfile
 from ats.models import ApplicationReminder, ATSResult, CV, EnterpriseBatch, EnterpriseCandidateResult, GeneratedCV, JobRole
 from payments.models import Invoice, PaymentTransaction, Refund
 from subscriptions.models import CustomerSubscription, SubscriptionPlan
+from subscriptions.services import get_entitlements
 
 
 @login_required(login_url='login')
 def dashboard(request):
-    """User dashboard showing uploaded CVs and recent ATS analyses."""
+    """Compose the authorised dashboard from records owned by the login user.
+
+    The effective plan comes from a non-expired active CustomerSubscription;
+    otherwise access falls back to Free. Related CV, result, job, reminder and
+    batch queries are filtered by ``request.user`` to prevent cross-account
+    disclosure. Superusers receive the owner/operations view.
+    """
     user_profile, _created = UserProfile.objects.get_or_create(user=request.user)
     user_profile.reset_daily_usage_if_needed()
     recent_results = list(ATSResult.objects.filter(user=request.user).select_related('cv')[:5])
@@ -23,20 +30,9 @@ def dashboard(request):
     generated_cvs = GeneratedCV.objects.filter(user=request.user).select_related('ats_result')[:5]
     enterprise_batches = EnterpriseBatch.objects.filter(user=request.user).select_related('job_role').annotate(candidate_count=Count('candidate_results'))[:5]
     is_owner = request.user.is_superuser
-    active_subscription = CustomerSubscription.objects.filter(
-        user=request.user,
-        status='active',
-    ).select_related('plan').first()
-    if active_subscription and active_subscription.current_period_end and active_subscription.current_period_end <= timezone.now():
-        active_subscription = None
-
-    paid_plan_code = active_subscription.plan.code if active_subscription else None
-    if is_owner:
-        effective_plan = 'enterprise'
-    elif paid_plan_code in ('plus', 'professional', 'enterprise'):
-        effective_plan = paid_plan_code
-    else:
-        effective_plan = 'free'
+    entitlements = get_entitlements(request.user)
+    active_subscription = entitlements.subscription
+    effective_plan = entitlements.code
 
     is_enterprise = is_owner or effective_plan == 'enterprise'
     social_providers = SocialAuthProvider.objects.all() if is_owner else SocialAuthProvider.objects.none()
@@ -56,14 +52,7 @@ def dashboard(request):
             }
             cache.set('owner-dashboard-stats', admin_stats, 60)
 
-    plan_limits = {'free': 5, 'plus': 20, 'professional': 20, 'enterprise': 50}
-    if active_subscription and effective_plan == 'enterprise':
-        limit = active_subscription.plan.monthly_bulk_cv_limit or 50
-    elif active_subscription:
-        limit = active_subscription.plan.daily_analysis_limit
-    else:
-        free_plan = SubscriptionPlan.objects.filter(code='free', is_active=True).first()
-        limit = free_plan.daily_analysis_limit if free_plan else plan_limits.get(effective_plan, 5)
+    limit = entitlements.bulk_limit if is_enterprise else entitlements.analysis_limit
     usage_label = 'CV scans this month' if is_enterprise else 'Validations this month'
     if is_enterprise and not is_owner:
         month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -72,7 +61,7 @@ def dashboard(request):
             created_at__gte=month_start,
         ).count()
     else:
-        usage_count = user_profile.analyses_today
+        usage_count = user_profile.analyses_this_month
     usage_percent = 0
     if limit:
         usage_percent = min(100, int((usage_count / limit) * 100))
