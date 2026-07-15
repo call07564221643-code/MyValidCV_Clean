@@ -45,7 +45,7 @@ class ATSScoringTests(SimpleTestCase):
         x-ray review and compliance with GDC standards.
         """
 
-        score, matched, missing, recommendation = calculate_score(cv_text, dentist_job)
+        score, matched, missing, recommendation = calculate_score(cv_text, dentist_job, "Dentist")
 
         self.assertLess(score, 50)
         self.assertIn("dentist", missing)
@@ -69,10 +69,51 @@ class ATSScoringTests(SimpleTestCase):
         email correspondence and accurate data entry.
         """
 
-        score, matched, missing, recommendation = calculate_score(cv_text, airport_admin_job)
+        score, matched, missing, recommendation = calculate_score(cv_text, airport_admin_job, "Airport Administrator")
 
         self.assertGreaterEqual(score, 50)
         self.assertLess(score, 90)
         self.assertIn("administration", matched)
         self.assertIn("airport", missing)
         self.assertNotIn("High role mismatch", recommendation)
+
+    def test_software_cv_scores_well_for_software_role(self):
+        cv_text = """
+        Backend Software Engineer
+        Skills: Python, Django, SQL, PostgreSQL, API development, Git, testing.
+        Experience: developed REST APIs, improved database performance by 30%,
+        deployed services, fixed defects, and worked with product teams.
+        Education: computer science degree.
+        """
+        software_job = """
+        Senior Django Developer required. Must have Python, Django, REST API,
+        PostgreSQL, SQL, Git, testing experience, database optimisation and
+        ability to deploy backend services.
+        """
+
+        score, matched, missing, recommendation = calculate_score(cv_text, software_job, "Senior Django Developer")
+
+        self.assertGreaterEqual(score, 70)
+        self.assertIn("django", matched)
+        self.assertNotIn("High role mismatch", recommendation)
+
+    def test_software_cv_is_capped_for_finance_role(self):
+        cv_text = """
+        Backend Software Engineer
+        Skills: Python, Django, SQL, PostgreSQL, API development, Git, testing.
+        Experience: developed REST APIs, improved database performance by 30%,
+        deployed services, fixed defects, and worked with product teams.
+        Education: computer science degree.
+        """
+        accountant_job = """
+        Management Accountant required. Responsibilities include month-end
+        accounts, reconciliations, budgeting, forecasting, variance analysis,
+        balance sheet control, VAT returns, payroll journals and financial
+        reporting using accounting software.
+        """
+
+        score, matched, missing, recommendation = calculate_score(cv_text, accountant_job, "Management Accountant")
+
+        self.assertLess(score, 50)
+        self.assertIn("accountant", missing)
+        self.assertIn("High role mismatch", recommendation)

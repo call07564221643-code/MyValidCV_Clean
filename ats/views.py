@@ -56,30 +56,14 @@ STOP_WORDS = {
     "who", "will", "with", "work", "would", "you", "your",
 }
 
-ROLE_FAMILIES = {
-    "dental": [
-        "dentist", "dentistry", "dental", "oral", "clinic", "clinical",
-        "patient", "patients", "hygienist", "nurse", "radiography", "x-ray",
-        "xray", "treatment", "treatments", "diagnosis", "restorative",
-        "periodontal", "endodontic", "extraction", "crown", "fillings",
-        "infection control", "gdc", "nhs",
-    ],
-    "administration": [
-        "admin", "administrator", "administration", "office", "reception",
-        "records", "filing", "scheduling", "diary", "appointments", "email",
-        "telephone", "correspondence", "document", "documents", "data entry",
-        "excel", "reporting", "customer service", "coordination",
-    ],
-    "aviation": [
-        "airport", "aviation", "airline", "terminal", "passenger",
-        "passengers", "boarding", "flight", "flights", "airside", "landside",
-        "baggage", "security", "check-in", "gate", "crew",
-    ],
-    "technology": [
-        "developer", "engineer", "software", "python", "django", "api",
-        "database", "sql", "cloud", "frontend", "backend", "testing",
-        "deployment", "github", "git",
-    ],
+GENERIC_REQUIREMENT_TERMS = {
+    "ability", "able", "applicant", "apply", "benefits", "business", "client",
+    "clients", "company", "deadline", "department", "duties", "employee",
+    "environment", "excellent", "expected", "full", "good", "high", "hours",
+    "ideal", "join", "knowledge", "level", "minimum", "needed", "people",
+    "person", "preferred", "previous", "proven", "required", "requires",
+    "responsible", "salary", "successful", "support", "team", "teams",
+    "using", "weekly", "within", "working",
 }
 
 
@@ -323,7 +307,7 @@ def enterprise_monthly_usage(user):
     ).count()
 
 
-def calculate_score(cv_text, job_description):
+def calculate_score(cv_text, job_description, job_title=""):
     cv_lower = (cv_text or "").lower()
     job_lower = (job_description or "").lower()
 
@@ -332,47 +316,50 @@ def calculate_score(cv_text, job_description):
     matched_skills = [skill for skill in jd_skills if skill in cv_skills]
     missing_skills = [skill for skill in jd_skills if skill not in cv_skills]
 
-    jd_role_terms = _extract_role_terms(job_lower)
-    cv_role_terms = _extract_role_terms(cv_lower)
-    matched_role_terms = [term for term in jd_role_terms if term in cv_role_terms]
-    missing_role_terms = [term for term in jd_role_terms if term not in cv_role_terms]
-
+    title_terms = _extract_title_terms(job_title)
+    requirement_terms = _extract_requirement_terms(job_lower, job_title)
+    matched_requirements = [term for term in requirement_terms if _term_in_text(term, cv_lower)]
+    missing_requirements = [term for term in requirement_terms if not _term_in_text(term, cv_lower)]
+    matched_title_terms = [term for term in title_terms if _term_in_text(term, cv_lower)]
     jd_keywords = _extract_relevant_keywords(job_lower)
     cv_keywords = _extract_relevant_keywords(cv_lower)
     matched_keywords = [term for term in jd_keywords if term in cv_keywords]
     missing_keywords = [term for term in jd_keywords if term not in cv_keywords]
 
     skills_score = _ratio_score(matched_skills, jd_skills)
-    role_score = _ratio_score(matched_role_terms, jd_role_terms)
+    requirement_score = _ratio_score(matched_requirements, requirement_terms)
+    title_score = _ratio_score(matched_title_terms, title_terms)
     keyword_score = _ratio_score(matched_keywords, jd_keywords[:12])
     evidence_score = _evidence_score(cv_lower)
 
-    if not jd_skills and jd_role_terms:
-        skills_score = role_score
-    if not jd_role_terms:
-        role_score = min(70, keyword_score)
+    if not jd_skills and requirement_terms:
+        skills_score = requirement_score
+    if not title_terms:
+        title_score = min(70, requirement_score)
 
     score = int(
-        (skills_score * 0.30)
-        + (role_score * 0.35)
+        (skills_score * 0.25)
+        + (requirement_score * 0.35)
+        + (title_score * 0.15)
         + (keyword_score * 0.25)
-        + (evidence_score * 0.10)
+        + (evidence_score * 0.00)
     )
+    score = max(0, min(100, score))
 
-    if jd_role_terms and role_score < 20:
+    if requirement_terms and requirement_score < 20 and title_score < 35:
         score = min(score, 45)
-    elif jd_role_terms and role_score < 40:
+    elif requirement_terms and requirement_score < 40:
         score = min(score, 59)
-    elif missing_role_terms and len(missing_role_terms) >= max(3, len(jd_role_terms) // 2):
+    elif missing_requirements and len(missing_requirements) >= max(3, len(requirement_terms) // 2):
         score = min(score, 74)
 
-    matched = _unique_keep_order(matched_role_terms + matched_skills + matched_keywords[:4])
-    missing = _unique_keep_order(missing_role_terms[:6] + missing_skills[:6] + missing_keywords[:4])
+    matched = _unique_keep_order(matched_title_terms + matched_requirements + matched_skills + matched_keywords[:4])
+    missing = _unique_keep_order(missing_requirements[:8] + missing_skills[:6] + missing_keywords[:4])
 
-    if jd_role_terms and role_score < 20:
+    if requirement_terms and requirement_score < 20 and title_score < 35:
         recommendation = (
             "High role mismatch. The CV may be well written, but recruiters are unlikely to see enough evidence "
-            "for this specific profession. Add truthful role-specific experience before applying."
+            "for this specific role. Add truthful role-specific experience before applying."
         )
     elif score >= 80:
         recommendation = "Strong role fit. Keep the top third focused on the matched requirements and measurable evidence."
@@ -397,22 +384,50 @@ def _extract_known_terms(text, terms):
     return _unique_keep_order(found)
 
 
-def _extract_role_terms(text):
+def _extract_title_terms(job_title):
+    return _unique_keep_order(_important_words(job_title or "")[:6])
+
+
+def _extract_requirement_terms(job_text, job_title=""):
     terms = []
-    for family_terms in ROLE_FAMILIES.values():
-        terms.extend(_extract_known_terms(text, family_terms))
-    return _unique_keep_order(terms)
+    terms.extend(_extract_title_terms(job_title))
+    terms.extend(_extract_known_terms(job_text, SKILLS))
+
+    requirement_lines = []
+    for line in re.split(r"[\n.;:]+", job_text):
+        if re.search(r"\b(require|required|responsib|duties|skills|experience|qualification|essential|must|knowledge|ability|licen[cs]e|certif)\b", line):
+            requirement_lines.append(line)
+    source_text = " ".join(requirement_lines) if requirement_lines else job_text
+
+    terms.extend(_important_words(source_text))
+    terms.extend(_extract_relevant_keywords(job_text, limit=18))
+    return _unique_keep_order(terms)[:28]
 
 
 def _extract_relevant_keywords(text, limit=20):
-    words = re.findall(r"\b[a-z][a-z+-]{2,}\b", text)
+    words = _important_words(text)
     counts = {}
     for word in words:
-        if word in STOP_WORDS or len(word) < 4:
+        if word in GENERIC_REQUIREMENT_TERMS:
             continue
         counts[word] = counts.get(word, 0) + 1
     ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
     return [word for word, _count in ranked[:limit]]
+
+
+def _important_words(text):
+    words = re.findall(r"\b[a-z][a-z0-9+#.-]{2,}\b", (text or "").lower())
+    return [
+        word.strip(".-")
+        for word in words
+        if word not in STOP_WORDS
+        and word not in GENERIC_REQUIREMENT_TERMS
+        and len(word.strip(".-")) >= 4
+    ]
+
+
+def _term_in_text(term, text):
+    return re.search(r"\b" + re.escape(term.lower()) + r"\b", text) is not None
 
 
 def _ratio_score(matched, required):
@@ -705,7 +720,7 @@ def analyse_cv(request):
                 deadline=deadline,
             )
 
-            score, matched, missing, recommendation = calculate_score(cv_text, job_description)
+            score, matched, missing, recommendation = calculate_score(cv_text, job_description, job_title)
             metrics = score_breakdown(score, matched, missing)
 
             result = ATSResult.objects.create(
@@ -845,7 +860,7 @@ def enterprise_bulk_upload(request):
                 if not is_valid_cv:
                     invalid_cvs.append(f"{uploaded_file.name}: {reason}")
                     continue
-                score, matched, missing, recommendation = calculate_score(cv_text, job_description)
+                score, matched, missing, recommendation = calculate_score(cv_text, job_description, job_title)
                 prepared_candidates.append((uploaded_file, score, matched, missing, recommendation))
 
             if invalid_cvs:
