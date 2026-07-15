@@ -39,7 +39,7 @@ class PaymentTransaction(models.Model):
     checkout_reference = models.CharField(max_length=90, unique=True, default=uuid.uuid4)
     provider_checkout_id = models.CharField(max_length=120, blank=True)
     provider_transaction_id = models.CharField(max_length=120, blank=True)
-    hosted_checkout_url = models.URLField(blank=True)
+    hosted_checkout_url = models.URLField(max_length=2000, blank=True)
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     currency = models.CharField(max_length=3, default="GBP")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
