@@ -150,46 +150,6 @@
         margin-bottom: 0.5rem;
     }
 
-    .payment-strip {
-        max-width: 920px;
-        margin: 2rem auto 0;
-        border: 1px solid #e2e8f0;
-        border-radius: 18px;
-        background: #ffffff;
-        padding: 1rem;
-        box-shadow: 0 14px 44px rgba(15, 23, 42, 0.05);
-    }
-
-    .payment-strip h2 {
-        color: #0f172a;
-        font-size: 1rem;
-        font-weight: 760;
-        margin: 0 0 0.85rem;
-        text-align: center;
-    }
-
-    .gateway-grid {
-        display: grid;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
-        gap: 0.75rem;
-    }
-
-    .gateway-pill {
-        display: grid;
-        place-items: center;
-        min-height: 54px;
-        border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        background: #f8fafc;
-        color: #334155;
-        font-weight: 760;
-        font-size: 0.86rem;
-    }
-
-    .gateway-pill span {
-        color: #4f46e5;
-    }
-
     @media (prefers-color-scheme: dark) {
         .plans-shell {
             background: linear-gradient(180deg, #0b1224 0%, #0f172a 100%);
@@ -197,8 +157,7 @@
 
         .plans-hero h1,
         .plan-card h2,
-        .plan-price,
-        .payment-strip h2 {
+        .plan-price {
             color: #f8fafc;
         }
 
@@ -208,27 +167,18 @@
             color: #cbd5e1;
         }
 
-        .plan-card,
-        .payment-strip {
+        .plan-card {
             background: #111c33;
             border-color: #273449;
         }
 
-        .plan-action,
-        .gateway-pill {
+        .plan-action {
             background: #0b1224;
             border-color: #273449;
         }
 
-        .plan-features li,
-        .gateway-pill {
+        .plan-features li {
             color: #e2e8f0;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .gateway-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 </style>
@@ -318,17 +268,6 @@
             {% endfor %}
         </div>
 
-        <section class="payment-strip" aria-label="Accepted payment methods">
-            <h2>Available card and wallet methods are shown securely by Stripe Checkout.</h2>
-            <div class="gateway-grid">
-                <div class="gateway-pill">Stripe</div>
-                <div class="gateway-pill">Mastercard</div>
-                <div class="gateway-pill">Visa</div>
-                <div class="gateway-pill">American Express</div>
-                <div class="gateway-pill">Google Pay</div>
-                <div class="gateway-pill">Apple Pay</div>
-            </div>
-        </section>
     </div>
 </section>
 {% endblock %}

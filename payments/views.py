@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from datetime import datetime, timedelta, timezone as datetime_timezone
 from decimal import Decimal
@@ -27,6 +28,9 @@ from .services import (
     retrieve_stripe_checkout_session,
     verify_stripe_signature,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 def pricing(request):
@@ -102,12 +106,14 @@ def start_stripe_checkout(request, plan_code):
     try:
         session = create_stripe_checkout_session(transaction, success_url, cancel_url)
     except StripeConfigurationError:
+        logger.exception("Stripe checkout is not configured for plan %s.", plan.code)
         if settings.STRIPE_MOCK_MODE:
             messages.warning(request, "Live card checkout is not connected yet. Demo checkout is available.")
             return render(request, "payments/stripe_mock_checkout.html", demo_checkout_context(transaction))
         messages.error(request, "Stripe checkout is not configured. Please contact support.")
         return redirect("pricing")
     except StripeAPIError:
+        logger.exception("Stripe checkout API failed for plan %s and transaction %s.", plan.code, transaction.checkout_reference)
         messages.error(request, "Stripe checkout could not be started. Please try again.")
         return redirect("pricing")
 
