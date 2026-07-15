@@ -34,7 +34,53 @@ SKILLS = [
     "python", "django", "sql", "postgresql", "html", "css", "javascript",
     "bootstrap", "api", "git", "github", "excel", "communication",
     "leadership", "project management", "data analysis", "customer service",
+    "administration", "scheduling", "records management", "data entry",
+    "reception", "office management", "document control", "compliance",
+    "airport operations", "passenger service", "aviation", "boarding",
+    "dentistry", "dental", "patient care", "oral health", "treatment planning",
+    "radiography", "x-ray", "infection control", "clinical assessment",
 ]
+
+STOP_WORDS = {
+    "about", "above", "after", "again", "against", "also", "and", "any",
+    "are", "because", "been", "before", "being", "below", "between", "both",
+    "but", "can", "candidate", "company", "control", "could", "day", "description",
+    "did", "does", "doing", "down", "during", "each", "few", "for", "from",
+    "further", "had", "has", "have", "having", "here", "hers", "him", "his",
+    "how", "into", "its", "job", "just", "more", "most", "must", "not",
+    "now", "off", "once", "only", "other", "our", "out", "over", "own",
+    "position", "requirements", "responsibilities", "role", "same", "service", "she",
+    "should", "some", "such", "than", "that", "the", "their", "them", "then",
+    "there", "these", "they", "this", "those", "through", "too", "under",
+    "until", "very", "was", "were", "what", "when", "where", "which", "while",
+    "who", "will", "with", "work", "would", "you", "your",
+}
+
+ROLE_FAMILIES = {
+    "dental": [
+        "dentist", "dentistry", "dental", "oral", "clinic", "clinical",
+        "patient", "patients", "hygienist", "nurse", "radiography", "x-ray",
+        "xray", "treatment", "treatments", "diagnosis", "restorative",
+        "periodontal", "endodontic", "extraction", "crown", "fillings",
+        "infection control", "gdc", "nhs",
+    ],
+    "administration": [
+        "admin", "administrator", "administration", "office", "reception",
+        "records", "filing", "scheduling", "diary", "appointments", "email",
+        "telephone", "correspondence", "document", "documents", "data entry",
+        "excel", "reporting", "customer service", "coordination",
+    ],
+    "aviation": [
+        "airport", "aviation", "airline", "terminal", "passenger",
+        "passengers", "boarding", "flight", "flights", "airside", "landside",
+        "baggage", "security", "check-in", "gate", "crew",
+    ],
+    "technology": [
+        "developer", "engineer", "software", "python", "django", "api",
+        "database", "sql", "cloud", "frontend", "backend", "testing",
+        "deployment", "github", "git",
+    ],
+}
 
 
 def get_user_profile(user):
@@ -278,28 +324,122 @@ def enterprise_monthly_usage(user):
 
 
 def calculate_score(cv_text, job_description):
-    cv_text = cv_text.lower()
-    job_text = job_description.lower()
-    required_skills = [skill for skill in SKILLS if skill in job_text]
+    cv_lower = (cv_text or "").lower()
+    job_lower = (job_description or "").lower()
 
-    if not required_skills:
-        required_skills = [skill for skill in SKILLS if skill in cv_text]
+    jd_skills = _extract_known_terms(job_lower, SKILLS)
+    cv_skills = _extract_known_terms(cv_lower, SKILLS)
+    matched_skills = [skill for skill in jd_skills if skill in cv_skills]
+    missing_skills = [skill for skill in jd_skills if skill not in cv_skills]
 
-    matched = [skill for skill in required_skills if skill in cv_text]
-    missing = [skill for skill in required_skills if skill not in cv_text]
+    jd_role_terms = _extract_role_terms(job_lower)
+    cv_role_terms = _extract_role_terms(cv_lower)
+    matched_role_terms = [term for term in jd_role_terms if term in cv_role_terms]
+    missing_role_terms = [term for term in jd_role_terms if term not in cv_role_terms]
 
-    score = int((len(matched) / len(required_skills)) * 100) if required_skills else 0
+    jd_keywords = _extract_relevant_keywords(job_lower)
+    cv_keywords = _extract_relevant_keywords(cv_lower)
+    matched_keywords = [term for term in jd_keywords if term in cv_keywords]
+    missing_keywords = [term for term in jd_keywords if term not in cv_keywords]
 
-    if missing:
+    skills_score = _ratio_score(matched_skills, jd_skills)
+    role_score = _ratio_score(matched_role_terms, jd_role_terms)
+    keyword_score = _ratio_score(matched_keywords, jd_keywords[:12])
+    evidence_score = _evidence_score(cv_lower)
+
+    if not jd_skills and jd_role_terms:
+        skills_score = role_score
+    if not jd_role_terms:
+        role_score = min(70, keyword_score)
+
+    score = int(
+        (skills_score * 0.30)
+        + (role_score * 0.35)
+        + (keyword_score * 0.25)
+        + (evidence_score * 0.10)
+    )
+
+    if jd_role_terms and role_score < 20:
+        score = min(score, 45)
+    elif jd_role_terms and role_score < 40:
+        score = min(score, 59)
+    elif missing_role_terms and len(missing_role_terms) >= max(3, len(jd_role_terms) // 2):
+        score = min(score, 74)
+
+    matched = _unique_keep_order(matched_role_terms + matched_skills + matched_keywords[:4])
+    missing = _unique_keep_order(missing_role_terms[:6] + missing_skills[:6] + missing_keywords[:4])
+
+    if jd_role_terms and role_score < 20:
         recommendation = (
-            "Your CV matches some requirements. Add truthful evidence for the missing skills if you have them."
+            "High role mismatch. The CV may be well written, but recruiters are unlikely to see enough evidence "
+            "for this specific profession. Add truthful role-specific experience before applying."
         )
-    elif matched:
-        recommendation = "Strong match. Keep the CV focused on measurable outcomes for these role requirements."
+    elif score >= 80:
+        recommendation = "Strong role fit. Keep the top third focused on the matched requirements and measurable evidence."
+    elif score >= 55:
+        recommendation = (
+            "Partial role fit. Improve the CV by moving matched evidence higher and adding truthful proof for the missing requirements."
+        )
     else:
-        recommendation = "Add more role-specific skills and evidence before applying for this position."
+        recommendation = (
+            "Weak match for this job. The CV needs clearer role-specific skills, keywords, and evidence before applying."
+        )
 
     return score, matched, missing, recommendation
+
+
+def _extract_known_terms(text, terms):
+    found = []
+    for term in terms:
+        pattern = r"\b" + re.escape(term.lower()) + r"\b"
+        if re.search(pattern, text):
+            found.append(term)
+    return _unique_keep_order(found)
+
+
+def _extract_role_terms(text):
+    terms = []
+    for family_terms in ROLE_FAMILIES.values():
+        terms.extend(_extract_known_terms(text, family_terms))
+    return _unique_keep_order(terms)
+
+
+def _extract_relevant_keywords(text, limit=20):
+    words = re.findall(r"\b[a-z][a-z+-]{2,}\b", text)
+    counts = {}
+    for word in words:
+        if word in STOP_WORDS or len(word) < 4:
+            continue
+        counts[word] = counts.get(word, 0) + 1
+    ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    return [word for word, _count in ranked[:limit]]
+
+
+def _ratio_score(matched, required):
+    if not required:
+        return 0
+    return min(100, int((len(matched) / len(required)) * 100))
+
+
+def _evidence_score(text):
+    evidence_markers = [
+        "achieved", "coordinated", "delivered", "improved", "increased",
+        "managed", "reduced", "reported", "resolved", "supported", "trained",
+    ]
+    marker_hits = sum(1 for marker in evidence_markers if marker in text)
+    number_hits = len(re.findall(r"\b\d+%?|\b\d+\+?\s+years?\b", text))
+    return min(100, 45 + marker_hits * 7 + number_hits * 5)
+
+
+def _unique_keep_order(items):
+    seen = set()
+    unique = []
+    for item in items:
+        normalized = item.strip().lower()
+        if normalized and normalized not in seen:
+            seen.add(normalized)
+            unique.append(item)
+    return unique
 
 
 def build_generated_cv(cv, result, matched, missing):
@@ -385,7 +525,7 @@ def build_report_insights(result, matched, missing):
             "The CV is not weak overall, but it may still lose interviews if the best achievements are buried, "
             "generic, or not measurable."
         )
-    elif result.score >= 60:
+    elif result.score >= 55:
         readiness_label = "Needs work before applying"
         readiness_class = "work"
         recruiter_view = (
