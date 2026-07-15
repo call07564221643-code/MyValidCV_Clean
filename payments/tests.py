@@ -31,7 +31,7 @@ class StripeCheckoutTests(TestCase):
 
     @override_settings(DEBUG=True, STRIPE_MOCK_MODE=True)
     def test_plan_button_route_opens_stripe_mock_checkout(self):
-        response = self.client.post(reverse("start_stripe_checkout", args=[self.plan.code]))
+        response = self.client.post(reverse("start_checkout", args=[self.plan.code]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "payments/stripe_mock_checkout.html")
         transaction = PaymentTransaction.objects.get()

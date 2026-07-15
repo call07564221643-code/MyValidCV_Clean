@@ -246,7 +246,7 @@
 
                         <div class="plan-action">
                             {% if user.is_authenticated %}
-                                <form method="post" action="{% url 'start_stripe_checkout' plan.code %}">
+                                <form method="post" action="{% url 'start_checkout' plan.code %}">
                                     {% csrf_token %}
                                     {% if plan.price > 0 %}
                                         <input type="text" name="discount_code" class="form-control discount-slot" placeholder="Discount code, optional">
