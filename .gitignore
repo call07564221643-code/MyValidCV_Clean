@@ -5,3 +5,8 @@ __pycache__/
 db.sqlite3
 staticfiles/
 media/
+test.sqlite3
+.pytest_cache/
+*.log
+structure.txt
+tatus
