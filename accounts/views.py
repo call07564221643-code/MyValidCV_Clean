@@ -51,7 +51,7 @@ def register(request):
             user = form.save()
             username = form.cleaned_data.get('username')
             messages.success(request, f'Account created successfully. Welcome {username}!')
-            login(request, user)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect(redirect_to)
         else:
             for field, errors in form.errors.items():
@@ -143,6 +143,3 @@ def settings_view(request):
         'form': form,
         'profile': getattr(request.user, 'profile', None),
     })
-from urllib.parse import urlencode
-
-from django.conf import settings
