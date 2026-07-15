@@ -200,6 +200,7 @@ def stripe_success(request, checkout_reference):
     try:
         session = retrieve_stripe_checkout_session(session_id)
     except (StripeConfigurationError, StripeAPIError):
+        logger.exception("Stripe checkout verification failed for transaction %s.", transaction.checkout_reference)
         messages.warning(request, "Payment is awaiting Stripe confirmation.")
         return render(request, "payments/payment_pending.html", {"transaction": transaction})
     reference = session.get("metadata", {}).get("checkout_reference", "")
@@ -209,12 +210,17 @@ def stripe_success(request, checkout_reference):
         and session.get("payment_status") in ("paid", "no_payment_required")
         and session.get("status") == "complete"
     ):
-        activate_paid_transaction(
-            transaction,
-            raw_response=session,
-            stripe_customer_id=session.get("customer", "") or "",
-            stripe_subscription_id=session.get("subscription", "") or "",
-        )
+        try:
+            activate_paid_transaction(
+                transaction,
+                raw_response=session,
+                stripe_customer_id=session.get("customer", "") or "",
+                stripe_subscription_id=session.get("subscription", "") or "",
+            )
+        except Exception:
+            logger.exception("Payment activation failed for transaction %s.", transaction.checkout_reference)
+            messages.warning(request, "Payment is confirmed by Stripe and is being activated. Please check again shortly.")
+            return render(request, "payments/payment_pending.html", {"transaction": transaction})
         messages.success(request, "Payment confirmed. Your subscription is active.")
         return redirect("payment_receipt", checkout_reference=transaction.checkout_reference)
     messages.warning(request, "Payment has not been confirmed by Stripe yet.")
@@ -316,6 +322,10 @@ def payment_receipt(request, checkout_reference):
         checkout_reference=checkout_reference,
         user=request.user,
     )
+    if not hasattr(transaction, "invoice"):
+        logger.error("Paid transaction %s has no invoice record.", transaction.checkout_reference)
+        messages.warning(request, "Your payment exists, but the receipt is still being prepared.")
+        return render(request, "payments/payment_pending.html", {"transaction": transaction})
     return render(request, "payments/receipt.html", {"transaction": transaction})
 
 

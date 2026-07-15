@@ -77,9 +77,28 @@ class StripeCheckoutTests(TestCase):
 
     @override_settings(STRIPE_SECRET_KEY="sk_test_example")
     @patch("payments.services.urllib.request.urlopen")
-    def test_discounted_checkout_uses_discounted_dynamic_price(self, urlopen):
+    def test_checkout_uses_dynamic_price_even_when_plan_has_stripe_price_id(self, urlopen):
         self.plan.stripe_price_id = "price_full_amount"
         self.plan.save(update_fields=["stripe_price_id"])
+        transaction = PaymentTransaction.objects.create(
+            user=self.user,
+            plan=self.plan,
+            provider="stripe",
+            amount=self.plan.price,
+            currency="GBP",
+            status="pending",
+        )
+        response = MagicMock()
+        response.read.return_value = b'{"id":"cs_test","url":"https://checkout.stripe.test"}'
+        urlopen.return_value.__enter__.return_value = response
+        create_stripe_checkout_session(transaction, "https://example.test/success", "https://example.test/cancel")
+        payload = parse_qs(urlopen.call_args.args[0].data.decode())
+        self.assertNotIn("line_items[0][price]", payload)
+        self.assertEqual(payload["line_items[0][price_data][unit_amount]"], ["499"])
+
+    @override_settings(STRIPE_SECRET_KEY="sk_test_example")
+    @patch("payments.services.urllib.request.urlopen")
+    def test_discounted_checkout_uses_discounted_dynamic_price(self, urlopen):
         discount = DiscountCode.objects.create(code="HALF", percent_off=50)
         transaction = PaymentTransaction.objects.create(
             user=self.user,

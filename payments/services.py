@@ -46,15 +46,12 @@ def create_stripe_checkout_session(transaction, success_url, cancel_url):
     }
     if transaction.user.email:
         payload["customer_email"] = transaction.user.email
-    if transaction.plan.stripe_price_id and not transaction.discount_code_id:
-        payload["line_items[0][price]"] = transaction.plan.stripe_price_id
-    else:
-        payload.update({
-            "line_items[0][price_data][currency]": transaction.currency.lower(),
-            "line_items[0][price_data][product_data][name]": f"MyValidCV {transaction.plan.name}",
-            "line_items[0][price_data][unit_amount]": str(int(transaction.amount * 100)),
-            "line_items[0][price_data][recurring][interval]": transaction.plan.billing_interval,
-        })
+    payload.update({
+        "line_items[0][price_data][currency]": transaction.currency.lower(),
+        "line_items[0][price_data][product_data][name]": f"MyValidCV {transaction.plan.name}",
+        "line_items[0][price_data][unit_amount]": str(int(transaction.amount * 100)),
+        "line_items[0][price_data][recurring][interval]": transaction.plan.billing_interval,
+    })
 
     request = urllib.request.Request(
         "https://api.stripe.com/v1/checkout/sessions",
