@@ -1,1 +1,0 @@
-# Organizations app models

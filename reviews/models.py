@@ -1,1 +1,0 @@
-# Reviews app models
