@@ -9,4 +9,5 @@ test.sqlite3
 .pytest_cache/
 *.log
 structure.txt
+project_structure.txt
 tatus
