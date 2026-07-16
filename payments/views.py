@@ -100,7 +100,7 @@ def start_stripe_checkout(request, plan_code):
     if settings.STRIPE_MOCK_MODE:
         return render(request, "payments/stripe_mock_checkout.html", demo_checkout_context(transaction))
 
-    success_url = request.build_absolute_uri(reverse("stripe_success", args=[transaction.checkout_reference]))
+    success_url = request.build_absolute_uri(reverse("checkout_success", args=[transaction.checkout_reference]))
     success_url = f"{success_url}?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = request.build_absolute_uri(reverse("pricing"))
     try:

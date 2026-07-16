@@ -139,7 +139,7 @@ class StripeCheckoutTests(TestCase):
             "metadata": {"checkout_reference": str(transaction.checkout_reference)},
         }
         response = self.client.get(
-            reverse("stripe_success", args=[transaction.checkout_reference]),
+            reverse("checkout_success", args=[transaction.checkout_reference]),
             {"session_id": "cs_test_123"},
         )
         self.assertEqual(response.status_code, 302)
