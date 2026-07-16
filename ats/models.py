@@ -61,6 +61,166 @@ class JobRole(models.Model):
         return self.title
 
 
+class JobFamily(models.Model):
+    name = models.CharField(max_length=120, unique=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name_plural = "Job families"
+
+    def __str__(self):
+        return self.name
+
+
+class Skill(models.Model):
+    CATEGORY_CHOICES = [
+        ("technical", "Technical"),
+        ("domain", "Domain"),
+        ("soft", "Soft"),
+        ("tool", "Tool"),
+        ("process", "Process"),
+        ("language", "Language"),
+    ]
+
+    name = models.CharField(max_length=120, unique=True)
+    normalized_name = models.CharField(max_length=120, unique=True)
+    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES, default="domain")
+    aliases = models.TextField(blank=True, help_text="Comma-separated alternative names.")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+        indexes = [models.Index(fields=["normalized_name"], name="skill_normalized_idx")]
+
+    def save(self, *args, **kwargs):
+        if not self.normalized_name:
+            self.normalized_name = self.name.lower().strip()
+        super().save(*args, **kwargs)
+
+    def terms(self):
+        aliases = [item.strip().lower() for item in self.aliases.split(",") if item.strip()]
+        return [self.normalized_name.lower(), *aliases]
+
+    def __str__(self):
+        return self.name
+
+
+class Qualification(models.Model):
+    CATEGORY_CHOICES = [
+        ("education", "Education"),
+        ("certification", "Certification"),
+        ("licence", "Licence"),
+        ("membership", "Membership"),
+        ("training", "Training"),
+    ]
+
+    name = models.CharField(max_length=160, unique=True)
+    normalized_name = models.CharField(max_length=160, unique=True)
+    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES, default="certification")
+    issuing_body = models.CharField(max_length=160, blank=True)
+    is_license = models.BooleanField(default=False)
+    aliases = models.TextField(blank=True, help_text="Comma-separated alternative names.")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+        indexes = [models.Index(fields=["normalized_name"], name="qual_normalized_idx")]
+
+    def save(self, *args, **kwargs):
+        if not self.normalized_name:
+            self.normalized_name = self.name.lower().strip()
+        super().save(*args, **kwargs)
+
+    def terms(self):
+        aliases = [item.strip().lower() for item in self.aliases.split(",") if item.strip()]
+        return [self.normalized_name.lower(), *aliases]
+
+    def __str__(self):
+        return self.name
+
+
+class RoleTemplate(models.Model):
+    SENIORITY_CHOICES = [
+        ("entry", "Entry"),
+        ("junior", "Junior"),
+        ("mid", "Mid"),
+        ("senior", "Senior"),
+        ("lead", "Lead"),
+        ("manager", "Manager"),
+        ("director", "Director"),
+    ]
+
+    job_family = models.ForeignKey(JobFamily, on_delete=models.CASCADE, related_name="role_templates")
+    title = models.CharField(max_length=160)
+    normalized_title = models.CharField(max_length=160)
+    seniority_level = models.CharField(max_length=30, choices=SENIORITY_CHOICES, default="mid")
+    description = models.TextField(blank=True)
+    aliases = models.TextField(blank=True, help_text="Comma-separated alternative role titles.")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["job_family__name", "title"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["job_family", "normalized_title", "seniority_level"],
+                name="unique_role_template_level",
+            )
+        ]
+        indexes = [models.Index(fields=["normalized_title"], name="role_normalized_idx")]
+
+    def save(self, *args, **kwargs):
+        if not self.normalized_title:
+            self.normalized_title = self.title.lower().strip()
+        super().save(*args, **kwargs)
+
+    def terms(self):
+        aliases = [item.strip().lower() for item in self.aliases.split(",") if item.strip()]
+        return [self.normalized_title.lower(), *aliases]
+
+    def __str__(self):
+        return f"{self.title} ({self.job_family})"
+
+
+class RoleTemplateSkill(models.Model):
+    IMPORTANCE_CHOICES = [
+        ("required", "Required"),
+        ("preferred", "Preferred"),
+        ("optional", "Optional"),
+    ]
+
+    role_template = models.ForeignKey(RoleTemplate, on_delete=models.CASCADE, related_name="skill_requirements")
+    skill = models.ForeignKey(Skill, on_delete=models.CASCADE, related_name="role_requirements")
+    importance = models.CharField(max_length=20, choices=IMPORTANCE_CHOICES, default="required")
+
+    class Meta:
+        ordering = ["role_template", "importance", "skill__name"]
+        constraints = [
+            models.UniqueConstraint(fields=["role_template", "skill"], name="unique_role_skill")
+        ]
+
+    def __str__(self):
+        return f"{self.role_template}: {self.skill} ({self.importance})"
+
+
+class RoleTemplateQualification(models.Model):
+    IMPORTANCE_CHOICES = RoleTemplateSkill.IMPORTANCE_CHOICES
+
+    role_template = models.ForeignKey(RoleTemplate, on_delete=models.CASCADE, related_name="qualification_requirements")
+    qualification = models.ForeignKey(Qualification, on_delete=models.CASCADE, related_name="role_requirements")
+    importance = models.CharField(max_length=20, choices=IMPORTANCE_CHOICES, default="required")
+
+    class Meta:
+        ordering = ["role_template", "importance", "qualification__name"]
+        constraints = [
+            models.UniqueConstraint(fields=["role_template", "qualification"], name="unique_role_qualification")
+        ]
+
+    def __str__(self):
+        return f"{self.role_template}: {self.qualification} ({self.importance})"
+
+
 class CV(models.Model):
     VALIDATION_STATUS_CHOICES = [
         ("pending", "Pending"),
