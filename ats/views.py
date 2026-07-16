@@ -30,6 +30,9 @@ from .engine import ats_engine
 from subscriptions.services import get_active_subscription, get_entitlements
 
 
+APPLY_STRONG_THRESHOLD = 75
+APPLY_MINIMUM_THRESHOLD = 55
+
 SKILLS = [
     "python", "django", "sql", "postgresql", "html", "css", "javascript",
     "bootstrap", "api", "git", "github", "excel", "communication",
@@ -461,25 +464,52 @@ def build_generated_cv(cv, result, matched, missing):
     cv_text = extract_cv_text(cv)
     matched_text = ", ".join(matched) if matched else "role-relevant strengths already present in your CV"
     missing_text = ", ".join(missing) if missing else "No major missing skills detected"
+    decision = build_application_decision(result.score)
+    if not decision["can_rewrite"]:
+        return f"""Tailored CV Draft for {result.job_title}
+
+Source CV: {cv.title}
+ATS Match Score: {result.score}%
+
+Application Decision
+{decision["message"]}
+
+Suggested Action
+Do not create a cosmetic CV rewrite for this job yet. The current CV does not show enough evidence for the role requirements. Build truthful evidence first, such as training, licence, domain experience, portfolio work, or measurable examples that directly support the job advert.
+
+Missing Evidence To Address
+{missing_text}
+
+Original CV Content Reference
+{cv_text[:2500]}
+"""
     return f"""Tailored CV Draft for {result.job_title}
 
 Source CV: {cv.title}
 ATS Match Score: {result.score}%
 
+Application Decision
+{decision["message"]}
+
+Change Legend
+[GREEN] Rewording only: same evidence, clearer ATS/recruiter wording.
+[YELLOW] Window-dressed wording: stronger presentation of existing evidence; do not invent facts.
+[RED] Evidence gap: CV owner must be ready with training, licence, certification, or truthful proof before claiming it.
+
 Professional Summary
-Candidate with experience aligned to {result.job_title}. This version should highlight {matched_text} and keep the profile focused on evidence that matches the job advert.
+[GREEN] Candidate with experience relevant to {result.job_title}, with visible evidence in {matched_text}. The profile should keep the strongest role-matched evidence in the first third of the CV.
 
 Key Skills to Emphasise
-{matched_text}
+[GREEN] {matched_text}
 
 Skills or Evidence to Add Truthfully
-{missing_text}
+[RED] {missing_text}
 
 Recommended CV Changes
-1. Move the most relevant skills into the top third of the CV.
-2. Add measurable examples beside each matched skill.
-3. If you have experience with the missing skills, add truthful project or work evidence.
-4. Remove or shorten content that does not support this specific role.
+1. [GREEN] Move the most relevant matched skills into the top third of the CV.
+2. [YELLOW] Add measurable examples beside each matched skill using evidence already in the CV or real work history.
+3. [RED] Add missing skills only when the candidate genuinely has experience, training, licence, or certification.
+4. [YELLOW] Remove or shorten content that does not support this specific role.
 
 Original CV Content Reference
 {cv_text[:2500]}
@@ -525,6 +555,83 @@ def score_breakdown(score, matched, missing):
         "total": score,
         "matched_count": matched_count,
         "missing_count": missing_count,
+    }
+
+
+def build_application_decision(score):
+    if score >= APPLY_STRONG_THRESHOLD:
+        return {
+            "status": "worth",
+            "label": "Worth applying",
+            "threshold": APPLY_STRONG_THRESHOLD,
+            "can_rewrite": True,
+            "message": (
+                f"It is worth applying for this job role. Your success signal is above {APPLY_STRONG_THRESHOLD}%, "
+                "which means the CV shows enough role evidence to justify a focused application."
+            ),
+        }
+    if score >= APPLY_MINIMUM_THRESHOLD:
+        return {
+            "status": "improve",
+            "label": "Possible, but improve first",
+            "threshold": APPLY_MINIMUM_THRESHOLD,
+            "can_rewrite": True,
+            "message": (
+                f"You may have a chance, but improve the CV before applying. The score is above the minimum "
+                f"{APPLY_MINIMUM_THRESHOLD}% review line, but below the stronger shortlist signal of {APPLY_STRONG_THRESHOLD}%."
+            ),
+        }
+    return {
+        "status": "low",
+        "label": "Low chance for this role",
+        "threshold": APPLY_MINIMUM_THRESHOLD,
+        "can_rewrite": False,
+        "message": (
+            "You do not currently have a strong chance with this job role because the CV does not meet the minimum "
+            f"{APPLY_MINIMUM_THRESHOLD}% role-fit standard used by MyValidCV for a credible application review."
+        ),
+    }
+
+
+def build_suggested_cv_review(result, matched, missing):
+    decision = build_application_decision(result.score)
+    matched_text = ", ".join(matched[:5]) if matched else "the strongest truthful evidence already visible in the CV"
+    missing_text = ", ".join(missing[:5]) if missing else "no major missing evidence"
+    return {
+        "decision": decision,
+        "format_note": (
+            "The suggested draft keeps the candidate's existing CV structure where possible: summary, skills, "
+            "experience, education, and supporting evidence. It changes wording and ordering; it must not invent facts."
+        ),
+        "sections": [
+            {
+                "tone": "green",
+                "label": "Professional summary",
+                "meaning": "Rewording only",
+                "text": (
+                    f"Open with the target role, then surface matched evidence such as {matched_text}. "
+                    "This is a wording and ordering change, not a new claim."
+                ),
+            },
+            {
+                "tone": "yellow",
+                "label": "Skills and experience wording",
+                "meaning": "Window-dressed wording",
+                "text": (
+                    "Rewrite bullets so existing duties show measurable outcomes, tools used, scale, stakeholders, "
+                    "and impact. Keep every statement defensible in interview."
+                ),
+            },
+            {
+                "tone": "red",
+                "label": "Evidence, training, or licence gaps",
+                "meaning": "Prepare proof before claiming",
+                "text": (
+                    f"Do not claim {missing_text} unless the CV owner has real experience, training, certification, "
+                    "licence, or project evidence. If the role requires these as must-have criteria, build the evidence first."
+                ),
+            },
+        ],
     }
 
 
@@ -784,6 +891,8 @@ def result_detail(request, result_id):
     missing = [item.strip() for item in result.missing_skills.split(",") if item.strip()]
     breakdown = score_breakdown(result.score, matched, missing)
     report_insights = build_report_insights(result, matched, missing)
+    application_decision = build_application_decision(result.score)
+    suggested_cv_review = build_suggested_cv_review(result, matched, missing)
     return render(
         request,
         "ats/result.html",
@@ -793,6 +902,8 @@ def result_detail(request, result_id):
             "matched": matched,
             "missing": missing,
             "report_insights": report_insights,
+            "application_decision": application_decision,
+            "suggested_cv_review": suggested_cv_review,
             "can_download": can_download_generated_cv(request.user),
         },
     )

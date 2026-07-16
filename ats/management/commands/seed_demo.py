@@ -14,6 +14,7 @@ from ats.models import (
     CVStorage,
     EnterpriseBatch,
     EnterpriseCandidateResult,
+    GeneratedCoverLetter,
     GeneratedCV,
     JobRole,
 )
@@ -60,6 +61,7 @@ class Command(BaseCommand):
             "jobs": 0,
             "results": 0,
             "generated_cvs": 0,
+            "generated_cover_letters": 0,
             "reminders": 0,
             "subscriptions": 0,
             "payments": 0,
@@ -184,7 +186,7 @@ class Command(BaseCommand):
                 result.status = "completed"
                 result.save(update_fields=["job_role", "job_description", "score", "metrics", "status", "updated_at"])
 
-            _generated, created = GeneratedCV.objects.get_or_create(
+            generated_cv, created = GeneratedCV.objects.get_or_create(
                 user=user,
                 original_cv=cv,
                 ats_result=result,
@@ -194,6 +196,22 @@ class Command(BaseCommand):
                 },
             )
             counters["generated_cvs"] += int(created)
+            if not created:
+                generated_cv.title = f"{cv.title} tailored for {job_title}"
+                generated_cv.content = self.build_generated_cv(cv.title, job_title, score)
+                generated_cv.save(update_fields=["title", "content"])
+
+            cover_letter, created = GeneratedCoverLetter.objects.get_or_create(
+                user=user,
+                ats_result=result,
+                defaults={
+                    "content": self.build_cover_letter(first_name, last_name, job_title, matched, score),
+                },
+            )
+            counters["generated_cover_letters"] += int(created)
+            if not created:
+                cover_letter.content = self.build_cover_letter(first_name, last_name, job_title, matched, score)
+                cover_letter.save(update_fields=["content"])
 
             _reminder, created = ApplicationReminder.objects.get_or_create(
                 user=user,
@@ -386,17 +404,44 @@ and the ability to improve systems while working with a wider team.
 """
 
     def build_generated_cv(self, cv_title, job_title, score):
+        if score >= 75:
+            decision = "It is worth applying for this job role because the CV is above the strong shortlist signal used by MyValidCV."
+        elif score >= 55:
+            decision = "It may be worth applying after improving the CV because the role-fit score is above the minimum review line but below the stronger shortlist signal."
+        else:
+            decision = "Do not apply yet. The CV does not meet the minimum role-fit standard for this job, so a cosmetic rewrite is not enough."
         return f"""Tailored CV Draft for {job_title}
 
 Source CV: {cv_title}
 ATS Match Score: {score}%
 
+Application Decision
+{decision}
+
+Change Legend
+[GREEN] Rewording only: same evidence, clearer ATS/recruiter wording.
+[YELLOW] Window-dressed wording: stronger presentation of existing evidence; do not invent facts.
+[RED] Evidence gap: CV owner must be ready with training, licence, certification, or truthful proof before claiming it.
+
 Professional Summary
-Candidate profile tailored toward {job_title}, emphasising Python, Django, SQL, communication,
-and measurable delivery outcomes where truthful.
+[GREEN] Candidate profile tailored toward {job_title}, emphasising the strongest matched evidence and measurable delivery outcomes where truthful.
 
 Recommended Changes
-1. Add role keywords near the top of the CV.
-2. Show evidence for matched skills.
-3. Add missing skills only when the candidate genuinely has experience.
+1. [GREEN] Add role keywords near the top of the CV when they are already supported by evidence.
+2. [YELLOW] Reframe existing duties into measurable achievements.
+3. [RED] Add missing skills only when the candidate genuinely has training, licence, certification, or experience.
+"""
+
+    def build_cover_letter(self, first_name, last_name, job_title, matched, score):
+        strengths = ", ".join(matched[:4]) if matched else "the evidence shown in my CV"
+        return f"""Dear Hiring Manager,
+
+I am applying for the {job_title} role. My CV currently shows a MyValidCV role-fit score of {score}% and highlights strengths including {strengths}.
+
+I have kept this draft truthful and focused on evidence already present in my CV. I would welcome the opportunity to discuss how my experience can support the requirements of this role.
+
+Yours sincerely,
+{first_name} {last_name}
+
+Draft note: personalise this letter before sending and verify every statement.
 """
