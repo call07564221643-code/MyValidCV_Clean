@@ -20,7 +20,7 @@
     .report-shell {
         min-height: calc(100vh - 84px);
         background: linear-gradient(180deg, #ffffff 0%, var(--report-bg) 100%);
-        padding: 2.25rem 0 3rem;
+        padding: 1.8rem 0 3rem;
     }
 
     .report-hero {
@@ -29,6 +29,71 @@
         gap: 1rem;
         align-items: start;
         margin-bottom: 1.25rem;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr 1fr 1fr;
+        gap: 0.85rem;
+        margin-bottom: 1rem;
+    }
+
+    .summary-card {
+        background: var(--report-card);
+        border: 1px solid var(--report-line);
+        border-radius: 16px;
+        padding: 1rem;
+        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.055);
+    }
+
+    .summary-card span {
+        color: var(--report-muted);
+        display: block;
+        font-size: 0.76rem;
+        font-weight: 760;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.35rem;
+        text-transform: uppercase;
+    }
+
+    .summary-card strong {
+        color: var(--report-ink);
+        display: block;
+        font-size: 1.05rem;
+        line-height: 1.25;
+    }
+
+    .summary-card p {
+        color: var(--report-muted);
+        margin: 0.35rem 0 0;
+        font-size: 0.88rem;
+    }
+
+    .summary-score {
+        font-size: 2.35rem !important;
+        letter-spacing: -0.05em;
+        line-height: 1 !important;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 1rem;
+        margin: 1.35rem 0 0.65rem;
+    }
+
+    .section-header h2 {
+        color: var(--report-ink);
+        font-size: 1rem;
+        font-weight: 780;
+        margin: 0;
+    }
+
+    .section-header p {
+        color: var(--report-muted);
+        margin: 0;
+        font-size: 0.9rem;
     }
 
     .report-kicker {
@@ -75,7 +140,7 @@
         grid-template-columns: minmax(220px, 0.75fr) minmax(0, 1.25fr);
         gap: 1.25rem;
         align-items: center;
-        margin-bottom: 1.25rem;
+        margin-bottom: 1rem;
     }
 
     .readiness-decision {
@@ -450,6 +515,7 @@
         .signal-card,
         .skill-box,
         .intelligence-card,
+        .summary-card,
         .draft-output,
         .cv-change-card {
             background: #0b1224;
@@ -486,6 +552,7 @@
 
     @media (max-width: 991px) {
         .report-hero,
+        .summary-grid,
         .readiness-card,
         .report-grid {
             grid-template-columns: 1fr;
@@ -542,16 +609,45 @@
                 {% endif %}
             </div>
         </div>
-        <div class="report-card mt-4">
-            <div class="report-card-pad d-flex justify-content-between align-items-start gap-3 flex-wrap border-bottom">
-                <div><h2 class="h5 mb-1">Cover-letter draft</h2><p class="report-muted mb-0">Included with Plus. Personalise and verify it before applying.</p></div>
-                {% if result.generated_cover_letter and can_download %}<a href="{% url 'download_cover_letter' result.id %}" class="btn btn-primary btn-sm">Download TXT</a>{% endif %}
+
+        <div class="summary-grid" aria-label="Report summary">
+            <div class="summary-card">
+                <span>Decision</span>
+                <strong>{{ application_decision.label }}</strong>
+                <p>{{ application_decision.message }}</p>
             </div>
-            <div class="report-card-pad">
-                {% if result.generated_cover_letter %}<pre class="draft-output">{{ result.generated_cover_letter.content }}</pre>{% else %}<p class="report-muted mb-0">Upgrade to Plus to generate a tailored CV rewrite and cover letter for each validation.</p>{% endif %}
+            <div class="summary-card">
+                <span>Match score</span>
+                <strong class="summary-score">{{ breakdown.total }}%</strong>
+                <p>ATS signal for this specific role.</p>
+            </div>
+            <div class="summary-card">
+                <span>Detected role family</span>
+                <strong>{{ match_intelligence.detected_family }}</strong>
+                <p>{{ match_intelligence.detected_role }}</p>
+            </div>
+            <div class="summary-card">
+                <span>Must-have gaps</span>
+                {% if match_intelligence.missing_mandatory %}
+                    <strong>{{ match_intelligence.missing_mandatory|length }} critical gap{{ match_intelligence.missing_mandatory|length|pluralize }}</strong>
+                    <div class="gap-list">
+                        {% for item in match_intelligence.missing_mandatory|slice:":3" %}
+                            <span class="gap-pill must">{{ item }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <strong>No critical gap detected</strong>
+                    <p>Review normal evidence gaps below.</p>
+                {% endif %}
             </div>
         </div>
 
+        <div class="section-header">
+            <div>
+                <h2>Recruiter view</h2>
+                <p>The plain-English interpretation of the result.</p>
+            </div>
+        </div>
         <div class="report-card report-card-pad readiness-card">
             <div class="readiness-decision">
                 <span class="readiness-pill {{ report_insights.readiness_class }}">{{ report_insights.readiness_label }}</span>
@@ -567,6 +663,12 @@
             </div>
         </div>
 
+        <div class="section-header">
+            <div>
+                <h2>Role understanding</h2>
+                <p>What the system detected from the advert and taxonomy.</p>
+            </div>
+        </div>
         <div class="report-card report-card-pad mb-3">
             <div class="report-copy mb-3">
                 <h2>How MyValidCV understood this role</h2>
@@ -618,6 +720,12 @@
             </div>
         </div>
 
+        <div class="section-header">
+            <div>
+                <h2>Action plan</h2>
+                <p>Fix these items before applying or downloading a tailored CV.</p>
+            </div>
+        </div>
         <div class="report-grid">
             <div class="report-card report-panel">
                 <h2>Biggest impact fixes before applying</h2>
@@ -642,6 +750,12 @@
             </div>
         </div>
 
+        <div class="section-header">
+            <div>
+                <h2>Evidence comparison</h2>
+                <p>What supports the application and what still needs proof.</p>
+            </div>
+        </div>
         <div class="row g-4">
             <div class="col-lg-6">
                 <div class="skill-box good">
@@ -669,6 +783,12 @@
             </div>
         </div>
 
+        <div class="section-header">
+            <div>
+                <h2>Suggested CV</h2>
+                <p>Readable rewrite guidance with clear evidence warnings.</p>
+            </div>
+        </div>
         <div id="suggestedCv" class="report-card mt-4">
             <div class="report-card-pad d-flex justify-content-between align-items-start gap-3 flex-wrap border-bottom">
                 <div>
@@ -722,6 +842,22 @@
                 {% else %}
                     <p class="report-muted mb-0">No generated CV draft exists for this result.</p>
                 {% endif %}
+            </div>
+        </div>
+
+        <div class="section-header">
+            <div>
+                <h2>Cover letter</h2>
+                <p>Use this after the CV evidence has been checked.</p>
+            </div>
+        </div>
+        <div class="report-card">
+            <div class="report-card-pad d-flex justify-content-between align-items-start gap-3 flex-wrap border-bottom">
+                <div><h2 class="h5 mb-1">Cover-letter draft</h2><p class="report-muted mb-0">Included with Plus. Personalise and verify it before applying.</p></div>
+                {% if result.generated_cover_letter and can_download %}<a href="{% url 'download_cover_letter' result.id %}" class="btn btn-primary btn-sm">Download TXT</a>{% endif %}
+            </div>
+            <div class="report-card-pad">
+                {% if result.generated_cover_letter %}<pre class="draft-output">{{ result.generated_cover_letter.content }}</pre>{% else %}<p class="report-muted mb-0">Upgrade to Plus to generate a tailored CV rewrite and cover letter for each validation.</p>{% endif %}
             </div>
         </div>
     </div>
