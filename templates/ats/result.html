@@ -458,9 +458,20 @@
 
     .cv-guidance-layout {
         display: grid;
-        grid-template-columns: minmax(260px, 0.78fr) minmax(0, 1.22fr);
+        grid-template-columns: minmax(300px, 0.82fr) minmax(0, 1.18fr);
         gap: 1rem;
-        align-items: start;
+        align-items: stretch;
+    }
+
+    .cv-guidance-panel {
+        border: 1px solid var(--report-line);
+        border-radius: 16px;
+        background: #fbfdff;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        min-height: 760px;
+        padding: 1rem;
     }
 
     .cv-change-grid {
@@ -511,6 +522,42 @@
 
     .cv-change-card.active {
         display: block;
+    }
+
+    .cv-support-grid {
+        display: grid;
+        gap: 0.65rem;
+        margin-top: auto;
+    }
+
+    .cv-support-card {
+        border: 1px solid var(--report-line);
+        border-radius: 14px;
+        background: #ffffff;
+        padding: 0.85rem;
+    }
+
+    .cv-support-card strong {
+        color: var(--report-ink);
+        display: block;
+        font-size: 0.9rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .cv-support-card p,
+    .cv-support-card li {
+        color: var(--report-muted);
+        font-size: 0.84rem;
+        line-height: 1.45;
+    }
+
+    .cv-support-card p {
+        margin: 0;
+    }
+
+    .cv-support-card ul {
+        margin: 0;
+        padding-left: 1rem;
     }
 
     .cv-preview {
@@ -638,6 +685,8 @@
         .skill-box,
         .intelligence-card,
         .summary-card,
+        .cv-guidance-panel,
+        .cv-support-card,
         .draft-output,
         .cv-change-card {
             background: #0b1224;
@@ -695,6 +744,10 @@
 
         .cv-guidance-layout {
             grid-template-columns: 1fr;
+        }
+
+        .cv-guidance-panel {
+            min-height: auto;
         }
 
         .intelligence-grid {
@@ -952,7 +1005,7 @@
                 {% endif %}
 
                 <div class="cv-guidance-layout">
-                    <div>
+                    <div class="cv-guidance-panel">
                         <p class="report-muted mb-3">Use the coloured keys to review what changed. The draft preview on the right is written in a standard CV format.</p>
                         <div class="cv-change-grid">
                             {% for section in suggested_cv_review.sections %}
@@ -962,6 +1015,26 @@
                                     <p>{{ section.text }}</p>
                                 </div>
                             {% endfor %}
+                        </div>
+
+                        <div class="cv-support-grid" aria-label="Recommended CV structure notes">
+                            <div class="cv-support-card">
+                                <strong>Standard CV structure</strong>
+                                <ul>
+                                    <li>Profile: 3-4 lines focused on the target role.</li>
+                                    <li>Skills: role keywords supported by real evidence.</li>
+                                    <li>Experience: achievement-led bullets, newest first.</li>
+                                    <li>Education/licence: only include claims you can prove.</li>
+                                </ul>
+                            </div>
+                            <div class="cv-support-card">
+                                <strong>Highlight rule</strong>
+                                <p>Green and yellow wording can be used when it is supported by the uploaded CV. Red items should stay out of the final CV until the candidate has proof.</p>
+                            </div>
+                            <div class="cv-support-card">
+                                <strong>Before applying</strong>
+                                <p>Check names, dates, employers, licence numbers, and measurable results. The draft should sound confident, but every line must survive interview questions.</p>
+                            </div>
                         </div>
                     </div>
 
