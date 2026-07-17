@@ -303,6 +303,14 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
 
+# Maya site assistant. Ollama itself usually has no API key, but hosted
+# Ollama-compatible services may require one. Keep secrets in environment
+# variables only, never in source control.
+OLLAMA_BASE_URL = os.environ.get('OLLAMA_BASE_URL', '')
+OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'llama3.1')
+OLLAMA_API_KEY = os.environ.get('OLLAMA_API_KEY', '')
+OLLAMA_TIMEOUT_SECONDS = int(os.environ.get('OLLAMA_TIMEOUT_SECONDS', '8'))
+
 # Heroku/proxy security
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = env_bool('SESSION_COOKIE_SECURE', not DEBUG)

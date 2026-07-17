@@ -236,10 +236,23 @@ function setupSiteAssistant() {
         body.scrollTop = body.scrollHeight;
     };
 
-    const respond = (question) => {
-        const answer = getAssistantAnswer(question);
+    const respond = async (question) => {
         addMessage(question, 'user');
-        window.setTimeout(() => addMessage(answer, 'bot'), 180);
+        let answer = '';
+        try {
+            const response = await fetch('/assistant/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({question})
+            });
+            if (response.ok) {
+                const data = await response.json();
+                answer = data.answer || '';
+            }
+        } catch (error) {
+            answer = '';
+        }
+        window.setTimeout(() => addMessage(answer || getAssistantAnswer(question), 'bot'), 180);
     };
 
     toggle.addEventListener('click', () => {
