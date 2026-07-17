@@ -529,16 +529,16 @@
                         <h2>Owner control center</h2>
                         <p class="dash-muted mb-0">Classified website management, payments, plans, health, and admin controls are visible only to superusers.</p>
                     </div>
-                    <a href="{% url 'admin:index' %}" class="btn btn-sm btn-dark">Open admin</a>
+                    <a href="{% url 'owner_console' %}" class="btn btn-sm btn-dark">Open owner console</a>
                 </div>
                 <div class="dash-owner-grid">
-                    <a class="dash-owner-tile" href="{% url 'admin:index' %}"><span>Users</span><strong>{{ admin_stats.users }}</strong><small>Accounts and access</small></a>
-                    <a class="dash-owner-tile" href="{% url 'admin:index' %}"><span>Payments</span><strong>{{ admin_stats.payments }}</strong><small>Transactions and receipts</small></a>
-                    <a class="dash-owner-tile" href="{% url 'admin:index' %}"><span>Plans</span><strong>{{ admin_stats.plans }}</strong><small>Pricing and limits</small></a>
-                    <a class="dash-owner-tile" href="{% url 'admin:index' %}"><span>Subscriptions</span><strong>{{ admin_stats.active_subscriptions }}</strong><small>Active customer plans</small></a>
-                    <a class="dash-owner-tile" href="{% url 'admin:index' %}"><span>Invoices</span><strong>{{ admin_stats.open_invoices }}</strong><small>Open billing items</small></a>
-                    <a class="dash-owner-tile" href="{% url 'admin:index' %}"><span>Refunds</span><strong>{{ admin_stats.refunds }}</strong><small>Refund records</small></a>
-                    <a class="dash-owner-tile" href="{% url 'admin:index' %}"><span>Health</span><strong>{{ admin_stats.ats_results }}</strong><small>ATS and site reports</small></a>
+                    <a class="dash-owner-tile" href="{% url 'admin:auth_user_changelist' %}"><span>Users</span><strong>{{ admin_stats.users }}</strong><small>Accounts and access</small></a>
+                    <a class="dash-owner-tile" href="{% url 'admin:payments_paymenttransaction_changelist' %}"><span>Payments</span><strong>{{ admin_stats.payments }}</strong><small>Transactions and receipts</small></a>
+                    <a class="dash-owner-tile" href="{% url 'admin:subscriptions_subscriptionplan_changelist' %}"><span>Plans</span><strong>{{ admin_stats.plans }}</strong><small>Pricing and limits</small></a>
+                    <a class="dash-owner-tile" href="{% url 'admin:subscriptions_customersubscription_changelist' %}"><span>Subscriptions</span><strong>{{ admin_stats.active_subscriptions }}</strong><small>Active customer plans</small></a>
+                    <a class="dash-owner-tile" href="{% url 'admin:payments_invoice_changelist' %}"><span>Invoices</span><strong>{{ admin_stats.open_invoices }}</strong><small>Open billing items</small></a>
+                    <a class="dash-owner-tile" href="{% url 'admin:payments_refund_changelist' %}"><span>Refunds</span><strong>{{ admin_stats.refunds }}</strong><small>Refund records</small></a>
+                    <a class="dash-owner-tile" href="{% url 'website_health' %}"><span>Health</span><strong>{{ admin_stats.ats_results }}</strong><small>ATS and site reports</small></a>
                     <a class="dash-owner-tile" href="{% url 'enterprise_bulk' %}"><span>Enterprise</span><strong>{{ admin_stats.enterprise_batches }}</strong><small>Bulk reports</small></a>
                 </div>
             </div>

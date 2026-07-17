@@ -28,9 +28,10 @@ class ThemeManager {
             document.documentElement.setAttribute('data-bs-theme', 'dark');
             document.body.classList.add('bg-dark');
         } else {
-            document.documentElement.removeAttribute('data-bs-theme');
+            document.documentElement.setAttribute('data-bs-theme', 'light');
             document.body.classList.remove('bg-dark');
         }
+        this.updateToggleIcon();
     }
 
     toggle() {
@@ -50,7 +51,7 @@ class ThemeManager {
     updateToggleIcon() {
         const icon = document.getElementById('themeToggleIcon');
         if (icon) {
-            icon.textContent = this.theme === 'light' ? '🌙' : '☀️';
+            icon.textContent = this.theme === 'light' ? 'Dark' : 'Light';
         }
     }
 }
@@ -177,7 +178,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Setup customer-service assistant
     setupSiteAssistant();
+
+    // Setup reusable copy buttons
+    setupCopyActions();
 });
+
+function setupCopyActions() {
+    const buttons = document.querySelectorAll('[data-copy-target]');
+    buttons.forEach((button) => {
+        button.addEventListener('click', async () => {
+            const target = document.querySelector(button.dataset.copyTarget);
+            if (!target) return;
+
+            const text = target.innerText || target.textContent || '';
+            if (!text.trim()) return;
+
+            const originalText = button.textContent;
+            try {
+                await navigator.clipboard.writeText(text.trim());
+                button.textContent = 'Copied';
+            } catch (error) {
+                const range = document.createRange();
+                range.selectNodeContents(target);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                button.textContent = 'Selected';
+            }
+
+            window.setTimeout(() => {
+                button.textContent = originalText;
+            }, 1400);
+        });
+    });
+}
 
 function setupFormValidation() {
     const forms = document.querySelectorAll('form');

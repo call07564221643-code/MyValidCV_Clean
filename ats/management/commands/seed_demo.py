@@ -49,10 +49,19 @@ ROLE_DATA = [
 class Command(BaseCommand):
     help = "Create 20 demo users and linked records across the main MyValidCV tables."
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--per-plan",
+            type=int,
+            default=0,
+            help="Create this many demo users for each plan category: free, plus, and enterprise.",
+        )
+
     def handle(self, *args, **options):
         self.ensure_core_reference_data()
 
         password = "DemoPass123!"
+        role_data = self.build_role_data(options["per_plan"]) if options["per_plan"] else ROLE_DATA
         counters = {
             "users": 0,
             "profiles": 0,
@@ -72,7 +81,7 @@ class Command(BaseCommand):
             "webhooks": 0,
         }
 
-        for index, (username, first_name, last_name, email, job_title, score, plan_code) in enumerate(ROLE_DATA, start=1):
+        for index, (username, first_name, last_name, email, job_title, score, plan_code) in enumerate(role_data, start=1):
             user, created = User.objects.get_or_create(
                 username=username,
                 defaults={
@@ -237,17 +246,19 @@ class Command(BaseCommand):
             )
             counters["subscriptions"] += int(created)
 
+            demo_reference = f"DEMO-{username.upper()}"
+
             transaction, created = PaymentTransaction.objects.get_or_create(
                 user=user,
                 plan=plan,
-                checkout_reference=f"DEMO-{index:04d}",
+                checkout_reference=demo_reference,
                 defaults={
                     "subscription": subscription,
                     "provider": "manual",
                     "amount": plan.price,
                     "currency": plan.currency,
                     "status": "paid",
-                    "provider_transaction_id": f"demo-txn-{index:04d}",
+                    "provider_transaction_id": f"demo-txn-{username}",
                     "raw_response": {"demo": True, "user": username},
                     "admin_notes": "Demo paid transaction.",
                 },
@@ -262,7 +273,7 @@ class Command(BaseCommand):
                 transaction=transaction,
                 defaults={
                     "user": user,
-                    "invoice_number": f"MVCV-DEMO-{index:04d}",
+                    "invoice_number": f"MVCV-{username.upper()}",
                     "amount": transaction.amount,
                     "currency": transaction.currency,
                     "status": "paid",
@@ -291,7 +302,7 @@ class Command(BaseCommand):
                 counters["refunds"] += int(created)
 
             _webhook, created = PaymentWebhookLog.objects.get_or_create(
-                checkout_reference=f"DEMO-{index:04d}",
+                checkout_reference=demo_reference,
                 provider="manual",
                 event_type="demo.payment.created",
                 defaults={"payload": {"demo": True, "index": index}, "is_processed": True},
@@ -328,9 +339,49 @@ class Command(BaseCommand):
                         counters["enterprise_candidates"] += 1
 
         self.stdout.write(self.style.SUCCESS("Demo seed complete for PostgreSQL/Django verification."))
+        if options["per_plan"]:
+            self.stdout.write(f"Requested demo users per plan: {options['per_plan']}")
         self.stdout.write(f"Demo user password: {password}")
         for key, value in counters.items():
             self.stdout.write(f"{key}: {value}")
+
+    def build_role_data(self, per_plan):
+        first_names = [
+            "Aisha", "Ben", "Chloe", "Daniel", "Emma", "Faisal", "Grace", "Hannah", "Isaac", "Julia",
+            "Kareem", "Lina", "Marcus", "Nora", "Omar", "Priya", "Quinn", "Rania", "Sam", "Tara",
+        ]
+        last_names = [
+            "Morgan", "Carter", "Patel", "Evans", "Wright", "Khan", "Taylor", "Brown", "Wilson", "Green",
+            "Saleh", "Haddad", "Reed", "Ali", "Nasser", "Shah", "Miller", "Yousef", "Brooks", "Stone",
+        ]
+        job_titles = {
+            "free": [
+                "Office Administrator", "Customer Service Advisor", "Teaching Assistant", "Marketing Assistant",
+                "Junior Data Analyst", "Receptionist", "Sales Assistant", "Finance Assistant",
+            ],
+            "plus": [
+                "Django Developer", "Project Manager", "Business Analyst", "QA Tester",
+                "Product Manager", "HR Coordinator", "Digital Marketing Specialist", "Backend API Engineer",
+            ],
+            "enterprise": [
+                "Recruitment Lead", "Operations Manager", "Data Engineering Lead", "IT Support Manager",
+                "Cloud Support Engineer", "Database Administrator", "Compliance Manager", "Product Coordinator",
+            ],
+        }
+        base_scores = {"free": 58, "plus": 74, "enterprise": 81}
+        rows = []
+        for plan_code in ("free", "plus", "enterprise"):
+            for number in range(1, per_plan + 1):
+                name_index = (number - 1) % len(first_names)
+                first_name = first_names[name_index]
+                last_name = last_names[(number + len(plan_code)) % len(last_names)]
+                username = f"demo_{plan_code}_{number:02d}"
+                email = f"{username}@example.com"
+                title_pool = job_titles[plan_code]
+                job_title = title_pool[(number - 1) % len(title_pool)]
+                score = min(96, base_scores[plan_code] + ((number * 7) % 19))
+                rows.append((username, first_name, last_name, email, job_title, score, plan_code))
+        return rows
 
     def ensure_core_reference_data(self):
         plans = [

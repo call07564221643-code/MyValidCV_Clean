@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Owner Console - MyValidCV{% endblock %}
+
+{% block extra_css %}
+<style>
+    .owner-shell {
+        background: linear-gradient(180deg, #f8fafc 0%, #eef3ff 100%);
+        min-height: calc(100vh - 84px);
+        padding: 2rem 0 3rem;
+    }
+
+    .owner-hero {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: flex-start;
+        margin-bottom: 1.25rem;
+    }
+
+    .owner-hero h1 {
+        color: #0f172a;
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 720;
+        letter-spacing: -0.05em;
+        margin: 0 0 0.35rem;
+    }
+
+    .owner-hero p,
+    .owner-muted {
+        color: #64748b;
+    }
+
+    .owner-kicker {
+        color: #1f3374;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .owner-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        box-shadow: 0 18px 46px rgba(15, 23, 42, 0.07);
+    }
+
+    .owner-card-pad {
+        padding: 1.1rem;
+    }
+
+    .owner-summary {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.85rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .owner-metric span,
+    .owner-action span {
+        color: #64748b;
+        display: block;
+        font-size: 0.76rem;
+        font-weight: 780;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .owner-metric strong {
+        color: #0f172a;
+        display: block;
+        font-size: 1.65rem;
+        line-height: 1;
+        margin-top: 0.4rem;
+    }
+
+    .owner-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .owner-action {
+        display: flex;
+        flex-direction: column;
+        min-height: 220px;
+    }
+
+    .owner-action h2 {
+        color: #0f172a;
+        font-size: 1.15rem;
+        font-weight: 760;
+        margin: 0.35rem 0;
+    }
+
+    .owner-action strong {
+        color: #1f3374;
+        font-size: 2rem;
+        line-height: 1;
+    }
+
+    .owner-action p {
+        color: #64748b;
+        margin-bottom: 1rem;
+    }
+
+    .owner-action-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: auto;
+    }
+
+    .owner-table-wrap {
+        overflow-x: auto;
+    }
+
+    .owner-mini-table {
+        margin: 0;
+        min-width: 620px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        html:not([data-bs-theme="light"]) .owner-shell {
+            background: linear-gradient(180deg, #0f172a 0%, #111c33 100%);
+        }
+
+        html:not([data-bs-theme="light"]) .owner-card {
+            background: #111c33;
+            border-color: #273449;
+        }
+
+        html:not([data-bs-theme="light"]) .owner-hero h1,
+        html:not([data-bs-theme="light"]) .owner-action h2,
+        html:not([data-bs-theme="light"]) .owner-metric strong {
+            color: #f8fafc;
+        }
+
+        html:not([data-bs-theme="light"]) .owner-hero p,
+        html:not([data-bs-theme="light"]) .owner-muted,
+        html:not([data-bs-theme="light"]) .owner-action p,
+        html:not([data-bs-theme="light"]) .owner-metric span,
+        html:not([data-bs-theme="light"]) .owner-action span {
+            color: #cbd5e1;
+        }
+    }
+
+    @media (max-width: 991px) {
+        .owner-summary,
+        .owner-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 575px) {
+        .owner-hero {
+            flex-direction: column;
+        }
+
+        .owner-summary,
+        .owner-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="owner-shell">
+    <div class="container">
+        <div class="owner-hero">
+            <div>
+                <div class="owner-kicker">Owner-only SaaS control</div>
+                <h1>Owner Console</h1>
+                <p class="mb-0">Manage users, plans, payments, refunds, promo codes, reports, and website health from one place.</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">User dashboard</a>
+                <a href="{% url 'admin:index' %}" class="btn btn-primary">Django admin</a>
+            </div>
+        </div>
+
+        <div class="owner-summary">
+            <div class="owner-card owner-card-pad owner-metric"><span>Total users</span><strong>{{ summary.users_total }}</strong></div>
+            <div class="owner-card owner-card-pad owner-metric"><span>Active users</span><strong>{{ summary.active_users }}</strong></div>
+            <div class="owner-card owner-card-pad owner-metric"><span>30-day revenue</span><strong>GBP {{ summary.revenue_30_days }}</strong></div>
+            <div class="owner-card owner-card-pad owner-metric"><span>Payment success</span><strong>{{ summary.payment_success_rate }}%</strong></div>
+        </div>
+
+        <div class="owner-summary">
+            <div class="owner-card owner-card-pad owner-metric"><span>Free</span><strong>{{ summary.free_users }}</strong></div>
+            <div class="owner-card owner-card-pad owner-metric"><span>Plus</span><strong>{{ summary.plus_users }}</strong></div>
+            <div class="owner-card owner-card-pad owner-metric"><span>Enterprise</span><strong>{{ summary.enterprise_users }}</strong></div>
+            <div class="owner-card owner-card-pad owner-metric"><span>Open invoices</span><strong>{{ summary.open_invoices }}</strong></div>
+        </div>
+
+        <div class="owner-grid mb-4">
+            {% for card in management_cards %}
+                <article class="owner-card owner-card-pad owner-action">
+                    <span>{{ card.title }}</span>
+                    <strong>{{ card.value }}{{ card.suffix|default:"" }}</strong>
+                    <h2>{{ card.primary_label }}</h2>
+                    <p>{{ card.text }}</p>
+                    <div class="owner-action-links">
+                        <a href="{% url card.primary_url %}" class="btn btn-primary btn-sm">{{ card.primary_label }}</a>
+                        <a href="{% url card.secondary_url %}" class="btn btn-outline-primary btn-sm">{{ card.secondary_label }}</a>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="owner-card owner-card-pad h-100">
+                    <h2 class="h5">Recent users</h2>
+                    <div class="owner-table-wrap">
+                        <table class="table owner-mini-table align-middle">
+                            <thead><tr><th>User</th><th>Email</th><th>Joined</th></tr></thead>
+                            <tbody>
+                                {% for user in recent_users %}
+                                    <tr><td>{{ user.username }}</td><td>{{ user.email|default:"-" }}</td><td>{{ user.date_joined|date:"M d" }}</td></tr>
+                                {% empty %}
+                                    <tr><td colspan="3">No users yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="owner-card owner-card-pad h-100">
+                    <h2 class="h5">Recent payments</h2>
+                    <div class="owner-table-wrap">
+                        <table class="table owner-mini-table align-middle">
+                            <thead><tr><th>User</th><th>Plan</th><th>Status</th><th>Amount</th></tr></thead>
+                            <tbody>
+                                {% for payment in recent_payments %}
+                                    <tr><td>{{ payment.user.username }}</td><td>{{ payment.plan.name }}</td><td>{{ payment.status }}</td><td>{{ payment.currency }} {{ payment.amount }}</td></tr>
+                                {% empty %}
+                                    <tr><td colspan="4">No payments yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="owner-card owner-card-pad h-100">
+                    <h2 class="h5">Recent refunds</h2>
+                    <div class="owner-table-wrap">
+                        <table class="table owner-mini-table align-middle">
+                            <thead><tr><th>User</th><th>Status</th><th>Amount</th></tr></thead>
+                            <tbody>
+                                {% for refund in recent_refunds %}
+                                    <tr><td>{{ refund.transaction.user.username }}</td><td>{{ refund.status }}</td><td>{{ refund.transaction.currency }} {{ refund.amount }}</td></tr>
+                                {% empty %}
+                                    <tr><td colspan="3">No refunds yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

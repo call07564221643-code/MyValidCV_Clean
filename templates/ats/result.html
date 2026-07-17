@@ -820,6 +820,14 @@
         white-space: pre-wrap;
     }
 
+    .copy-action {
+        align-items: center;
+        border-radius: 999px;
+        display: inline-flex;
+        font-weight: 760;
+        gap: 0.35rem;
+    }
+
     @media (prefers-color-scheme: dark) {
         :root {
             --report-navy: #9fb8ff;
@@ -1017,6 +1025,7 @@
                 </div>
                 {% if result.generated_cv and can_download %}
                     <a href="{% url 'download_generated_cv' result.id %}" class="btn btn-primary btn-sm">Download TXT</a>
+                    <button type="button" class="btn btn-outline-secondary btn-sm copy-action" data-copy-target="#cvRewriteText">Copy</button>
                 {% endif %}
             </div>
             <div class="report-card-pad">
@@ -1063,7 +1072,7 @@
 
                             <div class="cv-preview-section">
                                 <h4>Professional Summary Rewrite</h4>
-                                <p><span class="cv-highlight green">{{ cv_draft_preview.summary }}</span></p>
+                                <p id="cvRewriteText"><span class="cv-highlight green">{{ cv_draft_preview.summary }}</span></p>
                             </div>
 
                             <div class="cv-preview-section">
@@ -1113,12 +1122,17 @@
         <div class="report-card">
             <div class="report-card-pad d-flex justify-content-between align-items-start gap-3 flex-wrap border-bottom">
                 <div><h2 class="h5 mb-1">Cover-letter draft</h2><p class="report-muted mb-0">Included with Plus. Personalise and verify it before applying.</p></div>
-                {% if result.generated_cover_letter and can_download %}<a href="{% url 'download_cover_letter' result.id %}" class="btn btn-primary btn-sm">Download TXT</a>{% endif %}
+                {% if result.generated_cover_letter and can_download %}
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="button" class="btn btn-outline-secondary btn-sm copy-action" data-copy-target="#coverLetterText">Copy</button>
+                        <a href="{% url 'download_cover_letter' result.id %}" class="btn btn-primary btn-sm">Download TXT</a>
+                    </div>
+                {% endif %}
             </div>
             <div class="report-card-pad">
                 {% if result.generated_cover_letter %}
                     <div class="letter-page">
-                        <pre class="letter-output">{{ result.generated_cover_letter.content }}</pre>
+                        <pre class="letter-output" id="coverLetterText">{{ result.generated_cover_letter.content }}</pre>
                     </div>
                 {% else %}
                     <p class="report-muted mb-0">Upgrade to Plus to generate a tailored CV rewrite and cover letter for each validation.</p>

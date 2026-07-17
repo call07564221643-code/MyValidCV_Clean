@@ -151,8 +151,97 @@
             }
         }
 
+        .mvcv-theme-toggle {
+            border-color: var(--mvcv-card-border);
+            color: var(--mvcv-nav-text);
+            min-width: 78px;
+        }
+
+        .mvcv-theme-toggle:hover,
+        .mvcv-theme-toggle:focus {
+            background: var(--mvcv-nav-active-bg);
+            color: var(--mvcv-nav-active-text);
+        }
+
+        html[data-bs-theme="dark"] {
+            color-scheme: dark;
+            --mvcv-nav-bg: rgba(15, 23, 42, 0.94);
+            --mvcv-nav-text: #e2e8f0;
+            --mvcv-nav-active-bg: rgba(159, 184, 255, 0.18);
+            --mvcv-nav-active-text: #dbe7ff;
+            --mvcv-body-bg: #0f172a;
+            --mvcv-body-text: #f8fafc;
+            --mvcv-card-bg: #111c33;
+            --mvcv-card-border: #273449;
+            --mvcv-muted: #cbd5e1;
+        }
+
+        html[data-bs-theme="dark"] body {
+            background: var(--mvcv-body-bg);
+            color: var(--mvcv-body-text);
+        }
+
+        html[data-bs-theme="dark"] .navbar {
+            background: var(--mvcv-nav-bg) !important;
+            border-bottom-color: var(--mvcv-card-border) !important;
+        }
+
+        html[data-bs-theme="dark"] .navbar .nav-link {
+            color: var(--mvcv-nav-text) !important;
+        }
+
+        html[data-bs-theme="dark"] .navbar .nav-link:hover,
+        html[data-bs-theme="dark"] .navbar .nav-link:focus,
+        html[data-bs-theme="dark"] .navbar .nav-link.active {
+            background: var(--mvcv-nav-active-bg);
+            color: var(--mvcv-nav-active-text) !important;
+        }
+
+        html[data-bs-theme="dark"] .mvcv-brand-inline {
+            color: #dbe7ff !important;
+        }
+
+        html[data-bs-theme="dark"] .mvcv-brand-inline span span {
+            color: #9fb8ff;
+        }
+
+        html[data-bs-theme="dark"] .bg-light,
+        html[data-bs-theme="dark"] footer.bg-light {
+            background: var(--mvcv-card-bg) !important;
+            color: var(--mvcv-muted) !important;
+        }
+
+        html[data-bs-theme="dark"] .border-top,
+        html[data-bs-theme="dark"] .border-bottom {
+            border-color: var(--mvcv-card-border) !important;
+        }
+
+        html[data-bs-theme="dark"] .card,
+        html[data-bs-theme="dark"] .modal-content,
+        html[data-bs-theme="dark"] .dropdown-menu,
+        html[data-bs-theme="dark"] .list-group-item {
+            background-color: var(--mvcv-card-bg);
+            color: var(--mvcv-body-text);
+            border-color: var(--mvcv-card-border);
+        }
+
+        html[data-bs-theme="dark"] .form-control,
+        html[data-bs-theme="dark"] .form-select {
+            background-color: #0b1224;
+            color: var(--mvcv-body-text);
+            border-color: var(--mvcv-card-border);
+        }
+
+        html[data-bs-theme="dark"] .form-control::placeholder {
+            color: #94a3b8;
+        }
+
+        html[data-bs-theme="dark"] .text-muted {
+            color: var(--mvcv-muted) !important;
+        }
+
         @media (prefers-color-scheme: dark) {
-            :root {
+            html:not([data-bs-theme="light"]) {
                 color-scheme: dark;
                 --mvcv-nav-bg: rgba(15, 23, 42, 0.94);
                 --mvcv-nav-text: #e2e8f0;
@@ -165,67 +254,67 @@
                 --mvcv-muted: #cbd5e1;
             }
 
-            body {
+            html:not([data-bs-theme="light"]) body {
                 background: var(--mvcv-body-bg);
                 color: var(--mvcv-body-text);
             }
 
-            .navbar {
+            html:not([data-bs-theme="light"]) .navbar {
                 background: var(--mvcv-nav-bg) !important;
                 border-bottom-color: var(--mvcv-card-border) !important;
             }
 
-            .navbar .nav-link {
+            html:not([data-bs-theme="light"]) .navbar .nav-link {
                 color: var(--mvcv-nav-text) !important;
             }
 
-            .navbar .nav-link:hover,
-            .navbar .nav-link:focus,
-            .navbar .nav-link.active {
+            html:not([data-bs-theme="light"]) .navbar .nav-link:hover,
+            html:not([data-bs-theme="light"]) .navbar .nav-link:focus,
+            html:not([data-bs-theme="light"]) .navbar .nav-link.active {
                 background: var(--mvcv-nav-active-bg);
                 color: var(--mvcv-nav-active-text) !important;
             }
 
-            .mvcv-brand-inline {
+            html:not([data-bs-theme="light"]) .mvcv-brand-inline {
                 color: #dbe7ff !important;
             }
 
-            .mvcv-brand-inline span span {
+            html:not([data-bs-theme="light"]) .mvcv-brand-inline span span {
                 color: #9fb8ff;
             }
 
-            .bg-light,
-            footer.bg-light {
+            html:not([data-bs-theme="light"]) .bg-light,
+            html:not([data-bs-theme="light"]) footer.bg-light {
                 background: var(--mvcv-card-bg) !important;
                 color: var(--mvcv-muted) !important;
             }
 
-            .border-top,
-            .border-bottom {
+            html:not([data-bs-theme="light"]) .border-top,
+            html:not([data-bs-theme="light"]) .border-bottom {
                 border-color: var(--mvcv-card-border) !important;
             }
 
-            .card,
-            .modal-content,
-            .dropdown-menu,
-            .list-group-item {
+            html:not([data-bs-theme="light"]) .card,
+            html:not([data-bs-theme="light"]) .modal-content,
+            html:not([data-bs-theme="light"]) .dropdown-menu,
+            html:not([data-bs-theme="light"]) .list-group-item {
                 background-color: var(--mvcv-card-bg);
                 color: var(--mvcv-body-text);
                 border-color: var(--mvcv-card-border);
             }
 
-            .form-control,
-            .form-select {
+            html:not([data-bs-theme="light"]) .form-control,
+            html:not([data-bs-theme="light"]) .form-select {
                 background-color: #0b1224;
                 color: var(--mvcv-body-text);
                 border-color: var(--mvcv-card-border);
             }
 
-            .form-control::placeholder {
+            html:not([data-bs-theme="light"]) .form-control::placeholder {
                 color: #94a3b8;
             }
 
-            .text-muted {
+            html:not([data-bs-theme="light"]) .text-muted {
                 color: var(--mvcv-muted) !important;
             }
         }
@@ -247,11 +336,21 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-lg-center {% if user.is_authenticated %}account-nav{% endif %}">
                     {% if user.is_authenticated %}
+                        {% if user.is_superuser %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'owner_console' %}active{% endif %}" href="{% url 'owner_console' %}">Owner Console</a>
+                            </li>
+                        {% endif %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Reports</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'account_settings' %}active{% endif %}" href="{% url 'account_settings' %}">Settings</a>
+                        </li>
+                        <li class="nav-item ms-lg-2">
+                            <button class="btn btn-outline-secondary btn-sm mvcv-theme-toggle" id="themeToggle" type="button" aria-label="Switch colour mode">
+                                <span id="themeToggleIcon">Dark</span>
+                            </button>
                         </li>
                         <li class="nav-item ms-lg-2">
                             <form method="post" action="{% url 'logout' %}" class="d-inline">
@@ -268,6 +367,11 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" href="{% url 'login' %}">Login</a>
+                        </li>
+                        <li class="nav-item ms-lg-2">
+                            <button class="btn btn-outline-secondary btn-sm mvcv-theme-toggle" id="themeToggle" type="button" aria-label="Switch colour mode">
+                                <span id="themeToggleIcon">Dark</span>
+                            </button>
                         </li>
                         <li class="nav-item ms-lg-2">
                             <a class="btn btn-primary btn-sm" href="{% url 'register' %}">Sign up</a>

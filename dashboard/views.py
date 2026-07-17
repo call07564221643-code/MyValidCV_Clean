@@ -1,15 +1,21 @@
-from datetime import date
+from datetime import date, timedelta
+from decimal import Decimal
 
+from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
-from django.db.models import Count
+from django.db.models import Count, Sum
 from django.utils import timezone
 from accounts.models import SocialAuthProvider, UserProfile
 from ats.models import ApplicationReminder, ATSResult, CV, EnterpriseBatch, EnterpriseCandidateResult, GeneratedCV, JobRole
 from payments.models import Invoice, PaymentTransaction, Refund
-from subscriptions.models import CustomerSubscription, SubscriptionPlan
+from subscriptions.models import CustomerSubscription, DiscountCode, SubscriptionPlan
 from subscriptions.services import get_entitlements
+
+
+def owner_required(user):
+    return user.is_authenticated and user.is_superuser
 
 
 @login_required(login_url='login')
@@ -142,3 +148,111 @@ def dashboard(request):
     }
 
     return render(request, 'dashboard/home.html', context)
+
+
+@login_required(login_url='login')
+def owner_console(request):
+    if not request.user.is_superuser:
+        return render(request, "dashboard/owner_forbidden.html", status=403)
+
+    now = timezone.now()
+    month_start = now - timedelta(days=30)
+    paid_transactions = PaymentTransaction.objects.filter(status="paid")
+    revenue_total = paid_transactions.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+    revenue_30_days = paid_transactions.filter(created_at__gte=month_start).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+    refunds_total = Refund.objects.exclude(status="rejected").aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+    users_total = User.objects.count()
+    active_users = User.objects.filter(is_active=True).count()
+    free_users = UserProfile.objects.filter(plan="free").count()
+    plus_users = UserProfile.objects.filter(plan__in=["plus", "professional"]).count()
+    enterprise_users = UserProfile.objects.filter(plan="enterprise").count()
+    payment_count = PaymentTransaction.objects.count()
+    paid_count = paid_transactions.count()
+    payment_success_rate = int((paid_count / payment_count) * 100) if payment_count else 0
+
+    management_cards = [
+        {
+            "title": "Users",
+            "value": users_total,
+            "text": "Add, deactivate, delete, or change staff/superuser access.",
+            "primary_label": "Manage users",
+            "primary_url": "admin:auth_user_changelist",
+            "secondary_label": "Add user",
+            "secondary_url": "admin:auth_user_add",
+        },
+        {
+            "title": "Subscriptions",
+            "value": CustomerSubscription.objects.filter(status="active").count(),
+            "text": "Change plan status, cancel subscriptions, and review renewal dates.",
+            "primary_label": "Manage subscriptions",
+            "primary_url": "admin:subscriptions_customersubscription_changelist",
+            "secondary_label": "Plans",
+            "secondary_url": "admin:subscriptions_subscriptionplan_changelist",
+        },
+        {
+            "title": "Promo codes",
+            "value": DiscountCode.objects.filter(is_active=True).count(),
+            "text": "Create launch discounts, deactivate expired offers, and track redemptions.",
+            "primary_label": "Manage codes",
+            "primary_url": "admin:subscriptions_discountcode_changelist",
+            "secondary_label": "Add code",
+            "secondary_url": "admin:subscriptions_discountcode_add",
+        },
+        {
+            "title": "Payments",
+            "value": payment_count,
+            "text": "Check checkout references, payment status, receipts, and provider IDs.",
+            "primary_label": "Transactions",
+            "primary_url": "admin:payments_paymenttransaction_changelist",
+            "secondary_label": "Invoices",
+            "secondary_url": "admin:payments_invoice_changelist",
+        },
+        {
+            "title": "Refunds",
+            "value": Refund.objects.count(),
+            "text": "Record refund requests and approve, process, or reject them.",
+            "primary_label": "Manage refunds",
+            "primary_url": "admin:payments_refund_changelist",
+            "secondary_label": "Add refund",
+            "secondary_url": "admin:payments_refund_add",
+        },
+        {
+            "title": "Reports",
+            "value": ATSResult.objects.count(),
+            "text": "Review ATS results, generated CVs, cover letters, and enterprise reports.",
+            "primary_label": "ATS results",
+            "primary_url": "admin:ats_atsresult_changelist",
+            "secondary_label": "Enterprise",
+            "secondary_url": "admin:ats_enterprisebatch_changelist",
+        },
+        {
+            "title": "Website health",
+            "value": payment_success_rate,
+            "suffix": "%",
+            "text": "Check operational health, revenue, assumptions, usage, and risks.",
+            "primary_label": "Open health",
+            "primary_url": "website_health",
+            "secondary_label": "Financial inputs",
+            "secondary_url": "admin:analytics_financialassumption_changelist",
+        },
+    ]
+
+    context = {
+        "summary": {
+            "users_total": users_total,
+            "active_users": active_users,
+            "free_users": free_users,
+            "plus_users": plus_users,
+            "enterprise_users": enterprise_users,
+            "revenue_total": revenue_total,
+            "revenue_30_days": revenue_30_days,
+            "refunds_total": refunds_total,
+            "payment_success_rate": payment_success_rate,
+            "open_invoices": Invoice.objects.filter(status="open").count(),
+        },
+        "management_cards": management_cards,
+        "recent_users": User.objects.order_by("-date_joined")[:6],
+        "recent_payments": PaymentTransaction.objects.select_related("user", "plan")[:6],
+        "recent_refunds": Refund.objects.select_related("transaction", "transaction__user")[:6],
+    }
+    return render(request, "dashboard/owner_console.html", context)
