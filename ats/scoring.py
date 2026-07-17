@@ -51,6 +51,11 @@ MANDATORY_HINTS = (
 
 
 def calculate_score(cv_text, job_description, job_title=""):
+    details = calculate_score_details(cv_text, job_description, job_title)
+    return details["score"], details["matched"], details["missing"], details["recommendation"]
+
+
+def calculate_score_details(cv_text, job_description, job_title=""):
     cv_lower = (cv_text or "").lower()
     job_lower = (job_description or "").lower()
     taxonomy = load_taxonomy(job_lower, job_title)
@@ -134,7 +139,31 @@ def calculate_score(cv_text, job_description, job_title=""):
             "Weak match for this job. The CV needs clearer role-specific skills, keywords, and evidence before applying."
         )
 
-    return score, matched, missing, recommendation
+    return {
+        "score": score,
+        "matched": matched,
+        "missing": missing,
+        "recommendation": recommendation,
+        "taxonomy": {
+            "detected_role": taxonomy.get("detected_role", ""),
+            "detected_family": taxonomy.get("detected_family", ""),
+            "required_skills": taxonomy["required_skills"],
+            "required_qualifications": taxonomy["required_qualifications"],
+            "mandatory_terms": taxonomy["mandatory_terms"],
+            "missing_mandatory": missing_mandatory,
+            "matched_required": [
+                term for term in taxonomy["required_skills"] + taxonomy["required_qualifications"]
+                if _term_in_text(term, cv_lower)
+            ],
+        },
+        "score_components": {
+            "skills": skills_score,
+            "requirements": requirement_score,
+            "title": title_score,
+            "keywords": keyword_score,
+            "mandatory": mandatory_score,
+        },
+    }
 
 
 def load_taxonomy(job_text, job_title=""):
@@ -143,6 +172,8 @@ def load_taxonomy(job_text, job_title=""):
         "required_skills": [],
         "required_qualifications": [],
         "mandatory_terms": [],
+        "detected_role": "",
+        "detected_family": "",
     }
     try:
         skills = []
@@ -171,6 +202,8 @@ def load_taxonomy(job_text, job_title=""):
             "required_skills": _unique_keep_order(required_skills),
             "required_qualifications": _unique_keep_order(required_qualifications),
             "mandatory_terms": mandatory,
+            "detected_role": role.title,
+            "detected_family": role.job_family.name,
         }
     except (ImproperlyConfigured, Exception):
         return empty

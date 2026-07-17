@@ -27,7 +27,7 @@ from .models import (
 )
 from accounts.models import UserProfile
 from .engine import ats_engine
-from .scoring import calculate_score
+from .scoring import calculate_score, calculate_score_details
 from subscriptions.services import get_active_subscription, get_entitlements
 
 
@@ -373,6 +373,26 @@ def score_breakdown(score, matched, missing):
     }
 
 
+def build_match_intelligence(result, cv_text=None):
+    metrics = result.metrics or {}
+    taxonomy = metrics.get("taxonomy") or {}
+    components = metrics.get("score_components") or {}
+    if (not taxonomy or not components) and cv_text is not None:
+        details = calculate_score_details(cv_text, result.job_description, result.job_title)
+        taxonomy = details.get("taxonomy", {})
+        components = details.get("score_components", {})
+    return {
+        "detected_role": taxonomy.get("detected_role") or "Specific job advert",
+        "detected_family": taxonomy.get("detected_family") or "Advert-led analysis",
+        "mandatory_terms": taxonomy.get("mandatory_terms", []),
+        "missing_mandatory": taxonomy.get("missing_mandatory", []),
+        "matched_required": taxonomy.get("matched_required", []),
+        "required_skills": taxonomy.get("required_skills", []),
+        "required_qualifications": taxonomy.get("required_qualifications", []),
+        "components": components,
+    }
+
+
 def build_application_decision(score):
     if score >= APPLY_STRONG_THRESHOLD:
         return {
@@ -642,8 +662,14 @@ def analyse_cv(request):
                 deadline=deadline,
             )
 
-            score, matched, missing, recommendation = calculate_score(cv_text, job_description, job_title)
+            details = calculate_score_details(cv_text, job_description, job_title)
+            score = details["score"]
+            matched = details["matched"]
+            missing = details["missing"]
+            recommendation = details["recommendation"]
             metrics = score_breakdown(score, matched, missing)
+            metrics["taxonomy"] = details.get("taxonomy", {})
+            metrics["score_components"] = details.get("score_components", {})
 
             result = ATSResult.objects.create(
                 user=request.user,
@@ -705,6 +731,7 @@ def result_detail(request, result_id):
     matched = [item.strip() for item in result.matched_skills.split(",") if item.strip()]
     missing = [item.strip() for item in result.missing_skills.split(",") if item.strip()]
     breakdown = score_breakdown(result.score, matched, missing)
+    match_intelligence = build_match_intelligence(result, extract_cv_text(result.cv))
     report_insights = build_report_insights(result, matched, missing)
     application_decision = build_application_decision(result.score)
     suggested_cv_review = build_suggested_cv_review(result, matched, missing)
@@ -714,6 +741,7 @@ def result_detail(request, result_id):
         {
             "result": result,
             "breakdown": breakdown,
+            "match_intelligence": match_intelligence,
             "matched": matched,
             "missing": missing,
             "report_insights": report_insights,
@@ -778,6 +806,7 @@ def enterprise_bulk_upload(request):
                 form.add_error(None, "The job role could not be read. Paste the job text directly and try again.")
                 return render(request, "ats/enterprise_bulk.html", {"form": form})
 
+            job_title = infer_job_title(form, job_description)
             prepared_candidates = []
             invalid_cvs = []
             for uploaded_file in cv_files:
@@ -795,7 +824,7 @@ def enterprise_bulk_upload(request):
 
             job_role = JobRole.objects.create(
                 user=request.user,
-                title=infer_job_title(form, job_description),
+                title=job_title,
                 company=infer_company(form, job_description),
                 description=job_description,
                 source_type=form.cleaned_data["source_type"],

@@ -202,6 +202,80 @@
         margin-top: 0.35rem;
     }
 
+    .intelligence-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.85rem;
+        margin-bottom: 1rem;
+    }
+
+    .intelligence-card {
+        border: 1px solid var(--report-line);
+        border-radius: 14px;
+        background: #ffffff;
+        padding: 0.95rem;
+    }
+
+    .intelligence-card strong {
+        color: var(--report-ink);
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .intelligence-card p {
+        color: var(--report-muted);
+        margin: 0;
+    }
+
+    .gap-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.65rem;
+    }
+
+    .gap-pill {
+        border-radius: 999px;
+        padding: 0.36rem 0.58rem;
+        background: #f1f5f9;
+        color: var(--report-ink);
+        font-size: 0.8rem;
+        font-weight: 720;
+    }
+
+    .gap-pill.must {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .component-bars {
+        display: grid;
+        gap: 0.55rem;
+    }
+
+    .component-row {
+        display: grid;
+        grid-template-columns: 110px minmax(0, 1fr) 42px;
+        gap: 0.65rem;
+        align-items: center;
+        color: var(--report-muted);
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    .component-track {
+        height: 8px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        overflow: hidden;
+    }
+
+    .component-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #4f46e5, #14b8a6);
+    }
+
     .skill-box {
         border: 1px solid var(--report-line);
         border-radius: 14px;
@@ -375,9 +449,19 @@
 
         .signal-card,
         .skill-box,
+        .intelligence-card,
         .draft-output,
         .cv-change-card {
             background: #0b1224;
+        }
+
+        .gap-pill {
+            background: #20335f;
+            color: #f8fafc;
+        }
+
+        .component-track {
+            background: #273449;
         }
 
         .apply-decision.worth,
@@ -416,6 +500,10 @@
         }
 
         .cv-change-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .intelligence-grid {
             grid-template-columns: 1fr;
         }
     }
@@ -476,6 +564,57 @@
                 <hr>
                 <h2>Why this CV may be weak for this role</h2>
                 <p>{{ report_insights.weakness_summary }}</p>
+            </div>
+        </div>
+
+        <div class="report-card report-card-pad mb-3">
+            <div class="report-copy mb-3">
+                <h2>How MyValidCV understood this role</h2>
+                <p>The result comes from the job advert, visible CV evidence, and the stored role taxonomy used as a reference layer.</p>
+            </div>
+            <div class="intelligence-grid">
+                <div class="intelligence-card">
+                    <strong>Detected role</strong>
+                    <p>{{ match_intelligence.detected_role }}</p>
+                </div>
+                <div class="intelligence-card">
+                    <strong>Job family</strong>
+                    <p>{{ match_intelligence.detected_family }}</p>
+                </div>
+                <div class="intelligence-card">
+                    <strong>Must-have gaps</strong>
+                    {% if match_intelligence.missing_mandatory %}
+                        <div class="gap-list">
+                            {% for item in match_intelligence.missing_mandatory %}
+                                <span class="gap-pill must">{{ item }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p>No mandatory licence or qualification gap detected.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="component-bars" aria-label="Score component breakdown">
+                <div class="component-row">
+                    <span>Requirements</span>
+                    <div class="component-track"><div class="component-fill" style="width: {{ match_intelligence.components.requirements|default:breakdown.skills }}%"></div></div>
+                    <span>{{ match_intelligence.components.requirements|default:breakdown.skills }}%</span>
+                </div>
+                <div class="component-row">
+                    <span>Skills</span>
+                    <div class="component-track"><div class="component-fill" style="width: {{ match_intelligence.components.skills|default:breakdown.skills }}%"></div></div>
+                    <span>{{ match_intelligence.components.skills|default:breakdown.skills }}%</span>
+                </div>
+                <div class="component-row">
+                    <span>Keywords</span>
+                    <div class="component-track"><div class="component-fill" style="width: {{ match_intelligence.components.keywords|default:breakdown.keywords }}%"></div></div>
+                    <span>{{ match_intelligence.components.keywords|default:breakdown.keywords }}%</span>
+                </div>
+                <div class="component-row">
+                    <span>Must-haves</span>
+                    <div class="component-track"><div class="component-fill" style="width: {{ match_intelligence.components.mandatory|default:100 }}%"></div></div>
+                    <span>{{ match_intelligence.components.mandatory|default:100 }}%</span>
+                </div>
             </div>
         </div>
 
