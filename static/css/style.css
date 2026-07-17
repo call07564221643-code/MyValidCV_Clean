@@ -2098,6 +2098,191 @@ h1, h2, h3, h4, h5, h6 {
     background: #fff7ed;
 }
 
+/* Global customer-service assistant */
+.mvcv-assistant {
+    position: fixed;
+    right: 1.2rem;
+    bottom: 1.2rem;
+    z-index: 1080;
+    font-family: inherit;
+}
+
+.mvcv-assistant-button {
+    border: 1px solid rgba(31, 51, 116, 0.18);
+    border-radius: 999px;
+    background: #1f3374;
+    color: #ffffff;
+    box-shadow: 0 16px 38px rgba(15, 23, 42, 0.22);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 800;
+    padding: 0.78rem 1rem;
+}
+
+.mvcv-assistant-button:hover,
+.mvcv-assistant-button:focus {
+    background: #17275f;
+}
+
+.mvcv-assistant-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: #22c55e;
+    box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.18);
+}
+
+.mvcv-assistant-panel {
+    display: none;
+    position: absolute;
+    right: 0;
+    bottom: 3.9rem;
+    width: min(380px, calc(100vw - 2rem));
+    overflow: hidden;
+    border: 1px solid #dce4f2;
+    border-radius: 20px;
+    background: #ffffff;
+    box-shadow: 0 26px 70px rgba(15, 23, 42, 0.24);
+}
+
+.mvcv-assistant.open .mvcv-assistant-panel {
+    display: block;
+}
+
+.mvcv-assistant-header {
+    background: linear-gradient(135deg, #1f3374, #4f46e5);
+    color: #ffffff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+}
+
+.mvcv-assistant-header strong,
+.mvcv-assistant-header span {
+    display: block;
+}
+
+.mvcv-assistant-header span {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.82rem;
+}
+
+.mvcv-assistant-header button {
+    border: 0;
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+    border-radius: 999px;
+    width: 32px;
+    height: 32px;
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.mvcv-assistant-body {
+    max-height: 430px;
+    overflow: auto;
+    padding: 0.9rem;
+    background: #f8fafc;
+}
+
+.mvcv-assistant-message {
+    border-radius: 15px;
+    margin-bottom: 0.65rem;
+    padding: 0.72rem 0.82rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.mvcv-assistant-message.bot {
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #0f172a;
+}
+
+.mvcv-assistant-message.user {
+    background: #1f3374;
+    color: #ffffff;
+    margin-left: 2.4rem;
+}
+
+.mvcv-assistant-prompts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.75rem;
+}
+
+.mvcv-assistant-prompts button {
+    border: 1px solid #dbe3ef;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #1f3374;
+    font-size: 0.78rem;
+    font-weight: 760;
+    padding: 0.42rem 0.62rem;
+}
+
+.mvcv-assistant-prompts button:hover,
+.mvcv-assistant-prompts button:focus {
+    background: #eef3ff;
+}
+
+.mvcv-assistant-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    border-top: 1px solid #e2e8f0;
+    padding: 0.75rem;
+    background: #ffffff;
+}
+
+.mvcv-assistant-form input {
+    border: 1px solid #dbe3ef;
+    border-radius: 999px;
+    min-width: 0;
+    padding: 0.65rem 0.82rem;
+}
+
+.mvcv-assistant-form button {
+    border: 0;
+    border-radius: 999px;
+    background: #1f3374;
+    color: #ffffff;
+    font-weight: 800;
+    padding: 0.65rem 0.85rem;
+}
+
+@media (prefers-color-scheme: dark) {
+    .mvcv-assistant-panel,
+    .mvcv-assistant-form,
+    .mvcv-assistant-message.bot,
+    .mvcv-assistant-prompts button {
+        background: #111c33;
+        color: #f8fafc;
+        border-color: #273449;
+    }
+
+    .mvcv-assistant-body {
+        background: #0f172a;
+    }
+
+    .mvcv-assistant-form input {
+        background: #0b1224;
+        color: #f8fafc;
+        border-color: #273449;
+    }
+}
+
+@media (max-width: 575px) {
+    .mvcv-assistant {
+        right: 0.75rem;
+        bottom: 0.75rem;
+    }
+}
+
 .mvcv-chip.paid-action::after {
     content: "Plus";
     margin-left: 0.45rem;
