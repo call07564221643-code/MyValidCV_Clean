@@ -441,55 +441,101 @@ def build_suggested_cv_review(result, matched, missing):
         "sections": [
             {
                 "tone": "green",
-                "label": "Professional summary",
+                "label": "CV wording",
                 "meaning": "Rewording only",
                 "text": (
-                    f"Open with the target role, then surface matched evidence such as {matched_text}. "
-                    "This is a wording and ordering change, not a new claim."
+                    f"Green highlights use evidence already detected in the CV, such as {matched_text}. "
+                    "These are safe wording and ordering changes."
                 ),
             },
             {
                 "tone": "yellow",
-                "label": "Skills and experience wording",
-                "meaning": "Window-dressed wording",
+                "label": "Enhanced evidence",
+                "meaning": "Stronger presentation",
                 "text": (
-                    "Rewrite bullets so existing duties show measurable outcomes, tools used, scale, stakeholders, "
-                    "and impact. Keep every statement defensible in interview."
+                    "Yellow highlights show where the same CV evidence has been presented more strongly, usually by making "
+                    "responsibility, tools, scope, or impact clearer."
                 ),
             },
             {
                 "tone": "red",
-                "label": "Evidence, training, or licence gaps",
-                "meaning": "Prepare proof before claiming",
+                "label": "Not evidenced",
+                "meaning": "Proof needed",
                 "text": (
-                    f"Do not claim {missing_text} unless the CV owner has real experience, training, certification, "
-                    "licence, or project evidence. If the role requires these as must-have criteria, build the evidence first."
+                    f"Red highlights show missing or weakly evidenced items such as {missing_text}. "
+                    "These should not be claimed unless the candidate genuinely has proof."
                 ),
             },
         ],
     }
 
 
-def build_cv_draft_preview(result, matched, missing):
+def clean_cv_sentence(text):
+    cleaned = re.sub(r"\s+", " ", (text or "").strip(" -•*\t"))
+    if not cleaned:
+        return ""
+    cleaned = cleaned[0].upper() + cleaned[1:]
+    if cleaned[-1] not in ".!?":
+        cleaned += "."
+    return cleaned
+
+
+def extract_cv_evidence_lines(cv_text, terms, limit=4):
+    text = cv_text or ""
+    candidates = []
+    for chunk in re.split(r"[\n\r]+|(?<=[.!?])\s+", text):
+        line = clean_cv_sentence(chunk)
+        if not 35 <= len(line) <= 220:
+            continue
+        line_lower = line.lower()
+        if "@" in line_lower or "http" in line_lower or "linkedin" in line_lower:
+            continue
+        if terms and not any(term.lower() in line_lower for term in terms):
+            continue
+        candidates.append(line)
+
+    if not candidates:
+        for chunk in re.split(r"[\n\r]+|(?<=[.!?])\s+", text):
+            line = clean_cv_sentence(chunk)
+            if 45 <= len(line) <= 220 and "@" not in line:
+                candidates.append(line)
+            if len(candidates) >= limit:
+                break
+
+    seen = set()
+    unique = []
+    for line in candidates:
+        key = line.lower()
+        if key not in seen:
+            seen.add(key)
+            unique.append(line)
+        if len(unique) >= limit:
+            break
+    return unique
+
+
+def build_cv_draft_preview(result, matched, missing, cv_text=""):
     matched_text = ", ".join(matched[:6]) if matched else "role-relevant evidence"
     missing_text = ", ".join(missing[:5]) if missing else "no major evidence gaps"
     safe_role = result.job_title or "Target Role"
+    evidence_lines = extract_cv_evidence_lines(cv_text, matched, limit=4)
+    if evidence_lines:
+        summary_evidence = evidence_lines[0]
+    else:
+        summary_evidence = f"Evidence aligned to {matched_text} should be visible in the CV before this draft is used."
     return {
         "candidate_name": result.cv.title,
         "target_role": safe_role,
         "summary": (
-            f"Candidate targeting {safe_role}, with visible evidence in {matched_text}. "
-            "The profile should open with the strongest truthful match to the job advert and avoid unsupported claims."
+            f"Candidate targeting {safe_role}, with CV evidence connected to {matched_text}. {summary_evidence}"
         ),
         "skills": matched[:8] or ["Add verified role-specific skills from your CV evidence"],
-        "experience_bullets": [
-            "Move the most relevant achievement or responsibility into the first experience section.",
-            "Rewrite duties as evidence-led bullets: action, tool or method used, and measurable outcome.",
-            "Keep claims specific enough for an interviewer to ask about and for the candidate to defend.",
+        "experience_bullets": evidence_lines or [
+            "Relevant experience was not clearly detected in the source CV text.",
+            "A stronger tailored CV cannot be produced until the CV includes truthful role evidence.",
         ],
         "education_note": (
-            f"Prepare proof for {missing_text}. If any item is a licence, registration, degree, or mandatory training, "
-            "do not include it unless the candidate genuinely holds it."
+            f"Not evidenced strongly enough in the source CV: {missing_text}."
         ),
     }
 
@@ -498,32 +544,18 @@ def build_report_insights(result, matched, missing):
     if result.score >= 80:
         readiness_label = "Ready to apply"
         readiness_class = "ready"
-        recruiter_view = (
-            "Recruiters are likely to see a clear role match. Before applying, make sure the strongest evidence "
-            "is visible in the top third of the CV."
-        )
-        weakness_summary = (
-            "The CV is not weak overall, but it may still lose interviews if the best achievements are buried, "
-            "generic, or not measurable."
-        )
+        recruiter_view = "Recruiters are likely to see a clear role match if the strongest evidence stays near the top."
+        weakness_summary = "Main risk: strong evidence may be buried, generic, or not measurable."
     elif result.score >= 55:
         readiness_label = "Needs work before applying"
         readiness_class = "work"
-        recruiter_view = (
-            "Recruiters may see partial fit, but they may need to work too hard to connect your CV to this role."
-        )
-        weakness_summary = (
-            "The CV likely has relevant experience, but some requirements are not visible enough or lack clear proof."
-        )
+        recruiter_view = "Recruiters may see partial fit, but the match is not immediate enough."
+        weakness_summary = "Main risk: relevant experience is present but not visible or proven enough."
     else:
         readiness_label = "High risk of being screened out"
         readiness_class = "risk"
-        recruiter_view = (
-            "Recruiters may not see enough role fit quickly, especially if the missing skills are important in the advert."
-        )
-        weakness_summary = (
-            "The CV is weak for this specific role because the visible evidence does not yet match enough of the job requirements."
-        )
+        recruiter_view = "Recruiters may not see enough role fit quickly."
+        weakness_summary = "Main risk: visible CV evidence does not meet enough of the role requirements."
 
     top_fixes = [
         "Move the strongest role-matched skills and achievements into the top third of the CV.",
@@ -752,14 +784,15 @@ def analyse_cv(request):
 @login_required(login_url="login")
 def result_detail(request, result_id):
     result = get_object_or_404(ATSResult, id=result_id, user=request.user)
+    cv_text = extract_cv_text(result.cv)
     matched = [item.strip() for item in result.matched_skills.split(",") if item.strip()]
     missing = [item.strip() for item in result.missing_skills.split(",") if item.strip()]
     breakdown = score_breakdown(result.score, matched, missing)
-    match_intelligence = build_match_intelligence(result, extract_cv_text(result.cv))
+    match_intelligence = build_match_intelligence(result, cv_text)
     report_insights = build_report_insights(result, matched, missing)
     application_decision = build_application_decision(result.score)
     suggested_cv_review = build_suggested_cv_review(result, matched, missing)
-    cv_draft_preview = build_cv_draft_preview(result, matched, missing)
+    cv_draft_preview = build_cv_draft_preview(result, matched, missing, cv_text)
     return render(
         request,
         "ats/result.html",
