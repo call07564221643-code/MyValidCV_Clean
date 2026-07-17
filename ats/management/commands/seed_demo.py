@@ -436,12 +436,12 @@ Recommended Changes
         strengths = ", ".join(matched[:4]) if matched else "the evidence shown in my CV"
         return f"""Dear Hiring Manager,
 
-I am applying for the {job_title} role. My CV currently shows a MyValidCV role-fit score of {score}% and highlights strengths including {strengths}.
+I am applying for the {job_title} role. The strongest evidence in my CV aligns with {strengths}, and I have kept the application focused on experience I can discuss confidently at interview.
 
-I have kept this draft truthful and focused on evidence already present in my CV. I would welcome the opportunity to discuss how my experience can support the requirements of this role.
+My background shows relevant delivery, communication, and role-specific capability for the requirements described in the advert. I would welcome the opportunity to discuss how this experience can support your team.
 
 Yours sincerely,
 {first_name} {last_name}
 
-Draft note: personalise this letter before sending and verify every statement.
+Draft note: personalise the greeting, company name, and any figures before sending.
 """

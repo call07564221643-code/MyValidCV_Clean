@@ -331,22 +331,56 @@ Original CV Content Reference
 """
 
 
-def build_cover_letter(user, result, matched):
+def clean_cover_letter_title(title):
+    title = re.sub(r"\s+", " ", (title or "").strip(" -:"))
+    bad_fragments = [
+        "because you",
+        "can't reveal",
+        "cannot reveal",
+        "before saving",
+        "hiring manager",
+        "imported job role",
+    ]
+    if not title or len(title) > 80 or any(fragment in title.lower() for fragment in bad_fragments):
+        return "the advertised role"
+    return title
+
+
+def clean_cover_letter_company(company):
+    company = re.sub(r"\s+", " ", (company or "").strip(" -:"))
+    if not company or company.lower() in {"hiring manager", "unknown", "n/a"} or len(company) > 80:
+        return "your team"
+    return company
+
+
+def build_cover_letter(user, result, matched, cv_text=""):
     name = user.get_full_name().strip() or user.username
-    company = result.job_role.company or "Hiring Manager"
-    strengths = ", ".join(matched[:4]) if matched else "the relevant experience described in my CV"
+    role_title = clean_cover_letter_title(result.job_title)
+    company = clean_cover_letter_company(result.job_role.company if result.job_role else "")
+    strengths = [item for item in matched[:5] if len(item) > 2]
+    strengths_text = ", ".join(strengths) if strengths else "relevant experience evidenced in my CV"
+    evidence_lines = extract_cv_evidence_lines(cv_text, strengths, limit=2)
+    if evidence_lines:
+        evidence_text = " ".join(evidence_lines)
+    else:
+        evidence_text = (
+            "My CV demonstrates experience that is relevant to the role requirements, "
+            "with emphasis on responsibilities and outcomes already evidenced in the document."
+        )
     return f"""Dear Hiring Manager,
 
-I am applying for the {result.job_title} position at {company}. My CV demonstrates experience relevant to this opportunity, particularly {strengths}.
+I am applying for {role_title}. Your advert appears to prioritise {strengths_text}, and my CV has been tailored to make this evidence easier to identify.
 
-I am interested in this role because it offers the opportunity to apply these strengths to the priorities described in the job advert. I would welcome the chance to discuss the evidence in my CV and how I could contribute to your team.
+The strongest CV evidence for this application is: {evidence_text}
+
+I would welcome the opportunity to discuss how this experience can support {company}. I have kept this application focused on evidence already present in my CV and would be pleased to expand on it at interview.
 
 Thank you for considering my application.
 
 Yours sincerely,
 {name}
 
-Draft note: personalise this letter and verify every statement before sending.
+Draft note: personalise the greeting, company name, and any figures before sending.
 """
 
 
@@ -753,7 +787,7 @@ def analyse_cv(request):
                     user=request.user,
                     ats_result=result,
                     title=f"Cover letter for {job_title}",
-                    content=build_cover_letter(request.user, result, matched),
+                    content=build_cover_letter(request.user, result, matched, cv_text),
                 )
 
             if job_role.deadline and form.cleaned_data.get("email_reminder"):
@@ -793,6 +827,11 @@ def result_detail(request, result_id):
     application_decision = build_application_decision(result.score)
     suggested_cv_review = build_suggested_cv_review(result, matched, missing)
     cv_draft_preview = build_cv_draft_preview(result, matched, missing, cv_text)
+    if hasattr(result, "generated_cover_letter"):
+        refreshed_letter = build_cover_letter(request.user, result, matched, cv_text)
+        if result.generated_cover_letter.content != refreshed_letter:
+            result.generated_cover_letter.content = refreshed_letter
+            result.generated_cover_letter.save(update_fields=["content"])
     return render(
         request,
         "ats/result.html",
