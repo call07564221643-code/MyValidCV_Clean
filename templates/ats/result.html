@@ -426,10 +426,19 @@
     }
 
     .legend-chip {
+        border: 1px solid transparent;
         border-radius: 999px;
+        cursor: pointer;
         padding: 0.45rem 0.7rem;
         font-size: 0.82rem;
         font-weight: 720;
+        transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+
+    .legend-chip:hover,
+    .legend-chip.active {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
     }
 
     .legend-chip.green {
@@ -447,18 +456,24 @@
         color: #991b1b;
     }
 
+    .cv-guidance-layout {
+        display: grid;
+        grid-template-columns: minmax(260px, 0.78fr) minmax(0, 1.22fr);
+        gap: 1rem;
+        align-items: start;
+    }
+
     .cv-change-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 0.85rem;
-        margin-bottom: 1rem;
+        gap: 0.65rem;
     }
 
     .cv-change-card {
         border-radius: 14px;
         border: 1px solid var(--report-line);
-        padding: 0.95rem;
+        padding: 0.82rem;
         background: #ffffff;
+        display: none;
     }
 
     .cv-change-card.green {
@@ -492,6 +507,113 @@
     .cv-change-card p {
         color: var(--report-ink);
         margin: 0;
+    }
+
+    .cv-change-card.active {
+        display: block;
+    }
+
+    .cv-preview {
+        border: 1px solid var(--report-line);
+        border-radius: 16px;
+        background: #ffffff;
+        padding: 1.15rem;
+    }
+
+    .cv-preview-page {
+        border: 1px solid #dbe3ef;
+        background: #ffffff;
+        color: #111827;
+        margin: 0 auto;
+        max-width: 760px;
+        min-height: 760px;
+        padding: 2rem;
+        box-shadow: 0 18px 38px rgba(15, 23, 42, 0.08);
+        text-align: justify;
+    }
+
+    .cv-preview-header {
+        border-bottom: 2px solid #1f3374;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        text-align: left;
+    }
+
+    .cv-preview-header h3 {
+        color: #0f172a;
+        font-size: 1.45rem;
+        font-weight: 760;
+        letter-spacing: -0.02em;
+        margin: 0;
+    }
+
+    .cv-preview-header p {
+        color: #475569;
+        margin: 0.25rem 0 0;
+    }
+
+    .cv-preview-section {
+        margin-top: 1rem;
+    }
+
+    .cv-preview-section h4 {
+        border-bottom: 1px solid #e2e8f0;
+        color: #1f3374;
+        font-size: 0.82rem;
+        font-weight: 820;
+        letter-spacing: 0.07em;
+        margin: 0 0 0.45rem;
+        padding-bottom: 0.25rem;
+        text-transform: uppercase;
+    }
+
+    .cv-preview-section p,
+    .cv-preview-section li {
+        color: #1f2937;
+        font-size: 0.93rem;
+        line-height: 1.55;
+    }
+
+    .cv-preview-section ul {
+        margin: 0;
+        padding-left: 1.15rem;
+    }
+
+    .cv-highlight {
+        border-radius: 5px;
+        padding: 0.05rem 0.18rem;
+    }
+
+    .cv-highlight.green {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .cv-highlight.yellow {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .cv-highlight.red {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .draft-raw-toggle {
+        border: 0;
+        background: transparent;
+        color: var(--report-navy);
+        font-weight: 760;
+        padding: 0;
+    }
+
+    .draft-raw-panel {
+        display: none;
+        margin-top: 1rem;
+    }
+
+    .draft-raw-panel.open {
+        display: block;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -533,6 +655,7 @@
         .apply-decision.worth,
         .apply-decision.improve,
         .apply-decision.low,
+        .cv-preview,
         .cv-change-card.green,
         .cv-change-card.yellow,
         .cv-change-card.red {
@@ -570,6 +693,10 @@
             grid-template-columns: 1fr;
         }
 
+        .cv-guidance-layout {
+            grid-template-columns: 1fr;
+        }
+
         .intelligence-grid {
             grid-template-columns: 1fr;
         }
@@ -582,6 +709,11 @@
 
         .signal-grid {
             grid-template-columns: 1fr;
+        }
+
+        .cv-preview-page {
+            min-height: auto;
+            padding: 1rem;
         }
     }
 </style>
@@ -808,12 +940,10 @@
                 </div>
 
                 <div class="cv-change-legend" aria-label="Suggested CV change legend">
-                    <span class="legend-chip green">Green: rewording only</span>
-                    <span class="legend-chip yellow">Yellow: window-dressed wording</span>
-                    <span class="legend-chip red">Red: training, licence, or proof needed</span>
+                    <button type="button" class="legend-chip green active" data-cv-tone="green">Green: rewording only</button>
+                    <button type="button" class="legend-chip yellow" data-cv-tone="yellow">Yellow: stronger wording</button>
+                    <button type="button" class="legend-chip red" data-cv-tone="red">Red: proof needed</button>
                 </div>
-
-                <p class="report-muted">{{ suggested_cv_review.format_note }}</p>
 
                 {% if not application_decision.can_rewrite %}
                     <div class="value-note mb-3">
@@ -821,19 +951,69 @@
                     </div>
                 {% endif %}
 
-                <div class="cv-change-grid">
-                    {% for section in suggested_cv_review.sections %}
-                        <div class="cv-change-card {{ section.tone }}">
-                            <strong>{{ section.label }}</strong>
-                            <small>{{ section.meaning }}</small>
-                            <p>{{ section.text }}</p>
+                <div class="cv-guidance-layout">
+                    <div>
+                        <p class="report-muted mb-3">{{ suggested_cv_review.format_note }}</p>
+                        <div class="cv-change-grid">
+                            {% for section in suggested_cv_review.sections %}
+                                <div class="cv-change-card {{ section.tone }}{% if forloop.first %} active{% endif %}" data-cv-panel="{{ section.tone }}">
+                                    <strong>{{ section.label }}</strong>
+                                    <small>{{ section.meaning }}</small>
+                                    <p>{{ section.text }}</p>
+                                </div>
+                            {% endfor %}
                         </div>
-                    {% endfor %}
+                    </div>
+
+                    <div class="cv-preview" aria-label="Suggested CV professional preview">
+                        <div class="cv-preview-page">
+                            <div class="cv-preview-header">
+                                <h3>{{ cv_draft_preview.candidate_name }}</h3>
+                                <p>Target role: {{ cv_draft_preview.target_role }}</p>
+                            </div>
+
+                            <div class="cv-preview-section">
+                                <h4>Professional Profile</h4>
+                                <p><span class="cv-highlight green">{{ cv_draft_preview.summary }}</span></p>
+                            </div>
+
+                            <div class="cv-preview-section">
+                                <h4>Key Skills</h4>
+                                <p>
+                                    {% for skill in cv_draft_preview.skills %}
+                                        <span class="cv-highlight green">{{ skill }}</span>{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </p>
+                            </div>
+
+                            <div class="cv-preview-section">
+                                <h4>Experience Evidence</h4>
+                                <ul>
+                                    {% for bullet in cv_draft_preview.experience_bullets %}
+                                        <li><span class="cv-highlight yellow">{{ bullet }}</span></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+
+                            <div class="cv-preview-section">
+                                <h4>Education, Licence and Proof Check</h4>
+                                <p><span class="cv-highlight red">{{ cv_draft_preview.education_note }}</span></p>
+                            </div>
+                        </div>
+
+                        {% if result.generated_cv %}
+                            <button type="button" class="draft-raw-toggle mt-3" data-raw-toggle>
+                                View raw generated draft
+                            </button>
+                            <div class="draft-raw-panel" data-raw-panel>
+                                <h3 class="h6">{{ result.generated_cv.title }}</h3>
+                                <pre class="draft-output">{{ result.generated_cv.content }}</pre>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
 
                 {% if result.generated_cv %}
-                    <h3 class="h6">{{ result.generated_cv.title }}</h3>
-                    <pre class="draft-output">{{ result.generated_cv.content }}</pre>
                     {% if not can_download %}
                         <div class="value-note mt-3">
                             Free users can preview the suggested CV. Plus and Professional users can download the tailored draft.
@@ -862,4 +1042,33 @@
         </div>
     </div>
 </section>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const toneButtons = document.querySelectorAll("[data-cv-tone]");
+        const tonePanels = document.querySelectorAll("[data-cv-panel]");
+
+        toneButtons.forEach(function (button) {
+            button.addEventListener("click", function () {
+                const tone = button.getAttribute("data-cv-tone");
+                toneButtons.forEach(function (item) {
+                    item.classList.toggle("active", item === button);
+                });
+                tonePanels.forEach(function (panel) {
+                    panel.classList.toggle("active", panel.getAttribute("data-cv-panel") === tone);
+                });
+            });
+        });
+
+        const rawToggle = document.querySelector("[data-raw-toggle]");
+        const rawPanel = document.querySelector("[data-raw-panel]");
+        if (rawToggle && rawPanel) {
+            rawToggle.addEventListener("click", function () {
+                rawPanel.classList.toggle("open");
+                rawToggle.textContent = rawPanel.classList.contains("open")
+                    ? "Hide raw generated draft"
+                    : "View raw generated draft";
+            });
+        }
+    });
+</script>
 {% endblock %}

@@ -470,6 +470,30 @@ def build_suggested_cv_review(result, matched, missing):
     }
 
 
+def build_cv_draft_preview(result, matched, missing):
+    matched_text = ", ".join(matched[:6]) if matched else "role-relevant evidence"
+    missing_text = ", ".join(missing[:5]) if missing else "no major evidence gaps"
+    safe_role = result.job_title or "Target Role"
+    return {
+        "candidate_name": result.cv.title,
+        "target_role": safe_role,
+        "summary": (
+            f"Candidate targeting {safe_role}, with visible evidence in {matched_text}. "
+            "The profile should open with the strongest truthful match to the job advert and avoid unsupported claims."
+        ),
+        "skills": matched[:8] or ["Add verified role-specific skills from your CV evidence"],
+        "experience_bullets": [
+            "Move the most relevant achievement or responsibility into the first experience section.",
+            "Rewrite duties as evidence-led bullets: action, tool or method used, and measurable outcome.",
+            "Keep claims specific enough for an interviewer to ask about and for the candidate to defend.",
+        ],
+        "education_note": (
+            f"Prepare proof for {missing_text}. If any item is a licence, registration, degree, or mandatory training, "
+            "do not include it unless the candidate genuinely holds it."
+        ),
+    }
+
+
 def build_report_insights(result, matched, missing):
     if result.score >= 80:
         readiness_label = "Ready to apply"
@@ -735,6 +759,7 @@ def result_detail(request, result_id):
     report_insights = build_report_insights(result, matched, missing)
     application_decision = build_application_decision(result.score)
     suggested_cv_review = build_suggested_cv_review(result, matched, missing)
+    cv_draft_preview = build_cv_draft_preview(result, matched, missing)
     return render(
         request,
         "ats/result.html",
@@ -747,6 +772,7 @@ def result_detail(request, result_id):
             "report_insights": report_insights,
             "application_decision": application_decision,
             "suggested_cv_review": suggested_cv_review,
+            "cv_draft_preview": cv_draft_preview,
             "can_download": can_download_generated_cv(request.user),
         },
     )
