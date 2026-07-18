@@ -364,38 +364,6 @@
         font-weight: 700;
     }
 
-    .dash-owner-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 0.75rem;
-    }
-
-    .dash-owner-tile {
-        display: block;
-        border: 1px solid var(--dash-line);
-        border-radius: 14px;
-        padding: 0.9rem;
-        color: var(--dash-ink);
-        text-decoration: none;
-        background: #ffffff;
-    }
-
-    .dash-owner-tile:hover {
-        background: var(--dash-soft);
-        color: var(--dash-navy);
-    }
-
-    .dash-owner-tile span,
-    .dash-owner-tile small {
-        display: block;
-        color: var(--dash-muted);
-    }
-
-    .dash-owner-tile strong {
-        display: block;
-        font-size: 1.45rem;
-    }
-
     html[data-bs-theme="dark"] {
         --dash-navy: #9fb8ff;
         --dash-navy-dark: #7f9df5;
@@ -415,8 +383,7 @@
     }
 
     html[data-bs-theme="dark"] .dash-item,
-    html[data-bs-theme="dark"] .dash-empty,
-    html[data-bs-theme="dark"] .dash-owner-tile {
+    html[data-bs-theme="dark"] .dash-empty {
         background: #0b1224;
     }
 
@@ -450,8 +417,7 @@
         }
 
         html:not([data-bs-theme="light"]) .dash-item,
-        html:not([data-bs-theme="light"]) .dash-empty,
-        html:not([data-bs-theme="light"]) .dash-owner-tile {
+        html:not([data-bs-theme="light"]) .dash-empty {
             background: #0b1224;
         }
 
@@ -476,10 +442,6 @@
             justify-content: flex-start;
         }
 
-        .dash-owner-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
         .dash-service-list {
             grid-template-columns: 1fr;
         }
@@ -494,10 +456,6 @@
     @media (max-width: 575px) {
         .dash-shell {
             padding-top: 1.2rem;
-        }
-
-        .dash-owner-grid {
-            grid-template-columns: 1fr;
         }
 
         .dash-item {
@@ -574,28 +532,6 @@
                 </ul>
             </div>
         </div>
-
-        {% if is_owner %}
-            <div class="dash-panel mb-4">
-                <div class="dash-section-head mt-0">
-                    <div>
-                        <h2>Owner control center</h2>
-                        <p class="dash-muted mb-0">Classified website management, payments, plans, health, and admin controls are visible only to superusers.</p>
-                    </div>
-                    <a href="{% url 'owner_console' %}" class="btn btn-sm btn-dark">Open owner console</a>
-                </div>
-                <div class="dash-owner-grid">
-                    <a class="dash-owner-tile" href="{% url 'admin:auth_user_changelist' %}"><span>Users</span><strong>{{ admin_stats.users }}</strong><small>Accounts and access</small></a>
-                    <a class="dash-owner-tile" href="{% url 'admin:payments_paymenttransaction_changelist' %}"><span>Payments</span><strong>{{ admin_stats.payments }}</strong><small>Transactions and receipts</small></a>
-                    <a class="dash-owner-tile" href="{% url 'admin:subscriptions_subscriptionplan_changelist' %}"><span>Plans</span><strong>{{ admin_stats.plans }}</strong><small>Pricing and limits</small></a>
-                    <a class="dash-owner-tile" href="{% url 'admin:subscriptions_customersubscription_changelist' %}"><span>Subscriptions</span><strong>{{ admin_stats.active_subscriptions }}</strong><small>Active customer plans</small></a>
-                    <a class="dash-owner-tile" href="{% url 'admin:payments_invoice_changelist' %}"><span>Invoices</span><strong>{{ admin_stats.open_invoices }}</strong><small>Open billing items</small></a>
-                    <a class="dash-owner-tile" href="{% url 'admin:payments_refund_changelist' %}"><span>Refunds</span><strong>{{ admin_stats.refunds }}</strong><small>Refund records</small></a>
-                    <a class="dash-owner-tile" href="{% url 'website_health' %}"><span>Health</span><strong>{{ admin_stats.ats_results }}</strong><small>ATS and site reports</small></a>
-                    <a class="dash-owner-tile" href="{% url 'enterprise_bulk' %}"><span>Enterprise</span><strong>{{ admin_stats.enterprise_batches }}</strong><small>Bulk reports</small></a>
-                </div>
-            </div>
-        {% endif %}
 
         <div class="row g-4">
             <div class="col-lg-5">

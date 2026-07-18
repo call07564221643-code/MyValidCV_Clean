@@ -4,10 +4,9 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from django.core.cache import cache
 from django.db.models import Count, Sum
 from django.utils import timezone
-from accounts.models import SocialAuthProvider, UserProfile
+from accounts.models import UserProfile
 from ats.models import ApplicationReminder, ATSResult, CV, EnterpriseBatch, EnterpriseCandidateResult, GeneratedCV, JobRole
 from payments.models import Invoice, PaymentTransaction, Refund
 from subscriptions.models import CustomerSubscription, DiscountCode, SubscriptionPlan
@@ -25,7 +24,7 @@ def dashboard(request):
     The effective plan comes from a non-expired active CustomerSubscription;
     otherwise access falls back to Free. Related CV, result, job, reminder and
     batch queries are filtered by ``request.user`` to prevent cross-account
-    disclosure. Superusers receive the owner/operations view.
+    disclosure. Website-owner controls live separately at ``/owner/``.
     """
     user_profile, _created = UserProfile.objects.get_or_create(user=request.user)
     user_profile.reset_daily_usage_if_needed()
@@ -35,32 +34,15 @@ def dashboard(request):
     reminders = ApplicationReminder.objects.filter(user=request.user, is_sent=False).select_related('job_role')[:5]
     generated_cvs = GeneratedCV.objects.filter(user=request.user).select_related('ats_result')[:5]
     enterprise_batches = EnterpriseBatch.objects.filter(user=request.user).select_related('job_role').annotate(candidate_count=Count('candidate_results'))[:5]
-    is_owner = request.user.is_superuser
     entitlements = get_entitlements(request.user)
     active_subscription = entitlements.subscription
     effective_plan = entitlements.code
 
-    is_enterprise = is_owner or effective_plan == 'enterprise'
-    social_providers = SocialAuthProvider.objects.all() if is_owner else SocialAuthProvider.objects.none()
-    admin_stats = {}
-    if is_owner:
-        admin_stats = cache.get('owner-dashboard-stats')
-        if admin_stats is None:
-            admin_stats = {
-            'users': UserProfile.objects.count(),
-            'active_subscriptions': CustomerSubscription.objects.filter(status='active').count(),
-            'payments': PaymentTransaction.objects.count(),
-            'open_invoices': Invoice.objects.filter(status='open').count(),
-            'refunds': Refund.objects.count(),
-            'plans': SubscriptionPlan.objects.filter(is_active=True).count(),
-            'ats_results': ATSResult.objects.count(),
-            'enterprise_batches': EnterpriseBatch.objects.count(),
-            }
-            cache.set('owner-dashboard-stats', admin_stats, 60)
+    is_enterprise = effective_plan == 'enterprise'
 
     limit = entitlements.bulk_limit if is_enterprise else entitlements.analysis_limit
     usage_label = 'CV scans this month' if is_enterprise else 'Validations this month'
-    if is_enterprise and not is_owner:
+    if is_enterprise:
         month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         usage_count = EnterpriseCandidateResult.objects.filter(
             batch__user=request.user,
@@ -119,11 +101,9 @@ def dashboard(request):
         'reminders': reminders,
         'generated_cvs': generated_cvs,
         'enterprise_batches': enterprise_batches,
-        'social_providers': social_providers,
-        'admin_stats': admin_stats,
-        'is_owner': is_owner,
+        'is_owner': request.user.is_superuser,
         'is_enterprise': is_enterprise,
-        'dashboard_scope': 'owner' if is_owner else effective_plan,
+        'dashboard_scope': effective_plan,
         'show_demo_preview': not uploaded_cvs and not recent_results,
         'demo_metrics': {
             'skills': 78,

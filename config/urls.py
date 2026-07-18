@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from dashboard import views as dashboard_views
 
 admin.site.site_header = 'MyValidCV Admin'
 admin.site.site_title = 'MyValidCV Admin'
@@ -15,6 +16,7 @@ urlpatterns = [
     path('', include('core.urls')),
     path('', include('accounts.urls')),
     path('', include('payments.urls')),
+    path('owner/', dashboard_views.owner_console, name='owner_console'),
     path('dashboard/', include('dashboard.urls')),
     path('ats/', include('ats.urls')),
     path('accounts/', include('allauth.urls')),
