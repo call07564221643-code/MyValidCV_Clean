@@ -396,8 +396,42 @@
         font-size: 1.45rem;
     }
 
+    html[data-bs-theme="dark"] {
+        --dash-navy: #9fb8ff;
+        --dash-navy-dark: #7f9df5;
+        --dash-soft: #20335f;
+        --dash-bg: #0f172a;
+        --dash-card: #111c33;
+        --dash-ink: #f8fafc;
+        --dash-muted: #cbd5e1;
+        --dash-line: #273449;
+        --dash-success: #bbf7d0;
+        --dash-warn: #fde68a;
+        --dash-risk: #fecaca;
+    }
+
+    html[data-bs-theme="dark"] .dash-shell {
+        background: linear-gradient(180deg, #0b1224 0%, var(--dash-bg) 100%);
+    }
+
+    html[data-bs-theme="dark"] .dash-item,
+    html[data-bs-theme="dark"] .dash-empty,
+    html[data-bs-theme="dark"] .dash-owner-tile {
+        background: #0b1224;
+    }
+
+    html[data-bs-theme="dark"] .dash-ready,
+    html[data-bs-theme="dark"] .dash-work,
+    html[data-bs-theme="dark"] .dash-risk {
+        background: #20335f;
+    }
+
+    html[data-bs-theme="dark"] .dash-strip-item {
+        color: #9fb8ff;
+    }
+
     @media (prefers-color-scheme: dark) {
-        :root {
+        html:not([data-bs-theme="light"]) {
             --dash-navy: #9fb8ff;
             --dash-navy-dark: #7f9df5;
             --dash-soft: #20335f;
@@ -411,23 +445,23 @@
             --dash-risk: #fecaca;
         }
 
-        .dash-shell {
+        html:not([data-bs-theme="light"]) .dash-shell {
             background: linear-gradient(180deg, #0b1224 0%, var(--dash-bg) 100%);
         }
 
-        .dash-item,
-        .dash-empty,
-        .dash-owner-tile {
+        html:not([data-bs-theme="light"]) .dash-item,
+        html:not([data-bs-theme="light"]) .dash-empty,
+        html:not([data-bs-theme="light"]) .dash-owner-tile {
             background: #0b1224;
         }
 
-        .dash-ready,
-        .dash-work,
-        .dash-risk {
+        html:not([data-bs-theme="light"]) .dash-ready,
+        html:not([data-bs-theme="light"]) .dash-work,
+        html:not([data-bs-theme="light"]) .dash-risk {
             background: #20335f;
         }
 
-        .dash-strip-item {
+        html:not([data-bs-theme="light"]) .dash-strip-item {
             color: #9fb8ff;
         }
     }

@@ -2255,21 +2255,40 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0.65rem 0.85rem;
 }
 
+html[data-bs-theme="dark"] .mvcv-assistant-panel,
+html[data-bs-theme="dark"] .mvcv-assistant-form,
+html[data-bs-theme="dark"] .mvcv-assistant-message.bot,
+html[data-bs-theme="dark"] .mvcv-assistant-prompts button {
+    background: #111c33;
+    color: #f8fafc;
+    border-color: #273449;
+}
+
+html[data-bs-theme="dark"] .mvcv-assistant-body {
+    background: #0f172a;
+}
+
+html[data-bs-theme="dark"] .mvcv-assistant-form input {
+    background: #0b1224;
+    color: #f8fafc;
+    border-color: #273449;
+}
+
 @media (prefers-color-scheme: dark) {
-    .mvcv-assistant-panel,
-    .mvcv-assistant-form,
-    .mvcv-assistant-message.bot,
-    .mvcv-assistant-prompts button {
+    html:not([data-bs-theme="light"]) .mvcv-assistant-panel,
+    html:not([data-bs-theme="light"]) .mvcv-assistant-form,
+    html:not([data-bs-theme="light"]) .mvcv-assistant-message.bot,
+    html:not([data-bs-theme="light"]) .mvcv-assistant-prompts button {
         background: #111c33;
         color: #f8fafc;
         border-color: #273449;
     }
 
-    .mvcv-assistant-body {
+    html:not([data-bs-theme="light"]) .mvcv-assistant-body {
         background: #0f172a;
     }
 
-    .mvcv-assistant-form input {
+    html:not([data-bs-theme="light"]) .mvcv-assistant-form input {
         background: #0b1224;
         color: #f8fafc;
         border-color: #273449;
@@ -3081,49 +3100,96 @@ h1, h2, h3, h4, h5, h6 {
     overflow: auto;
 }
 
+html[data-bs-theme="dark"] .mvcv-ai-app {
+    background: #111827;
+    color: #eef2ff;
+}
+
+html[data-bs-theme="dark"] .mvcv-ai-sidebar,
+html[data-bs-theme="dark"] .mvcv-ai-composer-card,
+html[data-bs-theme="dark"] .mvcv-ai-feature-grid article,
+html[data-bs-theme="dark"] .mvcv-ai-table-card,
+html[data-bs-theme="dark"] .mvcv-ai-result {
+    background: #172033;
+    border-color: #293247;
+}
+
+html[data-bs-theme="dark"] .mvcv-ai-brand,
+html[data-bs-theme="dark"] .mvcv-ai-hero h1,
+html[data-bs-theme="dark"] .mvcv-ai-hero h1 span,
+html[data-bs-theme="dark"] .mvcv-ai-nav a,
+html[data-bs-theme="dark"] .mvcv-ai-recent,
+html[data-bs-theme="dark"] .mvcv-ai-top-icons a,
+html[data-bs-theme="dark"] .mvcv-ai-user-menu {
+    color: #f8fafc;
+}
+
+html[data-bs-theme="dark"] .mvcv-ai-new,
+html[data-bs-theme="dark"] .mvcv-ai-nav a:hover,
+html[data-bs-theme="dark"] .mvcv-ai-nav a.active,
+html[data-bs-theme="dark"] .mvcv-ai-feature-grid article span {
+    background: rgba(143, 188, 235, 0.14);
+}
+
+html[data-bs-theme="dark"] .mvcv-ai-logo,
+html[data-bs-theme="dark"] .mvcv-ai-avatar {
+    box-shadow: 0 8px 28px rgba(245, 158, 11, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+html[data-bs-theme="dark"] .mvcv-ai-form textarea,
+html[data-bs-theme="dark"] .mvcv-ai-guest-box,
+html[data-bs-theme="dark"] .mvcv-ai-selects select,
+html[data-bs-theme="dark"] .mvcv-ai-selects input,
+html[data-bs-theme="dark"] .mvcv-ai-extra input,
+html[data-bs-theme="dark"] .mvcv-ai-mode-menu {
+    background: #111827;
+    border-color: #293247;
+    color: #f8fafc;
+}
+
 @media (prefers-color-scheme: dark) {
-    .mvcv-ai-app {
+    html:not([data-bs-theme="light"]) .mvcv-ai-app {
         background: #111827;
         color: #eef2ff;
     }
 
-    .mvcv-ai-sidebar,
-    .mvcv-ai-composer-card,
-    .mvcv-ai-feature-grid article,
-    .mvcv-ai-table-card,
-    .mvcv-ai-result {
+    html:not([data-bs-theme="light"]) .mvcv-ai-sidebar,
+    html:not([data-bs-theme="light"]) .mvcv-ai-composer-card,
+    html:not([data-bs-theme="light"]) .mvcv-ai-feature-grid article,
+    html:not([data-bs-theme="light"]) .mvcv-ai-table-card,
+    html:not([data-bs-theme="light"]) .mvcv-ai-result {
         background: #172033;
         border-color: #293247;
     }
 
-    .mvcv-ai-brand,
-    .mvcv-ai-hero h1,
-    .mvcv-ai-hero h1 span,
-    .mvcv-ai-nav a,
-    .mvcv-ai-recent,
-    .mvcv-ai-top-icons a,
-    .mvcv-ai-user-menu {
+    html:not([data-bs-theme="light"]) .mvcv-ai-brand,
+    html:not([data-bs-theme="light"]) .mvcv-ai-hero h1,
+    html:not([data-bs-theme="light"]) .mvcv-ai-hero h1 span,
+    html:not([data-bs-theme="light"]) .mvcv-ai-nav a,
+    html:not([data-bs-theme="light"]) .mvcv-ai-recent,
+    html:not([data-bs-theme="light"]) .mvcv-ai-top-icons a,
+    html:not([data-bs-theme="light"]) .mvcv-ai-user-menu {
         color: #f8fafc;
     }
 
-    .mvcv-ai-new,
-    .mvcv-ai-nav a:hover,
-    .mvcv-ai-nav a.active,
-    .mvcv-ai-feature-grid article span {
+    html:not([data-bs-theme="light"]) .mvcv-ai-new,
+    html:not([data-bs-theme="light"]) .mvcv-ai-nav a:hover,
+    html:not([data-bs-theme="light"]) .mvcv-ai-nav a.active,
+    html:not([data-bs-theme="light"]) .mvcv-ai-feature-grid article span {
         background: rgba(143, 188, 235, 0.14);
     }
 
-    .mvcv-ai-logo,
-    .mvcv-ai-avatar {
+    html:not([data-bs-theme="light"]) .mvcv-ai-logo,
+    html:not([data-bs-theme="light"]) .mvcv-ai-avatar {
         box-shadow: 0 8px 28px rgba(245, 158, 11, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.45);
     }
 
-    .mvcv-ai-form textarea,
-    .mvcv-ai-guest-box,
-    .mvcv-ai-selects select,
-    .mvcv-ai-selects input,
-    .mvcv-ai-extra input,
-    .mvcv-ai-mode-menu {
+    html:not([data-bs-theme="light"]) .mvcv-ai-form textarea,
+    html:not([data-bs-theme="light"]) .mvcv-ai-guest-box,
+    html:not([data-bs-theme="light"]) .mvcv-ai-selects select,
+    html:not([data-bs-theme="light"]) .mvcv-ai-selects input,
+    html:not([data-bs-theme="light"]) .mvcv-ai-extra input,
+    html:not([data-bs-theme="light"]) .mvcv-ai-mode-menu {
         background: #111827;
         border-color: #293247;
         color: #f8fafc;

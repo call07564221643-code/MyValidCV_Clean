@@ -828,8 +828,67 @@
         gap: 0.35rem;
     }
 
+    html[data-bs-theme="dark"] {
+        --report-navy: #9fb8ff;
+        --report-soft: #20335f;
+        --report-bg: #0f172a;
+        --report-card: #111c33;
+        --report-ink: #f8fafc;
+        --report-muted: #cbd5e1;
+        --report-line: #273449;
+        --report-success: #bbf7d0;
+        --report-warn: #fde68a;
+        --report-risk: #fecaca;
+    }
+
+    html[data-bs-theme="dark"] .report-shell {
+        background: linear-gradient(180deg, #0b1224 0%, var(--report-bg) 100%);
+    }
+
+    html[data-bs-theme="dark"] .signal-card,
+    html[data-bs-theme="dark"] .skill-box,
+    html[data-bs-theme="dark"] .intelligence-card,
+    html[data-bs-theme="dark"] .match-metric,
+    html[data-bs-theme="dark"] .summary-card,
+    html[data-bs-theme="dark"] .cv-guidance-panel,
+    html[data-bs-theme="dark"] .cv-support-card,
+    html[data-bs-theme="dark"] .draft-output,
+    html[data-bs-theme="dark"] .cv-change-card {
+        background: #0b1224;
+    }
+
+    html[data-bs-theme="dark"] .gap-pill {
+        background: #20335f;
+        color: #f8fafc;
+    }
+
+    html[data-bs-theme="dark"] .component-track {
+        background: #273449;
+    }
+
+    html[data-bs-theme="dark"] .apply-decision.worth,
+    html[data-bs-theme="dark"] .apply-decision.improve,
+    html[data-bs-theme="dark"] .apply-decision.low,
+    html[data-bs-theme="dark"] .cv-preview,
+    html[data-bs-theme="dark"] .letter-page,
+    html[data-bs-theme="dark"] .cv-change-card.green,
+    html[data-bs-theme="dark"] .cv-change-card.yellow,
+    html[data-bs-theme="dark"] .cv-change-card.red {
+        background: #111c33;
+    }
+
+    html[data-bs-theme="dark"] .fix-list span {
+        color: #0f172a;
+    }
+
+    html[data-bs-theme="dark"] .readiness-pill.ready,
+    html[data-bs-theme="dark"] .readiness-pill.work,
+    html[data-bs-theme="dark"] .readiness-pill.risk {
+        background: #20335f;
+    }
+
     @media (prefers-color-scheme: dark) {
-        :root {
+        html:not([data-bs-theme="light"]) {
             --report-navy: #9fb8ff;
             --report-soft: #20335f;
             --report-bg: #0f172a;
@@ -842,49 +901,49 @@
             --report-risk: #fecaca;
         }
 
-        .report-shell {
+        html:not([data-bs-theme="light"]) .report-shell {
             background: linear-gradient(180deg, #0b1224 0%, var(--report-bg) 100%);
         }
 
-        .signal-card,
-        .skill-box,
-        .intelligence-card,
-        .match-metric,
-        .summary-card,
-        .cv-guidance-panel,
-        .cv-support-card,
-        .draft-output,
-        .cv-change-card {
+        html:not([data-bs-theme="light"]) .signal-card,
+        html:not([data-bs-theme="light"]) .skill-box,
+        html:not([data-bs-theme="light"]) .intelligence-card,
+        html:not([data-bs-theme="light"]) .match-metric,
+        html:not([data-bs-theme="light"]) .summary-card,
+        html:not([data-bs-theme="light"]) .cv-guidance-panel,
+        html:not([data-bs-theme="light"]) .cv-support-card,
+        html:not([data-bs-theme="light"]) .draft-output,
+        html:not([data-bs-theme="light"]) .cv-change-card {
             background: #0b1224;
         }
 
-        .gap-pill {
+        html:not([data-bs-theme="light"]) .gap-pill {
             background: #20335f;
             color: #f8fafc;
         }
 
-        .component-track {
+        html:not([data-bs-theme="light"]) .component-track {
             background: #273449;
         }
 
-        .apply-decision.worth,
-        .apply-decision.improve,
-        .apply-decision.low,
-        .cv-preview,
-        .letter-page,
-        .cv-change-card.green,
-        .cv-change-card.yellow,
-        .cv-change-card.red {
+        html:not([data-bs-theme="light"]) .apply-decision.worth,
+        html:not([data-bs-theme="light"]) .apply-decision.improve,
+        html:not([data-bs-theme="light"]) .apply-decision.low,
+        html:not([data-bs-theme="light"]) .cv-preview,
+        html:not([data-bs-theme="light"]) .letter-page,
+        html:not([data-bs-theme="light"]) .cv-change-card.green,
+        html:not([data-bs-theme="light"]) .cv-change-card.yellow,
+        html:not([data-bs-theme="light"]) .cv-change-card.red {
             background: #111c33;
         }
 
-        .fix-list span {
+        html:not([data-bs-theme="light"]) .fix-list span {
             color: #0f172a;
         }
 
-        .readiness-pill.ready,
-        .readiness-pill.work,
-        .readiness-pill.risk {
+        html:not([data-bs-theme="light"]) .readiness-pill.ready,
+        html:not([data-bs-theme="light"]) .readiness-pill.work,
+        html:not([data-bs-theme="light"]) .readiness-pill.risk {
             background: #20335f;
         }
     }

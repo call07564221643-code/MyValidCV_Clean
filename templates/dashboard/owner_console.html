@@ -121,6 +121,29 @@
         min-width: 620px;
     }
 
+    html[data-bs-theme="dark"] .owner-shell {
+        background: linear-gradient(180deg, #0f172a 0%, #111c33 100%);
+    }
+
+    html[data-bs-theme="dark"] .owner-card {
+        background: #111c33;
+        border-color: #273449;
+    }
+
+    html[data-bs-theme="dark"] .owner-hero h1,
+    html[data-bs-theme="dark"] .owner-action h2,
+    html[data-bs-theme="dark"] .owner-metric strong {
+        color: #f8fafc;
+    }
+
+    html[data-bs-theme="dark"] .owner-hero p,
+    html[data-bs-theme="dark"] .owner-muted,
+    html[data-bs-theme="dark"] .owner-action p,
+    html[data-bs-theme="dark"] .owner-metric span,
+    html[data-bs-theme="dark"] .owner-action span {
+        color: #cbd5e1;
+    }
+
     @media (prefers-color-scheme: dark) {
         html:not([data-bs-theme="light"]) .owner-shell {
             background: linear-gradient(180deg, #0f172a 0%, #111c33 100%);

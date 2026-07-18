@@ -150,34 +150,64 @@
         margin-bottom: 0.5rem;
     }
 
+    html[data-bs-theme="dark"] .plans-shell {
+        background: linear-gradient(180deg, #0b1224 0%, #0f172a 100%);
+    }
+
+    html[data-bs-theme="dark"] .plans-hero h1,
+    html[data-bs-theme="dark"] .plan-card h2,
+    html[data-bs-theme="dark"] .plan-price {
+        color: #f8fafc;
+    }
+
+    html[data-bs-theme="dark"] .plans-hero p,
+    html[data-bs-theme="dark"] .plan-desc,
+    html[data-bs-theme="dark"] .plan-price small {
+        color: #cbd5e1;
+    }
+
+    html[data-bs-theme="dark"] .plan-card {
+        background: #111c33;
+        border-color: #273449;
+    }
+
+    html[data-bs-theme="dark"] .plan-action {
+        background: #0b1224;
+        border-color: #273449;
+    }
+
+    html[data-bs-theme="dark"] .plan-features li {
+        color: #e2e8f0;
+    }
+
     @media (prefers-color-scheme: dark) {
-        .plans-shell {
+        html:not([data-bs-theme="light"]) .plans-shell {
             background: linear-gradient(180deg, #0b1224 0%, #0f172a 100%);
         }
 
-        .plans-hero h1,
-        .plan-card h2,
-        .plan-price {
+        html:not([data-bs-theme="light"]) .plans-hero h1,
+        html:not([data-bs-theme="light"]) .plan-card h2,
+        html:not([data-bs-theme="light"]) .plan-price {
             color: #f8fafc;
         }
 
-        .plans-hero p,
-        .plan-desc,
-        .plan-price small {
+        html:not([data-bs-theme="light"]) .plans-hero p,
+        html:not([data-bs-theme="light"]) .plan-desc,
+        html:not([data-bs-theme="light"]) .plan-price small {
             color: #cbd5e1;
         }
 
-        .plan-card {
+        html:not([data-bs-theme="light"]) .plan-card {
             background: #111c33;
             border-color: #273449;
         }
 
-        .plan-action {
+        html:not([data-bs-theme="light"]) .plan-action {
             background: #0b1224;
             border-color: #273449;
         }
 
-        .plan-features li {
+        html:not([data-bs-theme="light"]) .plan-features li {
             color: #e2e8f0;
         }
     }

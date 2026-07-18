@@ -270,8 +270,26 @@
         line-height: 1.45;
     }
 
+    html[data-bs-theme="dark"] {
+        --validate-navy: #b9caff;
+        --validate-blue: #9fb8ff;
+        --validate-blue-soft: #1d2d52;
+        --validate-ink: #f8fafc;
+        --validate-muted: #cbd5e1;
+        --validate-line: #2b3952;
+        --validate-card: #111c33;
+        --validate-bg: #0f172a;
+    }
+
+    html[data-bs-theme="dark"] .validate-engine { background: linear-gradient(180deg, #0b1224 0%, var(--validate-bg) 100%); }
+    html[data-bs-theme="dark"] .validate-card .form-control,
+    html[data-bs-theme="dark"] .validate-card .form-select,
+    html[data-bs-theme="dark"] .validate-source-tab { background-color: #0b1224; color: var(--validate-ink); }
+    html[data-bs-theme="dark"] .validate-submit { background: #9fb8ff; border-color: #9fb8ff; color: #111827; }
+    html[data-bs-theme="dark"] .validate-result-promise { background: rgba(17, 28, 51, 0.76); }
+
     @media (prefers-color-scheme: dark) {
-        :root {
+        html:not([data-bs-theme="light"]) {
             --validate-navy: #b9caff;
             --validate-blue: #9fb8ff;
             --validate-blue-soft: #1d2d52;
@@ -282,12 +300,12 @@
             --validate-bg: #0f172a;
         }
 
-        .validate-engine { background: linear-gradient(180deg, #0b1224 0%, var(--validate-bg) 100%); }
-        .validate-card .form-control,
-        .validate-card .form-select,
-        .validate-source-tab { background-color: #0b1224; color: var(--validate-ink); }
-        .validate-submit { background: #9fb8ff; border-color: #9fb8ff; color: #111827; }
-        .validate-result-promise { background: rgba(17, 28, 51, 0.76); }
+        html:not([data-bs-theme="light"]) .validate-engine { background: linear-gradient(180deg, #0b1224 0%, var(--validate-bg) 100%); }
+        html:not([data-bs-theme="light"]) .validate-card .form-control,
+        html:not([data-bs-theme="light"]) .validate-card .form-select,
+        html:not([data-bs-theme="light"]) .validate-source-tab { background-color: #0b1224; color: var(--validate-ink); }
+        html:not([data-bs-theme="light"]) .validate-submit { background: #9fb8ff; border-color: #9fb8ff; color: #111827; }
+        html:not([data-bs-theme="light"]) .validate-result-promise { background: rgba(17, 28, 51, 0.76); }
     }
 
     @media (max-width: 720px) {
