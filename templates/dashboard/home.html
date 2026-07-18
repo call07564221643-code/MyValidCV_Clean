@@ -83,6 +83,38 @@
         gap: 0.6rem;
         flex-wrap: wrap;
         justify-content: flex-end;
+        align-items: center;
+    }
+
+    .dash-usage-counter {
+        align-items: center;
+        color: #65676b;
+        display: inline-flex;
+        gap: 0.7rem;
+        line-height: 1;
+        padding: 0 0.2rem;
+    }
+
+    .dash-count {
+        display: grid;
+        gap: 0.16rem;
+        min-width: 34px;
+        place-items: center;
+    }
+
+    .dash-count strong {
+        color: #65676b;
+        display: block;
+        font-size: 1.08rem;
+        font-weight: 760;
+        letter-spacing: -0.03em;
+    }
+
+    .dash-count span {
+        color: #8a8d91;
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 720;
     }
 
     .dash-card,
@@ -165,6 +197,52 @@
         margin-right: 0.45rem;
         color: var(--dash-navy);
         font-weight: 900;
+    }
+
+    .dash-account-strip {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        margin: 0 0 1.25rem;
+        padding: 0.85rem;
+    }
+
+    .dash-strip-item {
+        align-items: center;
+        border: 1px solid var(--dash-line);
+        border-radius: 999px;
+        color: var(--dash-muted);
+        display: inline-flex;
+        gap: 0.38rem;
+        min-height: 38px;
+        padding: 0.45rem 0.72rem;
+        white-space: nowrap;
+    }
+
+    .dash-strip-item strong {
+        color: var(--dash-ink);
+        font-size: 0.9rem;
+    }
+
+    .dash-feature-chips {
+        display: flex;
+        flex: 1 1 320px;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .dash-feature-chips li {
+        border: 1px solid var(--dash-line);
+        border-radius: 999px;
+        background: var(--dash-soft);
+        color: var(--dash-navy);
+        font-size: 0.82rem;
+        font-weight: 720;
+        padding: 0.45rem 0.68rem;
     }
 
     .dash-next {
@@ -388,6 +466,15 @@
         .dash-service-list {
             grid-template-columns: 1fr;
         }
+
+        .dash-account-strip {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .dash-feature-chips {
+            flex-basis: auto;
+        }
     }
 
     @media (max-width: 575px) {
@@ -422,6 +509,10 @@
             </div>
             <div class="dash-actions">
                 <a href="{% url 'ats_analyse' %}" class="btn btn-primary">Validate CV</a>
+                <div class="dash-usage-counter" aria-label="Monthly validation allowance">
+                    <div class="dash-count"><strong>{{ remaining_usage }}</strong><span>Left</span></div>
+                    <div class="dash-count"><strong>{{ limit }}</strong><span>Allowance</span></div>
+                </div>
                 <a href="{% url 'upload_cv' %}" class="btn btn-outline-primary">Manage CVs</a>
                 {% if is_enterprise %}
                     <a href="{% url 'enterprise_bulk' %}" class="btn btn-outline-primary">Bulk analysis</a>
@@ -429,60 +520,11 @@
             </div>
         </div>
 
-        <div class="row g-3">
-            <div class="col-6 col-xl-2">
-                <div class="dash-card">
-                    <span>Current plan</span>
-                    <strong class="text-capitalize">{{ plan }}</strong>
-                </div>
-            </div>
-            <div class="col-6 col-xl-2">
-                <div class="dash-card">
-                    <span>Status</span>
-                    <strong class="text-capitalize">{{ subscription_status }}</strong>
-                </div>
-            </div>
-            <div class="col-6 col-xl-2">
-                <div class="dash-card">
-                    <span>{{ usage_label }}</span>
-                    <strong>{{ usage_count }} / {{ limit }}</strong>
-                    <div class="dash-progress" aria-label="Monthly usage"><div style="width: {{ usage_percent }}%;"></div></div>
-                </div>
-            </div>
-            <div class="col-6 col-xl-2">
-                <div class="dash-card">
-                    <span>Uses remaining</span>
-                    <strong>{{ remaining_usage }}</strong>
-                </div>
-            </div>
-            <div class="col-6 col-xl-2">
-                <div class="dash-card">
-                    <span>Subscription started</span>
-                    <strong class="fs-6">{{ subscription_started|date:"d M Y" }}</strong>
-                </div>
-            </div>
-            <div class="col-6 col-xl-2">
-                <div class="dash-card">
-                    <span>{{ renewal_label }}</span>
-                    <strong class="fs-6">{{ next_renewal|date:"d M Y" }}</strong>
-                </div>
-            </div>
-        </div>
-
-        <div class="alert alert-{{ usage_alert_level }} dash-usage-alert" role="status">
-            <span>{{ usage_alert }}</span>
-            {% if usage_alert_level != 'info' and not is_enterprise %}<a href="{% url 'pricing' %}" class="alert-link">Review plans</a>{% endif %}
-        </div>
-
-        <div class="dash-panel dash-service-panel">
-            <div class="dash-section-head mt-0 mb-0">
-                <div>
-                    <h2>{{ plan|title }} plan services</h2>
-                    <p class="dash-muted mb-0">The features and monthly allowance currently active for this account.</p>
-                </div>
-                {% if is_enterprise %}<span class="badge rounded-pill text-bg-success">Enterprise access</span>{% endif %}
-            </div>
-            <ul class="dash-service-list">
+        <div class="dash-card dash-account-strip" aria-label="Account usage and services">
+            <span class="dash-strip-item">Status <strong class="text-capitalize">{{ subscription_status }}</strong></span>
+            <span class="dash-strip-item">Started <strong>{{ subscription_started|date:"d M Y" }}</strong></span>
+            <span class="dash-strip-item">{{ renewal_label }} <strong>{{ next_renewal|date:"d M Y" }}</strong></span>
+            <ul class="dash-feature-chips" aria-label="{{ plan|title }} features">
                 {% for feature in service_features %}<li>{{ feature }}</li>{% endfor %}
             </ul>
         </div>
