@@ -51,7 +51,13 @@ class ThemeManager {
     updateToggleIcon() {
         const icon = document.getElementById('themeToggleIcon');
         if (icon) {
-            icon.textContent = this.theme === 'light' ? 'Dark' : 'Light';
+            icon.textContent = this.theme === 'light' ? '☾' : '☀';
+        }
+        const toggleBtn = document.getElementById('themeToggle');
+        if (toggleBtn) {
+            const label = this.theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+            toggleBtn.setAttribute('aria-label', label);
+            toggleBtn.setAttribute('title', label);
         }
     }
 }

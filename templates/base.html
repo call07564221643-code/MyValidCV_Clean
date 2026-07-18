@@ -167,9 +167,15 @@
         }
 
         .mvcv-theme-toggle {
+            align-items: center;
             border-color: var(--mvcv-card-border);
             color: var(--mvcv-nav-text);
-            min-width: 78px;
+            display: inline-flex;
+            height: 2rem;
+            justify-content: center;
+            min-width: 2rem;
+            padding: 0;
+            width: 2rem;
         }
 
         .mvcv-theme-toggle:hover,
@@ -369,8 +375,8 @@
                             <a class="nav-link {% if request.resolver_match.url_name == 'account_settings' %}active{% endif %}" href="{% url 'account_settings' %}">Settings</a>
                         </li>
                         <li class="nav-item ms-lg-2">
-                            <button class="btn btn-outline-secondary btn-sm mvcv-theme-toggle" id="themeToggle" type="button" aria-label="Switch colour mode">
-                                <span id="themeToggleIcon">Dark</span>
+                            <button class="btn btn-outline-secondary btn-sm mvcv-theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">
+                                <span id="themeToggleIcon" aria-hidden="true">&#9790;</span>
                             </button>
                         </li>
                         <li class="nav-item ms-lg-2">
@@ -390,8 +396,8 @@
                             <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" href="{% url 'login' %}">Login</a>
                         </li>
                         <li class="nav-item ms-lg-2">
-                            <button class="btn btn-outline-secondary btn-sm mvcv-theme-toggle" id="themeToggle" type="button" aria-label="Switch colour mode">
-                                <span id="themeToggleIcon">Dark</span>
+                            <button class="btn btn-outline-secondary btn-sm mvcv-theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">
+                                <span id="themeToggleIcon" aria-hidden="true">&#9790;</span>
                             </button>
                         </li>
                         <li class="nav-item ms-lg-2">

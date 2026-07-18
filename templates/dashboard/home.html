@@ -203,7 +203,8 @@
         align-items: center;
         display: flex;
         flex-wrap: wrap;
-        gap: 0.65rem;
+        column-gap: 0.8rem;
+        row-gap: 0.45rem;
         margin: 0 0 1.25rem;
         padding: 0.15rem 0;
     }
@@ -216,6 +217,15 @@
         font-size: 0.9rem;
         font-weight: 720;
         white-space: nowrap;
+    }
+
+    .dash-strip-item:not(:last-of-type)::after {
+        background: rgba(159, 184, 255, 0.7);
+        content: "";
+        display: inline-block;
+        height: 1rem;
+        margin-left: 0.42rem;
+        width: 1px;
     }
 
     .dash-strip-item strong {
@@ -397,6 +407,18 @@
         color: #9fb8ff;
     }
 
+    html[data-bs-theme="dark"] .dash-shell .btn-outline-primary {
+        border-color: #9fb8ff;
+        color: #dbe7ff;
+    }
+
+    html[data-bs-theme="dark"] .dash-shell .btn-outline-primary:hover,
+    html[data-bs-theme="dark"] .dash-shell .btn-outline-primary:focus {
+        background: #9fb8ff;
+        border-color: #9fb8ff;
+        color: #0f172a;
+    }
+
     @media (prefers-color-scheme: dark) {
         html:not([data-bs-theme="light"]) {
             --dash-navy: #9fb8ff;
@@ -429,6 +451,18 @@
 
         html:not([data-bs-theme="light"]) .dash-strip-item {
             color: #9fb8ff;
+        }
+
+        html:not([data-bs-theme="light"]) .dash-shell .btn-outline-primary {
+            border-color: #9fb8ff;
+            color: #dbe7ff;
+        }
+
+        html:not([data-bs-theme="light"]) .dash-shell .btn-outline-primary:hover,
+        html:not([data-bs-theme="light"]) .dash-shell .btn-outline-primary:focus {
+            background: #9fb8ff;
+            border-color: #9fb8ff;
+            color: #0f172a;
         }
     }
 
