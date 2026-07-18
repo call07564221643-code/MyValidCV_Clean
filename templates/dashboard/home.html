@@ -225,26 +225,6 @@
         font-size: 0.9rem;
     }
 
-    .dash-feature-chips {
-        display: flex;
-        flex: 1 1 320px;
-        flex-wrap: wrap;
-        gap: 0.45rem;
-        list-style: none;
-        margin: 0;
-        padding: 0;
-    }
-
-    .dash-feature-chips li {
-        border: 1px solid var(--dash-line);
-        border-radius: 999px;
-        background: var(--dash-soft);
-        color: var(--dash-navy);
-        font-size: 0.82rem;
-        font-weight: 720;
-        padding: 0.45rem 0.68rem;
-    }
-
     .dash-next {
         display: grid;
         grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr);
@@ -472,9 +452,6 @@
             flex-direction: column;
         }
 
-        .dash-feature-chips {
-            flex-basis: auto;
-        }
     }
 
     @media (max-width: 575px) {
@@ -509,10 +486,6 @@
             </div>
             <div class="dash-actions">
                 <a href="{% url 'ats_analyse' %}" class="btn btn-primary">Validate CV</a>
-                <div class="dash-usage-counter" aria-label="Monthly validation allowance">
-                    <div class="dash-count"><strong>{{ remaining_usage }}</strong><span>Left</span></div>
-                    <div class="dash-count"><strong>{{ limit }}</strong><span>Allowance</span></div>
-                </div>
                 <a href="{% url 'upload_cv' %}" class="btn btn-outline-primary">Manage CVs</a>
                 {% if is_enterprise %}
                     <a href="{% url 'enterprise_bulk' %}" class="btn btn-outline-primary">Bulk analysis</a>
@@ -524,9 +497,10 @@
             <span class="dash-strip-item">Status <strong class="text-capitalize">{{ subscription_status }}</strong></span>
             <span class="dash-strip-item">Started <strong>{{ subscription_started|date:"d M Y" }}</strong></span>
             <span class="dash-strip-item">{{ renewal_label }} <strong>{{ next_renewal|date:"d M Y" }}</strong></span>
-            <ul class="dash-feature-chips" aria-label="{{ plan|title }} features">
-                {% for feature in service_features %}<li>{{ feature }}</li>{% endfor %}
-            </ul>
+            <div class="dash-usage-counter" aria-label="Monthly validation allowance">
+                <div class="dash-count"><strong>{{ remaining_usage }}</strong><span>Remain</span></div>
+                <div class="dash-count"><strong>{{ limit }}</strong><span>Allowance</span></div>
+            </div>
         </div>
 
         <div class="dash-next">
