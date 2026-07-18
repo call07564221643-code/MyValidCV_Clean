@@ -35,22 +35,37 @@
 
         .navbar .nav-link {
             border-radius: 999px;
+            font-weight: 500;
             padding-inline: 0.85rem !important;
+            position: relative;
             color: var(--mvcv-nav-text) !important;
         }
 
-        /* Authenticated account navigation needs stronger contrast and hierarchy. */
         .navbar .account-nav .nav-link,
         .navbar .account-nav .btn {
-            font-size: 1.15rem;
-            font-weight: 700;
+            font-size: 1rem;
+            font-weight: 500;
         }
 
         .navbar .nav-link:hover,
-        .navbar .nav-link:focus,
-        .navbar .nav-link.active {
-            background: var(--mvcv-nav-active-bg);
+        .navbar .nav-link:focus {
             color: var(--mvcv-nav-active-text) !important;
+        }
+
+        .navbar .nav-link.active {
+            background: transparent;
+            color: var(--mvcv-nav-active-text) !important;
+        }
+
+        .navbar .nav-link.active::after {
+            background: var(--mvcv-nav-active-text);
+            border-radius: 999px;
+            bottom: 0.1rem;
+            content: "";
+            height: 2px;
+            left: 0.85rem;
+            position: absolute;
+            right: 0.85rem;
         }
 
         .mvcv-brand-inline {
@@ -191,9 +206,12 @@
         }
 
         html[data-bs-theme="dark"] .navbar .nav-link:hover,
-        html[data-bs-theme="dark"] .navbar .nav-link:focus,
+        html[data-bs-theme="dark"] .navbar .nav-link:focus {
+            color: var(--mvcv-nav-active-text) !important;
+        }
+
         html[data-bs-theme="dark"] .navbar .nav-link.active {
-            background: var(--mvcv-nav-active-bg);
+            background: transparent;
             color: var(--mvcv-nav-active-text) !important;
         }
 
@@ -269,9 +287,12 @@
             }
 
             html:not([data-bs-theme="light"]) .navbar .nav-link:hover,
-            html:not([data-bs-theme="light"]) .navbar .nav-link:focus,
+            html:not([data-bs-theme="light"]) .navbar .nav-link:focus {
+                color: var(--mvcv-nav-active-text) !important;
+            }
+
             html:not([data-bs-theme="light"]) .navbar .nav-link.active {
-                background: var(--mvcv-nav-active-bg);
+                background: transparent;
                 color: var(--mvcv-nav-active-text) !important;
             }
 
