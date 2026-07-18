@@ -111,7 +111,7 @@
     }
 
     .dash-count span {
-        color: #8a8d91;
+        color: #9fb8ff;
         display: block;
         font-size: 0.72rem;
         font-weight: 720;
@@ -201,33 +201,27 @@
 
     .dash-account-strip {
         align-items: center;
-        background:
-            linear-gradient(135deg, rgba(159, 184, 255, 0.2), rgba(159, 184, 255, 0.08)),
-            var(--dash-card);
-        border-color: rgba(159, 184, 255, 0.42);
         display: flex;
         flex-wrap: wrap;
         gap: 0.65rem;
         margin: 0 0 1.25rem;
-        padding: 0.85rem;
+        padding: 0.15rem 0;
     }
 
     .dash-strip-item {
         align-items: center;
-        background: rgba(255, 255, 255, 0.74);
-        border: 1px solid rgba(159, 184, 255, 0.48);
-        border-radius: 999px;
-        color: var(--dash-muted);
+        color: #9fb8ff;
         display: inline-flex;
         gap: 0.38rem;
-        min-height: 38px;
-        padding: 0.45rem 0.72rem;
+        font-size: 0.9rem;
+        font-weight: 720;
         white-space: nowrap;
     }
 
     .dash-strip-item strong {
         color: var(--dash-ink);
         font-size: 0.9rem;
+        font-weight: 650;
     }
 
     .dash-next {
@@ -433,16 +427,8 @@
             background: #20335f;
         }
 
-        .dash-account-strip {
-            background:
-                linear-gradient(135deg, rgba(159, 184, 255, 0.18), rgba(159, 184, 255, 0.07)),
-                var(--dash-card);
-            border-color: rgba(159, 184, 255, 0.34);
-        }
-
         .dash-strip-item {
-            background: rgba(15, 23, 42, 0.42);
-            border-color: rgba(159, 184, 255, 0.32);
+            color: #9fb8ff;
         }
     }
 
@@ -510,10 +496,10 @@
             </div>
         </div>
 
-        <div class="dash-card dash-account-strip" aria-label="Account usage and services">
+        <div class="dash-account-strip" aria-label="Account usage and services">
             <span class="dash-strip-item">Status <strong class="text-capitalize">{{ subscription_status }}</strong></span>
             <span class="dash-strip-item">Started <strong>{{ subscription_started|date:"d M Y" }}</strong></span>
-            <span class="dash-strip-item">{{ renewal_label }} <strong>{{ next_renewal|date:"d M Y" }}</strong></span>
+            <span class="dash-strip-item">Renewal <strong>{{ next_renewal|date:"d M Y" }}</strong></span>
             <div class="dash-usage-counter" aria-label="Monthly validation allowance">
                 <div class="dash-count"><strong>{{ remaining_usage }}</strong><span>Remain</span></div>
                 <div class="dash-count"><strong>{{ limit }}</strong><span>Allowance</span></div>
