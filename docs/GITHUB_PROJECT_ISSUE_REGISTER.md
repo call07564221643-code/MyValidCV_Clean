@@ -1,497 +1,1390 @@
-# MyValidCV GitHub Project Issue Register
+# MyValidCV GitHub Project User Stories
 
-Use this file to create the GitHub Issues that populate Project 7.
+Use this register to create GitHub Issues for Project 7.
 
-Milestone for all MVP/review items:
+For each item:
+
+1. Go to `Issues`.
+2. Click `New issue`.
+3. Choose `User Story`.
+4. Copy the title.
+5. Copy the full issue body.
+6. Add the issue to Project 7.
+7. Set Status, Estimate, Sprint, Labels and Milestone.
+
+Milestone for MVP items:
 
 ```text
 MVP v1.0
 ```
 
-Recommended Project fields:
+## Board Counts
 
-- Status
-- Estimate
-- Sprint / Iteration
-- Labels
-- Milestone
+| Status | Count |
+| --- | ---: |
+| Done | 18 |
+| In review | 5 |
+| Ready | 5 |
+| Backlog | 2 |
+| Total | 30 |
 
-## Summary Counts
+---
 
-| Status | Count | Meaning |
-| --- | ---: | --- |
-| Done | 18 | MVP work already completed during project build |
-| In review | 5 | Needs final testing, score capture or quality review |
-| Ready | 5 | Final submission/presentation work ready to start |
-| Backlog | 2 | Valuable improvements after MVP |
-| Total | 30 | Full Agile issue set |
+## 1. User Story: Landing Page And Emotional Carousel
 
-## Done
+Status: `Done`
+Labels: `Must Have`, `ux`
+Story points: `3`
+Sprint: `Sprint 1`
 
-### 1. Landing page and emotional carousel
+## User Story
 
-Status: `Done`  
-Estimate: `3`  
-Labels: `Must Have`, `ux`  
-Sprint: Completed sprint  
+As a **cold visitor**
+I want **the landing page to explain my CV uncertainty and show a simple path to validation**
+So that **I feel relief and decide to create an account**
 
-As a cold visitor, I want the landing page to explain the pain of CV uncertainty so that I feel MyValidCV can help me before I apply.
+## User Experience Reason
 
-Acceptance criteria:
+This removes the fear of applying blindly and the confusion of not knowing why a CV is ignored. It turns the visitor's emotional pain into a clear action: start a validation.
 
-- Landing page explains CV validation clearly.
-- Emotional carousel addresses application anxiety, recruiter view and relief.
-- Main CTA points to signup or dashboard.
-- Page remains responsive.
+## Acceptance Criteria
 
-### 2. Register, login, logout and account page
+- [ ] The visitor can understand MyValidCV in a few seconds.
+- [ ] The primary CTA leads to signup or dashboard.
+- [ ] The emotional carousel explains pain, recruiter view and relief.
+- [ ] The page is readable on mobile and desktop.
+- [ ] The happy path and one failure path are tested.
 
-Status: `Done`  
-Estimate: `5`  
-Labels: `Must Have`  
-Sprint: Completed sprint  
+## MoSCoW Priority
 
-As a user, I want to register, log in, log out and manage my account so that I can safely use saved CVs and reports.
+Must Have
 
-Acceptance criteria:
+## Story Points
 
-- Register works.
-- Login works.
-- Logout works.
-- `/settings/` is labelled as Account.
-- UserProfile is created automatically.
+3
 
-### 3. Google and LinkedIn social login setup
+## Sprint
 
-Status: `Done`  
-Estimate: `3`  
-Labels: `Should Have`  
-Sprint: Completed sprint  
+Sprint 1
 
-As a user, I want to sign up with Google or LinkedIn so that account creation is faster.
+## Test Notes
 
-Acceptance criteria:
+- [x] Local check completed.
+- [x] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
 
-- Social login buttons appear in auth pages.
-- Provider settings exist in Django.
-- OAuth secrets are stored in environment variables.
+---
 
-### 4. Dashboard for normal users
+## 2. User Story: Register Login Logout And Account Page
 
-Status: `Done`  
-Estimate: `5`  
-Labels: `Must Have`  
-Sprint: Completed sprint  
+Status: `Done`
+Labels: `Must Have`
+Story points: `5`
+Sprint: `Sprint 1`
 
-As a job seeker, I want a dashboard showing my CVs, reports and usage so that I can continue my job search quickly.
+## User Story
 
-Acceptance criteria:
+As a **job seeker**
+I want **to register, log in, log out and manage my account**
+So that **my CVs, reports and plan information are saved securely**
 
-- Dashboard loads for normal users.
-- Saved CVs are visible.
-- Recent reports are visible.
-- Usage allowance is shown without clutter.
+## User Experience Reason
 
-### 5. Enterprise dashboard and bulk CV reports
+This removes the anxiety of losing reports or having to repeat the same work. It also gives the user confidence that the platform has a real account area.
 
-Status: `Done`  
-Estimate: `8`  
-Labels: `Must Have`  
-Sprint: Completed sprint  
+## Acceptance Criteria
 
-As an enterprise user, I want bulk CV screening against a role so that I can shortlist candidates faster.
+- [ ] Users can register.
+- [ ] Users can log in and log out.
+- [ ] Account page is labelled clearly as Account.
+- [ ] UserProfile is created automatically.
+- [ ] The wrong user/account type cannot access restricted data.
+- [ ] The page is readable on mobile and desktop.
+- [ ] The happy path and one failure path are tested.
 
-Acceptance criteria:
+## MoSCoW Priority
 
-- Enterprise bulk upload route exists.
-- Candidate results are ranked.
-- CSV export is available.
-- Enterprise users do not see owner financial data.
+Must Have
 
-### 6. Owner control centre separated at /owner/
+## Story Points
 
-Status: `Done`  
-Estimate: `3`  
-Labels: `Must Have`  
-Sprint: Completed sprint  
+5
 
-As the website owner, I want website controls separated from customer dashboards so that sensitive controls are protected.
+## Sprint
 
-Acceptance criteria:
+Sprint 1
 
-- `/owner/` exists.
-- Superusers can access it.
-- Normal users cannot access it.
-- `/dashboard/owner/` redirects to `/owner/`.
+## Test Notes
 
-### 7. CV upload and CV quality validation
+- [x] Local check completed.
+- [x] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
 
-Status: `Done`  
-Estimate: `5`  
-Labels: `Must Have`  
-Sprint: Completed sprint  
+---
 
-As a user, I want to upload a real CV and be warned if the document is not strong enough as a CV so that analysis quality improves.
+## 3. User Story: Google And LinkedIn Social Login Setup
 
-Acceptance criteria:
+Status: `Done`
+Labels: `Should Have`
+Story points: `3`
+Sprint: `Sprint 1`
 
-- PDF/DOCX upload works.
-- CV ownership is linked to the logged-in user.
-- Weak/non-CV documents produce a clear warning.
+## User Story
 
-### 8. ATS analysis and result page
+As a **new user**
+I want **to register with Google or LinkedIn**
+So that **I can start faster without creating another password**
 
-Status: `Done`  
-Estimate: `8`  
-Labels: `Must Have`  
-Sprint: Completed sprint  
+## User Experience Reason
 
-As a user, I want to compare my CV with a job role so that I can see my match and what to improve.
+This reduces signup friction and helps cold visitors move faster from interest to first validation.
 
-Acceptance criteria:
+## Acceptance Criteria
 
-- Job text, URL or advert input is supported.
-- ATSResult is saved to the logged-in user.
-- Result page opens after validation.
-- Matched and missing skills are visible.
+- [ ] Google login button appears on auth pages.
+- [ ] LinkedIn login button appears on auth pages.
+- [ ] OAuth settings use environment variables.
+- [ ] Manual email registration still works.
+- [ ] The page is readable on mobile and desktop.
+- [ ] The happy path and one failure path are tested.
 
-### 9. Suggested CV draft and cover letter output
+## MoSCoW Priority
 
-Status: `Done`  
-Estimate: `8`  
-Labels: `Should Have`  
-Sprint: Completed sprint  
+Should Have
 
-As a Plus user, I want suggested CV wording and cover-letter support so that I can apply with stronger relevant evidence.
+## Story Points
 
-Acceptance criteria:
+3
 
-- Suggested CV section appears on report page.
-- Cover letter uses CV/job matched evidence.
-- Wording avoids invented experience.
+## Sprint
 
-### 10. Pricing page with Free, Plus and Enterprise plans
+Sprint 1
 
-Status: `Done`  
-Estimate: `5`  
-Labels: `Must Have`  
-Sprint: Completed sprint  
+## Test Notes
 
-As a visitor, I want clear pricing so that I can choose the right plan without confusion.
+- [x] Local check completed.
+- [ ] Heroku OAuth provider test completed.
+- [ ] Browser/UX smoke test completed.
 
-Acceptance criteria:
+---
 
-- Free, Plus and Enterprise plans are shown.
-- Features and limits are clear.
-- Pay Now uses provider-neutral wording.
+## 4. User Story: Dashboard For Normal Users
 
-### 11. Stripe checkout and receipt flow
+Status: `Done`
+Labels: `Must Have`
+Story points: `5`
+Sprint: `Sprint 1`
 
-Status: `Done`  
-Estimate: `8`  
-Labels: `Must Have`  
-Sprint: Completed sprint  
+## User Story
 
-As a paid user, I want secure checkout and a receipt so that I trust my subscription is active.
+As a **normal user**
+I want **a dashboard showing my CVs, reports, usage and next action**
+So that **I can continue my job search without confusion**
 
-Acceptance criteria:
+## User Experience Reason
 
-- Stripe Checkout opens.
-- Success page confirms payment.
-- Subscription is updated.
-- Receipt and transaction records are available.
+This removes the frustration of searching across pages after login. The dashboard becomes the user's calm workspace.
 
-### 12. PostgreSQL and Heroku deployment
+## Acceptance Criteria
 
-Status: `Done`  
-Estimate: `8`  
-Labels: `Must Have`  
-Sprint: Completed sprint  
+- [ ] Normal users can open `/dashboard/`.
+- [ ] Saved CVs are visible.
+- [ ] Recent reports are visible.
+- [ ] Usage and renewal information is readable.
+- [ ] The wrong user/account type cannot access restricted data.
+- [ ] The page is readable on mobile and desktop.
+- [ ] The happy path and one failure path are tested.
 
-As the website owner, I want the project deployed on Heroku with PostgreSQL so that the SaaS is live and persistent.
+## MoSCoW Priority
 
-Acceptance criteria:
+Must Have
 
-- Heroku app is live.
-- PostgreSQL is connected through `DATABASE_URL`.
-- Release command runs migrations and seed tasks.
+## Story Points
 
-### 13. Static files, HTTPS and PageSpeed readiness
+5
 
-Status: `Done`  
-Estimate: `3`  
-Labels: `Should Have`  
-Sprint: Completed sprint  
+## Sprint
 
-As a visitor, I want the site to load quickly and securely so that I trust the platform.
+Sprint 1
 
-Acceptance criteria:
+## Test Notes
 
-- Static files are collected.
-- Hashed static files are long-cache immutable.
-- HTTPS redirect and HSTS are active.
-- Scripts are deferred.
+- [x] Local check completed.
+- [x] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
 
-### 14. Dark and light mode across website
+---
 
-Status: `Done`  
-Estimate: `3`  
-Labels: `Could Have`, `ux`  
-Sprint: Completed sprint  
+## 5. User Story: Enterprise Dashboard And Bulk CV Reports
 
-As a user, I want light and dark modes to apply across the full site so that the interface remains comfortable and readable.
+Status: `Done`
+Labels: `Must Have`
+Story points: `8`
+Sprint: `Sprint 2`
 
-Acceptance criteria:
+## User Story
 
-- Toggle is icon-only.
-- Theme applies beyond navbar.
-- Buttons remain readable in dark mode.
+As an **enterprise recruiter**
+I want **to upload multiple CVs against one job role and receive ranked reports**
+So that **I can shortlist candidates faster**
 
-### 15. Admin branding and owner access rules
+## User Experience Reason
 
-Status: `Done`  
-Estimate: `3`  
-Labels: `Should Have`  
-Sprint: Completed sprint  
+This removes manual screening pressure and helps recruiters compare candidates with consistent criteria.
 
-As the owner, I want admin branding and access rules to match MyValidCV so that management feels professional.
+## Acceptance Criteria
 
-Acceptance criteria:
+- [ ] Enterprise users can access bulk analysis.
+- [ ] Bulk results are ranked.
+- [ ] CSV export works.
+- [ ] Enterprise users cannot see owner financial data.
+- [ ] The page is readable on mobile and desktop.
+- [ ] The happy path and one failure path are tested.
 
-- Admin header uses MyValidCV branding.
-- Owner-only data is restricted.
-- Superuser access is preserved.
+## MoSCoW Priority
 
-### 16. Demo data and seeded plans/taxonomy
+Must Have
 
-Status: `Done`  
-Estimate: `5`  
-Labels: `Should Have`  
-Sprint: Completed sprint  
+## Story Points
 
-As the owner, I want seeded demo users, plans and taxonomy so that the database can demonstrate platform behaviour.
+8
 
-Acceptance criteria:
+## Sprint
 
-- Plans are seeded.
-- Demo users can be created.
-- Taxonomy seed command runs during release.
+Sprint 2
 
-### 17. Agile documentation, backlog and Kanban documents
+## Test Notes
 
-Status: `Done`  
-Estimate: `2`  
-Labels: `Must Have`  
-Sprint: Completed sprint  
+- [x] Local check completed.
+- [x] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
 
-As the project owner, I want Agile documentation so that the project is managed professionally.
+---
 
-Acceptance criteria:
+## 6. User Story: Owner Control Centre Separated At /owner/
 
-- Agile operating model exists.
-- UX playbook exists.
-- Product backlog exists.
-- Markdown Kanban board exists.
+Status: `Done`
+Labels: `Must Have`
+Story points: `3`
+Sprint: `Sprint 2`
 
-### 18. GitHub issue template and project setup guide
+## User Story
 
-Status: `Done`  
-Estimate: `2`  
-Labels: `Must Have`  
-Sprint: Completed sprint  
+As the **website owner**
+I want **a separate owner control centre at `/owner/`**
+So that **business, payment and user-management controls are not mixed with customer dashboards**
 
-As the project owner, I want GitHub issue templates and setup instructions so that Project 7 can be populated correctly.
+## User Experience Reason
 
-Acceptance criteria:
+This removes confusion between enterprise users and the website owner. It also protects sensitive management data.
 
-- User Story issue template exists.
-- GitHub Project setup guide exists.
-- README links to setup guide.
+## Acceptance Criteria
 
-## In Review
+- [ ] Superusers can access `/owner/`.
+- [ ] Normal users cannot access `/owner/`.
+- [ ] `/dashboard/owner/` redirects to `/owner/`.
+- [ ] The owner page links to users, payments, refunds, plans and reports.
+- [ ] The page is readable on mobile and desktop.
+- [ ] The happy path and one failure path are tested.
 
-### 19. Final UX smoke test
+## MoSCoW Priority
 
-Status: `In review`  
-Estimate: `3`  
-Labels: `review`, `Must Have`  
-Sprint: Current iteration  
+Must Have
 
-As the owner, I want a full UX smoke test so that final issues are found before presentation.
+## Story Points
 
-Acceptance criteria:
+3
 
-- Home, register, login, dashboard, validate, result, pricing, payment and owner pages are checked.
-- Any 500 error becomes a hotfix.
-- Mobile and desktop are reviewed.
+## Sprint
 
-### 20. Manual Google PageSpeed test
+Sprint 2
 
-Status: `In review`  
-Estimate: `2`  
-Labels: `review`, `Should Have`  
-Sprint: Current iteration  
+## Test Notes
 
-As the owner, I want a manual PageSpeed score so that performance claims are evidence-based.
+- [x] Local check completed.
+- [x] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
 
-Acceptance criteria:
+---
 
-- `pagespeed.web.dev` is run on the live homepage.
-- Mobile and desktop scores are recorded.
-- Any failing Core Web Vital becomes a backlog issue.
+## 7. User Story: CV Upload And CV Quality Validation
 
-### 21. Live Stripe payment confirmation test
+Status: `Done`
+Labels: `Must Have`
+Story points: `5`
+Sprint: `Sprint 2`
 
-Status: `In review`  
-Estimate: `3`  
-Labels: `review`, `Must Have`  
-Sprint: Current iteration  
+## User Story
 
-As the owner, I want the payment flow checked live so that paid users can subscribe safely.
+As a **job seeker**
+I want **to upload my CV and know if the document is strong enough for analysis**
+So that **I do not receive a misleading ATS report from a weak or wrong document**
 
-Acceptance criteria:
+## User Experience Reason
 
-- Plus checkout works.
-- Success page displays receipt.
-- Subscription is active after payment.
-- Heroku logs show no payment 500 error.
+This removes the disappointment of uploading the wrong document and receiving useless results.
 
-### 22. ATS scoring quality review
+## Acceptance Criteria
 
-Status: `In review`  
-Estimate: `5`  
-Labels: `review`, `Should Have`  
-Sprint: Current iteration  
+- [ ] User can upload PDF or DOCX CV.
+- [ ] Uploaded CV belongs to the logged-in user.
+- [ ] Weak or non-CV documents produce a clear warning.
+- [ ] The wrong user/account type cannot access restricted data.
+- [ ] The page is readable on mobile and desktop.
+- [ ] The happy path and one failure path are tested.
 
-As a user, I want ATS scoring to distinguish unrelated roles so that the report feels credible.
+## MoSCoW Priority
 
-Acceptance criteria:
+Must Have
 
-- Same-industry CV/job gives sensible score.
-- Unrelated CV/job does not score unrealistically high.
-- Must-have requirements have stronger weighting.
+## Story Points
 
-### 23. Report page readability and CV wording review
+5
 
-Status: `In review`  
-Estimate: `5`  
-Labels: `review`, `ux`  
-Sprint: Current iteration  
+## Sprint
 
-As a user, I want the report and suggested wording to be compact, readable and useful.
+Sprint 2
 
-Acceptance criteria:
+## Test Notes
 
-- Recruiter risk is visible.
-- Suggested CV wording uses real evidence.
-- Cover letter summary is stronger and role-specific.
+- [x] Local check completed.
+- [x] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
 
-## Ready
+---
 
-### 24. Final project presentation
+## 8. User Story: ATS Analysis And Result Page
 
-Status: `Ready`  
-Estimate: `5`  
-Labels: `presentation`, `Must Have`  
-Sprint: Next iteration  
+Status: `Done`
+Labels: `Must Have`
+Story points: `8`
+Sprint: `Sprint 2`
 
-As the project owner, I want a final presentation so that I can demonstrate MyValidCV professionally.
+## User Story
 
-Acceptance criteria:
+As a **job seeker**
+I want **to compare my CV with a job description, URL or advert**
+So that **I can understand match quality before applying**
 
-- Product story is clear.
-- Architecture summary is included.
-- Demo journey is included.
-- Agile/Kanban evidence is included.
+## User Experience Reason
 
-### 25. Demo script and screenshots
+This removes guesswork and helps users understand what recruiters and ATS systems may notice.
 
-Status: `Ready`  
-Estimate: `3`  
-Labels: `presentation`, `Should Have`  
-Sprint: Next iteration  
+## Acceptance Criteria
 
-As the presenter, I want a demo script and screenshots so that the presentation runs smoothly.
+- [ ] User can add job text, URL or advert.
+- [ ] ATSResult is saved to the logged-in user.
+- [ ] Result page opens after validation.
+- [ ] Matched and missing skills are visible.
+- [ ] The wrong user/account type cannot access restricted data.
+- [ ] The page is readable on mobile and desktop.
+- [ ] The happy path and one failure path are tested.
 
-Acceptance criteria:
+## MoSCoW Priority
 
-- Screenshots cover landing, dashboard, validation, report, pricing and owner.
-- Demo script follows the core journey.
+Must Have
 
-### 26. README final polish
+## Story Points
 
-Status: `Ready`  
-Estimate: `2`  
-Labels: `Could Have`  
-Sprint: Next iteration  
+8
 
-As a reviewer, I want a polished README so that setup, product scope and deployment are easy to understand.
+## Sprint
 
-Acceptance criteria:
+Sprint 2
 
-- README links are current.
-- Heroku instructions are clear.
-- Agile docs are referenced.
+## Test Notes
 
-### 27. Terms, privacy and refund content pages
+- [x] Local check completed.
+- [x] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
 
-Status: `Ready`  
-Estimate: `3`  
-Labels: `Should Have`  
-Sprint: Next iteration  
+---
 
-As a user, I want clear terms, privacy and refund information so that I can trust the service.
+## 9. User Story: Suggested CV Draft And Cover Letter Output
 
-Acceptance criteria:
+Status: `Done`
+Labels: `Should Have`
+Story points: `8`
+Sprint: `Sprint 3`
 
-- Footer links lead to content pages or clear sections.
-- Refund terms explain payment expectations.
-- Data use is explained in plain language.
+## User Story
 
-### 28. Owner promo code workflow guide
+As a **Plus user**
+I want **suggested CV wording and a cover letter draft based on matched evidence**
+So that **I can apply with clearer role-specific wording**
 
-Status: `Ready`  
-Estimate: `3`  
-Labels: `Should Have`  
-Sprint: Next iteration  
+## User Experience Reason
 
-As the owner, I want a clear promo-code workflow so that discounts can be managed safely.
+This removes the stress of rewriting from scratch, while keeping the user honest about what evidence is real.
 
-Acceptance criteria:
+## Acceptance Criteria
 
-- Owner can find discount-code admin.
-- Active dates, percentage and usage limits are explained.
-- Promo codes do not bypass payment records.
+- [ ] Suggested CV wording appears on the report page.
+- [ ] Cover letter uses matched CV and job evidence.
+- [ ] Red/yellow/green guidance is explained.
+- [ ] The output avoids invented experience.
+- [ ] The page is readable on mobile and desktop.
+- [ ] The happy path and one failure path are tested.
 
-## Backlog
+## MoSCoW Priority
 
-### 29. User feedback after ATS report
+Should Have
 
-Status: `Backlog`  
-Estimate: `3`  
-Labels: `Could Have`  
-Sprint: Backlog  
+## Story Points
 
-As the owner, I want report feedback so that I can learn whether users find the report useful.
+8
 
-Acceptance criteria:
+## Sprint
 
-- User can rate report usefulness.
-- Feedback belongs to user/report.
-- Owner can review feedback.
+Sprint 3
 
-### 30. Improve ATS taxonomy coverage
+## Test Notes
 
-Status: `Backlog`  
-Estimate: `8`  
-Labels: `Should Have`  
-Sprint: Backlog  
+- [x] Local check completed.
+- [x] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
 
-As the owner, I want broader role taxonomy so that analysis works across more industries.
+---
 
-Acceptance criteria:
+## 10. User Story: Pricing Page With Free Plus And Enterprise Plans
 
-- More role families are seeded.
-- Skills and qualifications are structured.
-- Matching logic uses taxonomy without overfitting to one job.
+Status: `Done`
+Labels: `Must Have`
+Story points: `5`
+Sprint: `Sprint 3`
+
+## User Story
+
+As a **visitor**
+I want **clear Free, Plus and Enterprise pricing**
+So that **I can choose a plan without confusion**
+
+## User Experience Reason
+
+This removes hesitation caused by unclear pricing, provider names or repeated feature copy.
+
+## Acceptance Criteria
+
+- [ ] Free, Plus and Enterprise are shown.
+- [ ] Plan limits are clear.
+- [ ] Pay button is provider-neutral.
+- [ ] Enterprise is positioned for teams.
+- [ ] The page is readable on mobile and desktop.
+- [ ] The happy path and one failure path are tested.
+
+## MoSCoW Priority
+
+Must Have
+
+## Story Points
+
+5
+
+## Sprint
+
+Sprint 3
+
+## Test Notes
+
+- [x] Local check completed.
+- [x] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
+
+---
+
+## 11. User Story: Stripe Checkout And Receipt Flow
+
+Status: `Done`
+Labels: `Must Have`
+Story points: `8`
+Sprint: `Sprint 3`
+
+## User Story
+
+As a **paid user**
+I want **secure checkout and a receipt confirmation**
+So that **I trust my subscription is active**
+
+## User Experience Reason
+
+This removes payment anxiety and reassures users that card details are handled securely.
+
+## Acceptance Criteria
+
+- [ ] Plus checkout opens through Stripe.
+- [ ] Success page confirms payment.
+- [ ] Subscription status is updated.
+- [ ] Receipt and transaction records exist.
+- [ ] The wrong user/account type cannot access restricted data.
+- [ ] The page is readable on mobile and desktop.
+- [ ] The happy path and one failure path are tested.
+
+## MoSCoW Priority
+
+Must Have
+
+## Story Points
+
+8
+
+## Sprint
+
+Sprint 3
+
+## Test Notes
+
+- [x] Local check completed.
+- [x] Heroku check completed.
+- [ ] Final live payment smoke test pending.
+
+---
+
+## 12. User Story: PostgreSQL And Heroku Deployment
+
+Status: `Done`
+Labels: `Must Have`
+Story points: `8`
+Sprint: `Sprint 3`
+
+## User Story
+
+As the **website owner**
+I want **the SaaS deployed on Heroku with PostgreSQL**
+So that **the project is live and data persists**
+
+## User Experience Reason
+
+This removes the risk of local-only work and allows real users, payment testing and owner review.
+
+## Acceptance Criteria
+
+- [ ] Heroku app is live.
+- [ ] PostgreSQL is connected.
+- [ ] Release command runs migrations.
+- [ ] Plan and taxonomy seed commands run.
+- [ ] The happy path and one failure path are tested.
+
+## MoSCoW Priority
+
+Must Have
+
+## Story Points
+
+8
+
+## Sprint
+
+Sprint 3
+
+## Test Notes
+
+- [x] Local check completed.
+- [x] Heroku check completed.
+- [x] Browser/UX smoke test completed.
+
+---
+
+## 13. User Story: Static Files HTTPS And PageSpeed Readiness
+
+Status: `Done`
+Labels: `Should Have`
+Story points: `3`
+Sprint: `Sprint 4`
+
+## User Story
+
+As a **visitor**
+I want **the website to load securely and quickly**
+So that **I trust the platform before uploading my CV**
+
+## User Experience Reason
+
+This removes distrust caused by slow pages, insecure browser warnings or broken static assets.
+
+## Acceptance Criteria
+
+- [ ] HTTP redirects to HTTPS.
+- [ ] HSTS is present.
+- [ ] Static assets are hashed and compressed.
+- [ ] Scripts are deferred.
+- [ ] The page is readable on mobile and desktop.
+- [ ] The happy path and one failure path are tested.
+
+## MoSCoW Priority
+
+Should Have
+
+## Story Points
+
+3
+
+## Sprint
+
+Sprint 4
+
+## Test Notes
+
+- [x] Local check completed.
+- [x] Heroku check completed.
+- [ ] Official PageSpeed manual score pending.
+
+---
+
+## 14. User Story: Dark And Light Mode Across Website
+
+Status: `Done`
+Labels: `Could Have`, `ux`
+Story points: `3`
+Sprint: `Sprint 4`
+
+## User Story
+
+As a **user**
+I want **light and dark mode to apply across the whole site**
+So that **the website remains comfortable and readable**
+
+## User Experience Reason
+
+This removes visual discomfort and prevents unreadable buttons in dark mode.
+
+## Acceptance Criteria
+
+- [ ] Theme toggle is icon-only.
+- [ ] Theme applies beyond the navbar.
+- [ ] Buttons remain readable in dark mode.
+- [ ] The page is readable on mobile and desktop.
+- [ ] The happy path and one failure path are tested.
+
+## MoSCoW Priority
+
+Could Have
+
+## Story Points
+
+3
+
+## Sprint
+
+Sprint 4
+
+## Test Notes
+
+- [x] Local check completed.
+- [x] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
+
+---
+
+## 15. User Story: Admin Branding And Owner Access Rules
+
+Status: `Done`
+Labels: `Should Have`
+Story points: `3`
+Sprint: `Sprint 4`
+
+## User Story
+
+As the **website owner**
+I want **admin and owner areas branded and restricted correctly**
+So that **management feels professional and protected**
+
+## User Experience Reason
+
+This removes the confusion of Django default branding and reduces risk of exposing sensitive controls.
+
+## Acceptance Criteria
+
+- [ ] Admin uses MyValidCV branding.
+- [ ] Owner-only data is restricted.
+- [ ] Superuser access works.
+- [ ] Normal users cannot access owner controls.
+- [ ] The happy path and one failure path are tested.
+
+## MoSCoW Priority
+
+Should Have
+
+## Story Points
+
+3
+
+## Sprint
+
+Sprint 4
+
+## Test Notes
+
+- [x] Local check completed.
+- [x] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
+
+---
+
+## 16. User Story: Demo Data And Seeded Plans Taxonomy
+
+Status: `Done`
+Labels: `Should Have`
+Story points: `5`
+Sprint: `Sprint 4`
+
+## User Story
+
+As the **website owner**
+I want **demo data, plans and taxonomy seeded**
+So that **the product can demonstrate realistic usage and reports**
+
+## User Experience Reason
+
+This removes empty-dashboard anxiety during demos and makes the product easier to evaluate.
+
+## Acceptance Criteria
+
+- [ ] Plans are seeded.
+- [ ] Taxonomy is seeded.
+- [ ] Demo data command exists.
+- [ ] Release command synchronizes key records.
+- [ ] The happy path and one failure path are tested.
+
+## MoSCoW Priority
+
+Should Have
+
+## Story Points
+
+5
+
+## Sprint
+
+Sprint 4
+
+## Test Notes
+
+- [x] Local check completed.
+- [x] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
+
+---
+
+## 17. User Story: Agile Documentation Backlog And Kanban Documents
+
+Status: `Done`
+Labels: `Must Have`
+Story points: `2`
+Sprint: `Sprint 4`
+
+## User Story
+
+As the **project owner**
+I want **Agile documentation, backlog and Kanban files**
+So that **the development process is visible and professional**
+
+## User Experience Reason
+
+This removes assessment uncertainty and shows that the SaaS was managed with a real product workflow.
+
+## Acceptance Criteria
+
+- [ ] Agile operating model exists.
+- [ ] UX playbook exists.
+- [ ] Product backlog exists.
+- [ ] Kanban board exists.
+- [ ] README links to the documents.
+
+## MoSCoW Priority
+
+Must Have
+
+## Story Points
+
+2
+
+## Sprint
+
+Sprint 4
+
+## Test Notes
+
+- [x] Local check completed.
+- [x] Heroku check not required.
+- [x] Browser/GitHub review completed.
+
+---
+
+## 18. User Story: GitHub Issue Template And Project Setup Guide
+
+Status: `Done`
+Labels: `Must Have`
+Story points: `2`
+Sprint: `Sprint 4`
+
+## User Story
+
+As the **project owner**
+I want **GitHub issue templates and setup guidance**
+So that **Project 7 can be populated as a real Agile board**
+
+## User Experience Reason
+
+This removes confusion about why markdown files do not automatically appear as GitHub Project cards.
+
+## Acceptance Criteria
+
+- [ ] User Story issue template exists.
+- [ ] Project setup guide exists.
+- [ ] Issue register exists.
+- [ ] README links to setup documents.
+
+## MoSCoW Priority
+
+Must Have
+
+## Story Points
+
+2
+
+## Sprint
+
+Sprint 4
+
+## Test Notes
+
+- [x] Local check completed.
+- [x] Heroku check not required.
+- [x] Browser/GitHub review completed.
+
+---
+
+## 19. User Story: Final UX Smoke Test
+
+Status: `In review`
+Labels: `review`, `Must Have`
+Story points: `3`
+Sprint: `Current iteration`
+
+## User Story
+
+As the **project owner**
+I want **a final UX smoke test across the full platform**
+So that **I can find any final issue before presentation**
+
+## User Experience Reason
+
+This removes the risk of discovering broken pages during demo or assessment.
+
+## Acceptance Criteria
+
+- [ ] Home page tested.
+- [ ] Register/login/logout tested.
+- [ ] Dashboard tested.
+- [ ] Validate CV and result page tested.
+- [ ] Pricing and payment tested.
+- [ ] Owner console tested.
+- [ ] Mobile and desktop reviewed.
+
+## MoSCoW Priority
+
+Must Have
+
+## Story Points
+
+3
+
+## Sprint
+
+Current iteration
+
+## Test Notes
+
+- [ ] Local check completed.
+- [ ] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
+
+---
+
+## 20. User Story: Manual Google PageSpeed Test
+
+Status: `In review`
+Labels: `review`, `Should Have`
+Story points: `2`
+Sprint: `Current iteration`
+
+## User Story
+
+As the **project owner**
+I want **a manual Google PageSpeed test**
+So that **performance claims are supported by evidence**
+
+## User Experience Reason
+
+This removes uncertainty about whether the site feels fast enough for first-time visitors.
+
+## Acceptance Criteria
+
+- [ ] `pagespeed.web.dev` is run on the live homepage.
+- [ ] Mobile score is recorded.
+- [ ] Desktop score is recorded.
+- [ ] Any failing Core Web Vital becomes a backlog issue.
+
+## MoSCoW Priority
+
+Should Have
+
+## Story Points
+
+2
+
+## Sprint
+
+Current iteration
+
+## Test Notes
+
+- [ ] Local check not required.
+- [ ] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
+
+---
+
+## 21. User Story: Live Stripe Payment Confirmation Test
+
+Status: `In review`
+Labels: `review`, `Must Have`
+Story points: `3`
+Sprint: `Current iteration`
+
+## User Story
+
+As the **website owner**
+I want **the live Stripe payment flow tested end to end**
+So that **paid users can subscribe without errors**
+
+## User Experience Reason
+
+This removes payment anxiety and prevents users from losing trust at checkout.
+
+## Acceptance Criteria
+
+- [ ] Plus checkout opens.
+- [ ] Test payment succeeds.
+- [ ] Success page shows receipt.
+- [ ] User plan updates.
+- [ ] Heroku logs show no payment 500 error.
+
+## MoSCoW Priority
+
+Must Have
+
+## Story Points
+
+3
+
+## Sprint
+
+Current iteration
+
+## Test Notes
+
+- [ ] Local check completed.
+- [ ] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
+
+---
+
+## 22. User Story: ATS Scoring Quality Review
+
+Status: `In review`
+Labels: `review`, `Should Have`
+Story points: `5`
+Sprint: `Current iteration`
+
+## User Story
+
+As a **job seeker**
+I want **ATS scoring to distinguish relevant and unrelated roles**
+So that **I can trust the report**
+
+## User Experience Reason
+
+This removes distrust caused by unrealistic scores, such as a weak match receiving a high score.
+
+## Acceptance Criteria
+
+- [ ] Related CV/job pair produces sensible score.
+- [ ] Unrelated CV/job pair does not score unrealistically high.
+- [ ] Must-have requirements have strong weighting.
+- [ ] Recruiter risk is explained.
+
+## MoSCoW Priority
+
+Should Have
+
+## Story Points
+
+5
+
+## Sprint
+
+Current iteration
+
+## Test Notes
+
+- [ ] Local check completed.
+- [ ] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
+
+---
+
+## 23. User Story: Report Page Readability And CV Wording Review
+
+Status: `In review`
+Labels: `review`, `ux`
+Story points: `5`
+Sprint: `Current iteration`
+
+## User Story
+
+As a **job seeker**
+I want **the report, suggested CV wording and cover letter to be clear and realistic**
+So that **I know exactly what to improve before applying**
+
+## User Experience Reason
+
+This removes confusion caused by long analysis text or generic output that does not sound like a real CV.
+
+## Acceptance Criteria
+
+- [ ] Recruiter risk is visible.
+- [ ] Suggested CV wording is based on real evidence.
+- [ ] Cover letter summary uses matched keywords.
+- [ ] Colour keys are clear.
+- [ ] The page is readable on mobile and desktop.
+
+## MoSCoW Priority
+
+Should Have
+
+## Story Points
+
+5
+
+## Sprint
+
+Current iteration
+
+## Test Notes
+
+- [ ] Local check completed.
+- [ ] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
+
+---
+
+## 24. User Story: Final Project Presentation
+
+Status: `Ready`
+Labels: `presentation`, `Must Have`
+Story points: `5`
+Sprint: `Next iteration`
+
+## User Story
+
+As the **project owner**
+I want **a final presentation of MyValidCV**
+So that **I can demonstrate the product, architecture, Agile workflow and business value**
+
+## User Experience Reason
+
+This removes presentation anxiety and creates a clear story for reviewers or stakeholders.
+
+## Acceptance Criteria
+
+- [ ] Product problem and solution are explained.
+- [ ] Core journey is demonstrated.
+- [ ] Architecture summary is included.
+- [ ] Agile/Kanban evidence is included.
+- [ ] Deployment link is included.
+
+## MoSCoW Priority
+
+Must Have
+
+## Story Points
+
+5
+
+## Sprint
+
+Next iteration
+
+## Test Notes
+
+- [ ] Local check not required.
+- [ ] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
+
+---
+
+## 25. User Story: Demo Script And Screenshots
+
+Status: `Ready`
+Labels: `presentation`, `Should Have`
+Story points: `3`
+Sprint: `Next iteration`
+
+## User Story
+
+As the **presenter**
+I want **a demo script and screenshots**
+So that **the final review runs smoothly**
+
+## User Experience Reason
+
+This removes the risk of forgetting key features or losing time during the demo.
+
+## Acceptance Criteria
+
+- [ ] Landing screenshot captured.
+- [ ] Dashboard screenshot captured.
+- [ ] Validation screenshot captured.
+- [ ] Report screenshot captured.
+- [ ] Pricing and owner screenshots captured.
+- [ ] Demo script follows the core journey.
+
+## MoSCoW Priority
+
+Should Have
+
+## Story Points
+
+3
+
+## Sprint
+
+Next iteration
+
+## Test Notes
+
+- [ ] Local check not required.
+- [ ] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
+
+---
+
+## 26. User Story: README Final Polish
+
+Status: `Ready`
+Labels: `Could Have`
+Story points: `2`
+Sprint: `Next iteration`
+
+## User Story
+
+As a **reviewer**
+I want **a polished README**
+So that **setup, scope, deployment and Agile evidence are easy to understand**
+
+## User Experience Reason
+
+This removes reviewer confusion and makes the project look complete and professional.
+
+## Acceptance Criteria
+
+- [ ] README links are current.
+- [ ] Setup steps are clear.
+- [ ] Heroku configuration is clear.
+- [ ] Agile documentation is linked.
+
+## MoSCoW Priority
+
+Could Have
+
+## Story Points
+
+2
+
+## Sprint
+
+Next iteration
+
+## Test Notes
+
+- [ ] Local check not required.
+- [ ] Heroku check not required.
+- [ ] Browser/GitHub review completed.
+
+---
+
+## 27. User Story: Terms Privacy And Refund Content Pages
+
+Status: `Ready`
+Labels: `Should Have`
+Story points: `3`
+Sprint: `Next iteration`
+
+## User Story
+
+As a **user**
+I want **clear terms, privacy and refund information**
+So that **I understand how my data and payments are handled**
+
+## User Experience Reason
+
+This removes trust concerns before signup or payment.
+
+## Acceptance Criteria
+
+- [ ] Footer links lead to terms/privacy/refund content.
+- [ ] Refund terms are written plainly.
+- [ ] Data use is explained clearly.
+- [ ] Pages are readable on mobile and desktop.
+
+## MoSCoW Priority
+
+Should Have
+
+## Story Points
+
+3
+
+## Sprint
+
+Next iteration
+
+## Test Notes
+
+- [ ] Local check completed.
+- [ ] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
+
+---
+
+## 28. User Story: Owner Promo Code Workflow Guide
+
+Status: `Ready`
+Labels: `Should Have`
+Story points: `3`
+Sprint: `Next iteration`
+
+## User Story
+
+As the **website owner**
+I want **a clear promo-code workflow**
+So that **discounts can be managed safely**
+
+## User Experience Reason
+
+This removes operational confusion when offering discounts to users.
+
+## Acceptance Criteria
+
+- [ ] Owner can find discount-code admin.
+- [ ] Active dates are explained.
+- [ ] Percentage and usage limit are explained.
+- [ ] Promo codes do not bypass payment records.
+
+## MoSCoW Priority
+
+Should Have
+
+## Story Points
+
+3
+
+## Sprint
+
+Next iteration
+
+## Test Notes
+
+- [ ] Local check completed.
+- [ ] Heroku check not required.
+- [ ] Browser/UX smoke test completed.
+
+---
+
+## 29. User Story: User Feedback After ATS Report
+
+Status: `Backlog`
+Labels: `Could Have`
+Story points: `3`
+Sprint: `Backlog`
+
+## User Story
+
+As the **website owner**
+I want **users to rate report usefulness**
+So that **I can improve the ATS report based on real feedback**
+
+## User Experience Reason
+
+This removes guesswork about whether users understand and value the report.
+
+## Acceptance Criteria
+
+- [ ] User can rate a report.
+- [ ] Feedback belongs to a report and user.
+- [ ] Owner can review feedback.
+- [ ] Feedback does not interrupt the core journey.
+
+## MoSCoW Priority
+
+Could Have
+
+## Story Points
+
+3
+
+## Sprint
+
+Backlog
+
+## Test Notes
+
+- [ ] Local check completed.
+- [ ] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
+
+---
+
+## 30. User Story: Improve ATS Taxonomy Coverage
+
+Status: `Backlog`
+Labels: `Should Have`
+Story points: `8`
+Sprint: `Backlog`
+
+## User Story
+
+As the **website owner**
+I want **broader ATS taxonomy coverage across job families**
+So that **MyValidCV can serve more industries accurately**
+
+## User Experience Reason
+
+This removes user distrust when the platform compares unrelated jobs or misses role-specific language.
+
+## Acceptance Criteria
+
+- [ ] More role families are seeded.
+- [ ] Skills and qualifications are structured.
+- [ ] Matching logic uses taxonomy without overfitting.
+- [ ] Unrelated CV/job pairs score realistically.
+
+## MoSCoW Priority
+
+Should Have
+
+## Story Points
+
+8
+
+## Sprint
+
+Backlog
+
+## Test Notes
+
+- [ ] Local check completed.
+- [ ] Heroku check completed.
+- [ ] Browser/UX smoke test completed.
 
