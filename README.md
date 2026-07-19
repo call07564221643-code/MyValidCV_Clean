@@ -30,6 +30,18 @@ never grants paid access.
 See [docs/PROJECT_ARCHITECTURE_AUDIT.md](docs/PROJECT_ARCHITECTURE_AUDIT.md) for
 the full request, database, authorization and payment sequence.
 
+## Agile and UX workflow
+
+The project is managed as a lean Agile micro-SaaS:
+
+- [Agile operating model](docs/AGILE_OPERATING_MODEL.md)
+- [UX playbook](docs/USER_EXPERIENCE_PLAYBOOK.md)
+- [Product backlog](docs/PRODUCT_BACKLOG.md)
+- [Kanban board](docs/KANBAN_BOARD.md)
+
+Keep the Kanban board updated after each deployment. Protect the core user
+journey: Upload CV -> Add Job -> Validate -> Improve -> Apply.
+
 ## Local setup
 
 ```powershell
