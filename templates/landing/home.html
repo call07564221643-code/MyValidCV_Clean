@@ -287,6 +287,123 @@
         padding: 0 4rem 1.25rem;
     }
 
+    .landing-relief-carousel {
+        margin: 0 4rem 1.25rem;
+        border: 1px solid #dbe5ff;
+        border-radius: 18px;
+        background:
+            radial-gradient(circle at 12% 18%, rgba(159, 184, 255, 0.2), transparent 30%),
+            linear-gradient(145deg, #ffffff 0%, #f6f9ff 100%);
+        box-shadow: 0 18px 45px rgba(31, 51, 116, 0.08);
+        overflow: hidden;
+    }
+
+    .landing-relief-slide {
+        min-height: 220px;
+        padding: 2.2rem 4.6rem;
+    }
+
+    .landing-relief-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-bottom: 0.8rem;
+        color: #6f91e8;
+        font-size: 0.75rem;
+        font-weight: 850;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .landing-relief-slide h2 {
+        max-width: 780px;
+        margin: 0 0 0.7rem;
+        color: #202938;
+        font-size: clamp(1.35rem, 2.7vw, 2.35rem);
+        line-height: 1.08;
+        letter-spacing: -0.035em;
+        font-weight: 820;
+    }
+
+    .landing-relief-slide p {
+        max-width: 760px;
+        margin: 0;
+        color: var(--wf-muted);
+        font-size: 0.98rem;
+        line-height: 1.65;
+    }
+
+    .landing-relief-action {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+        margin-top: 1.2rem;
+    }
+
+    .landing-relief-proof {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        color: #1f3374;
+        font-size: 0.84rem;
+        font-weight: 800;
+    }
+
+    .landing-relief-proof::before {
+        content: "";
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: #9fb8ff;
+        box-shadow: 0 0 0 5px rgba(159, 184, 255, 0.2);
+    }
+
+    .landing-relief-carousel .carousel-control-prev,
+    .landing-relief-carousel .carousel-control-next {
+        width: 3.25rem;
+    }
+
+    .landing-relief-carousel .carousel-control-prev-icon,
+    .landing-relief-carousel .carousel-control-next-icon {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 999px;
+        background-color: #1f3374;
+        background-size: 52%;
+    }
+
+    .landing-relief-carousel .carousel-indicators {
+        margin-bottom: 0.75rem;
+    }
+
+    .landing-relief-carousel .carousel-indicators [data-bs-target] {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background-color: #9fb8ff;
+    }
+
+    html[data-bs-theme="dark"] .landing-relief-carousel {
+        border-color: #273449;
+        background:
+            radial-gradient(circle at 12% 18%, rgba(159, 184, 255, 0.16), transparent 30%),
+            linear-gradient(145deg, #111c33 0%, #0b1224 100%);
+    }
+
+    html[data-bs-theme="dark"] .landing-relief-slide h2,
+    html[data-bs-theme="dark"] .landing-relief-proof {
+        color: #f8fafc;
+    }
+
+    html[data-bs-theme="dark"] .landing-relief-slide p {
+        color: #cbd5e1;
+    }
+
+    html[data-bs-theme="dark"] .landing-relief-carousel .carousel-control-prev-icon,
+    html[data-bs-theme="dark"] .landing-relief-carousel .carousel-control-next-icon {
+        background-color: #9fb8ff;
+    }
+
     .landing-feature-visual {
         margin: 0 4rem 1.25rem;
         padding: 0.75rem;
@@ -454,6 +571,8 @@
             padding-inline: 2rem;
         }
 
+        .landing-relief-carousel { margin-inline: 2rem; }
+        .landing-relief-slide { padding: 1.8rem 3.4rem; }
         .landing-timeline { margin-inline: 2rem; }
         .landing-feature-visual { margin-inline: 2rem; }
 
@@ -535,6 +654,26 @@
         .landing-feature-grid {
             grid-template-columns: 1fr;
             padding: 0 1rem 1rem;
+        }
+
+        .landing-relief-carousel {
+            margin: 0 1rem 1rem;
+            border-radius: 15px;
+        }
+
+        .landing-relief-slide {
+            min-height: 270px;
+            padding: 1.45rem 2.8rem 2.6rem;
+        }
+
+        .landing-relief-slide p {
+            font-size: 0.9rem;
+            line-height: 1.55;
+        }
+
+        .landing-relief-action {
+            display: grid;
+            grid-template-columns: 1fr;
         }
 
         .landing-feature-visual {
@@ -665,6 +804,59 @@
                     </div>
                 </div>
             </div>
+        </section>
+
+        <section id="reliefCarousel" class="carousel slide landing-relief-carousel" data-bs-ride="carousel" data-bs-interval="6500" aria-label="Why job seekers choose MyValidCV">
+            <div class="carousel-indicators">
+                <button type="button" data-bs-target="#reliefCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Stop sending weak applications"></button>
+                <button type="button" data-bs-target="#reliefCarousel" data-bs-slide-to="1" aria-label="Know what recruiters may notice"></button>
+                <button type="button" data-bs-target="#reliefCarousel" data-bs-slide-to="2" aria-label="Apply with calm confidence"></button>
+            </div>
+            <div class="carousel-inner">
+                <article class="carousel-item active">
+                    <div class="landing-relief-slide">
+                        <span class="landing-relief-kicker">Application anxiety</span>
+                        <h2>Stop sending your CV and hoping for the best.</h2>
+                        <p>Most job seekers are not rejected because they are not capable. They are ignored because the CV does not make the right evidence obvious for that specific role. MyValidCV shows the gaps before a recruiter or ATS system sees them.</p>
+                        <div class="landing-relief-action">
+                            <span class="landing-relief-proof">Feel clear before you apply</span>
+                        </div>
+                    </div>
+                </article>
+                <article class="carousel-item">
+                    <div class="landing-relief-slide">
+                        <span class="landing-relief-kicker">Recruiter view</span>
+                        <h2>Know what the hiring team is likely to notice first.</h2>
+                        <p>Paste the job advert and see whether your CV speaks the same language: skills, keywords, experience, qualifications, and missing evidence. The report tells you what weakens your chance and what improvement has the biggest impact.</p>
+                        <div class="landing-relief-action">
+                            <span class="landing-relief-proof">Fix the highest value gaps first</span>
+                        </div>
+                    </div>
+                </article>
+                <article class="carousel-item">
+                    <div class="landing-relief-slide">
+                        <span class="landing-relief-kicker">Relief and control</span>
+                        <h2>Turn job searching from guesswork into a simple check.</h2>
+                        <p>Upload CV, add the job role, validate, improve, and apply. Free users can start quickly; paid users can view stronger CV wording and cover-letter support when the match is worth pursuing.</p>
+                        <div class="landing-relief-action">
+                            {% if user.is_authenticated and workspace_available %}
+                                <a class="wf-btn wf-btn-primary" href="{% url 'dashboard' %}">Validate a job</a>
+                            {% else %}
+                                <a class="wf-btn wf-btn-primary" href="{% url 'register' %}">Start free</a>
+                            {% endif %}
+                            <span class="landing-relief-proof">Less doubt, better applications</span>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#reliefCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#reliefCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
         </section>
 
         <section class="landing-timeline" aria-label="How MyValidCV works">
