@@ -39,6 +39,7 @@ The project is managed as a lean Agile micro-SaaS:
 - [Product backlog](docs/PRODUCT_BACKLOG.md)
 - [Kanban board](docs/KANBAN_BOARD.md)
 - [GitHub Project setup](docs/GITHUB_PROJECT_SETUP.md)
+- [GitHub Project issue register](docs/GITHUB_PROJECT_ISSUE_REGISTER.md)
 
 Keep the Kanban board updated after each deployment. Protect the core user
 journey: Upload CV -> Add Job -> Validate -> Improve -> Apply.
