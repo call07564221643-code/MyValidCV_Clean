@@ -17,7 +17,7 @@ class CustomerNavigationTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse('dashboard'))
         self.assertContains(response, '>Reports<', html=False)
-        self.assertContains(response, '>Settings<', html=False)
+        self.assertContains(response, '>Account<', html=False)
         self.assertNotContains(response, '>Health<', html=False)
         self.assertNotContains(response, '>Admin<', html=False)
 
