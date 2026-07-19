@@ -38,6 +38,7 @@ The project is managed as a lean Agile micro-SaaS:
 - [UX playbook](docs/USER_EXPERIENCE_PLAYBOOK.md)
 - [Product backlog](docs/PRODUCT_BACKLOG.md)
 - [Kanban board](docs/KANBAN_BOARD.md)
+- [GitHub Project setup](docs/GITHUB_PROJECT_SETUP.md)
 
 Keep the Kanban board updated after each deployment. Protect the core user
 journey: Upload CV -> Add Job -> Validate -> Improve -> Apply.
