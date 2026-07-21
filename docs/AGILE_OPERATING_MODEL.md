@@ -27,6 +27,31 @@ Use one-week sprints until the MVP is stable.
 
 For urgent production defects, pause feature work and use a hotfix lane.
 
+## MVP Delivery Sprint: 20-21 July 2026
+
+The final MVP increment is a two-day delivery sprint ending on **21 July 2026**.
+No new product features enter this sprint. Work is pulled in this order:
+
+1. Validate the full user journey and account boundaries.
+2. Confirm ATS scoring and report readability.
+3. Confirm live checkout, receipt and subscription activation.
+4. Confirm legal/trust content and production performance evidence.
+5. Capture screenshots, run the demo script and finish the presentation/README.
+
+The release candidate is frozen after the final critical fix. PageSpeed evidence
+or an external-provider check that cannot be completed must be recorded as a
+known delivery exception, not silently marked `Done`.
+
+### 21 July Definition Of Delivery
+
+- All Must Have release gates have an evidence note.
+- There are no unresolved critical defects in the core journey.
+- Free, Plus, Enterprise and owner access boundaries are verified.
+- Login accepts username or email and has a useful failure state.
+- Owner reporting remains separate from the Enterprise dashboard.
+- The live application URL, screenshots and demo script are ready to present.
+- Deferred work is explicitly moved to the post-delivery backlog.
+
 ## Roles
 
 - Product Owner: decides priority, pricing, user promise and launch scope.

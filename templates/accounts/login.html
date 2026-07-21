@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}Login - MyValidCV{% endblock %}
-{% block meta_description %}Log in to MyValidCV to check CV compatibility, review ATS results, and manage your applications.{% endblock %}
+{% block meta_description %}Log in with your username or email to check CV compatibility, review ATS results, and manage your applications.{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/mvcv-wireframe.css' %}">
@@ -188,7 +188,7 @@
         <div class="auth-panel">
             <div class="auth-card">
                 <h2>{% block auth_heading %}Log in{% endblock %}</h2>
-                <p>{% block auth_intro %}Use your account or continue with Google or LinkedIn.{% endblock %}</p>
+                <p>{% block auth_intro %}Use your username or email, or continue with Google or LinkedIn.{% endblock %}</p>
 
                 <form method="post" class="auth-form" novalidate>
                     {% csrf_token %}
@@ -207,6 +207,10 @@
                     {% endfor %}
                     <button type="submit" class="wf-btn wf-btn-primary auth-submit">{% block auth_submit %}Log in{% endblock %}</button>
                 </form>
+
+                {% block password_help %}
+                    <p class="auth-switch"><a href="{% url 'password_reset' %}">Forgot your password?</a></p>
+                {% endblock %}
 
                 <div class="auth-divider"><span>or continue with</span></div>
 

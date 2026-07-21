@@ -52,6 +52,27 @@ class CVUploadForm(forms.ModelForm):
         return validate_document(self.cleaned_data["file"])
 
 
+class CVUpdateForm(forms.ModelForm):
+    """Allow an owner to rename a saved CV without replacing its document."""
+
+    class Meta:
+        model = CV
+        fields = ["title"]
+        widgets = {
+            "title": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "e.g. Software Developer CV",
+                "autocomplete": "off",
+            }),
+        }
+
+    def clean_title(self):
+        title = self.cleaned_data["title"].strip()
+        if not title:
+            raise forms.ValidationError("Enter a name for this CV.")
+        return title
+
+
 class ATSAnalysisForm(forms.Form):
     SOURCE_CHOICES = [
         ("text", "Paste job description"),

@@ -51,7 +51,7 @@ def register(request):
             user = form.save()
             username = form.cleaned_data.get('username')
             messages.success(request, f'Account created successfully. Welcome {username}!')
-            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            login(request, user, backend='accounts.backends.EmailOrUsernameBackend')
             return redirect(redirect_to)
         else:
             for field, errors in form.errors.items():
@@ -76,12 +76,12 @@ def login_view(request):
     if request.method == 'POST':
         form = CustomAuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            username = form.cleaned_data.get('username')
+            identifier = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
+            user = authenticate(username=identifier, password=password)
             if user is not None:
                 login(request, user)
-                messages.success(request, f'Welcome back, {username}!')
+                messages.success(request, f'Welcome back, {user.get_short_name() or user.username}!')
                 return redirect(redirect_to)
     else:
         form = CustomAuthenticationForm()

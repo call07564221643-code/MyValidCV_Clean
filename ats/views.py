@@ -12,8 +12,9 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.views.decorators.http import require_http_methods
 
-from .forms import ATSAnalysisForm, CVUploadForm, EnterpriseBulkAnalysisForm
+from .forms import ATSAnalysisForm, CVUpdateForm, CVUploadForm, EnterpriseBulkAnalysisForm
 from .models import (
     ApplicationReminder,
     ATSResult,
@@ -650,6 +651,16 @@ def upload_cv(request):
     profile = get_user_profile(request.user)
     entitlements = get_entitlements(request.user)
     cv_count = CV.objects.filter(user=request.user).count()
+
+    def page_context(form):
+        return {
+            "form": form,
+            "profile": profile,
+            "cv_count": cv_count,
+            "cv_limit": entitlements.cv_limit,
+            "saved_cvs": CV.objects.filter(user=request.user).order_by("-uploaded_at"),
+        }
+
     if request.method != "POST" and cv_count >= entitlements.cv_limit:
         messages.warning(request, f"Your {entitlements.code} plan allows {entitlements.cv_limit} saved CV(s). Upgrade to save more.")
 
@@ -663,7 +674,7 @@ def upload_cv(request):
             is_valid_cv, reason = validate_cv_for_analysis(cv_text)
             if not is_valid_cv:
                 form.add_error("file", reason)
-                return render(request, "ats/upload_cv.html", {"form": form, "profile": profile, "cv_count": cv_count})
+                return render(request, "ats/upload_cv.html", page_context(form))
             cv = form.save(commit=False)
             cv.user = request.user
             populate_cv_metadata(cv, form.cleaned_data["file"], validation_status="valid", validation_notes="Passed CV readiness validation.")
@@ -674,7 +685,37 @@ def upload_cv(request):
     else:
         form = CVUploadForm()
 
-    return render(request, "ats/upload_cv.html", {"form": form, "profile": profile, "cv_count": cv_count})
+    return render(request, "ats/upload_cv.html", page_context(form))
+
+
+@login_required(login_url="login")
+@require_http_methods(["GET", "POST"])
+def update_cv(request, public_id):
+    """Rename one CV owned by the authenticated user."""
+    cv = get_object_or_404(CV, public_id=public_id, user=request.user)
+    form = CVUpdateForm(request.POST or None, instance=cv)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "CV name updated.")
+        return redirect("upload_cv")
+    return render(request, "ats/update_cv.html", {"form": form, "cv": cv})
+
+
+@login_required(login_url="login")
+@require_http_methods(["GET", "POST"])
+def delete_cv(request, public_id):
+    """Confirm and delete one owned CV plus its dependent analysis records."""
+    cv = get_object_or_404(CV, public_id=public_id, user=request.user)
+    if request.method == "POST":
+        title = cv.title
+        cv.delete()
+        refresh_cv_storage(request.user)
+        messages.success(request, f'“{title}” and its related reports were deleted.')
+        return redirect("upload_cv")
+    return render(request, "ats/delete_cv_confirm.html", {
+        "cv": cv,
+        "result_count": cv.results.count(),
+    })
 
 
 @login_required(login_url="login")
@@ -817,7 +858,10 @@ def analyse_cv(request):
 
 @login_required(login_url="login")
 def result_detail(request, result_id):
-    result = get_object_or_404(ATSResult, id=result_id, user=request.user)
+    if request.user.is_superuser:
+        result = get_object_or_404(ATSResult, id=result_id)
+    else:
+        result = get_object_or_404(ATSResult, id=result_id, user=request.user)
     cv_text = extract_cv_text(result.cv)
     matched = [item.strip() for item in result.matched_skills.split(",") if item.strip()]
     missing = [item.strip() for item in result.missing_skills.split(",") if item.strip()]

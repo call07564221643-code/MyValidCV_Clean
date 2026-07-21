@@ -151,7 +151,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
+    'accounts.backends.EmailOrUsernameBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 

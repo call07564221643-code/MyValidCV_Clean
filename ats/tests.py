@@ -1,7 +1,10 @@
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import SimpleTestCase
+from django.contrib.auth.models import User
+from django.test import SimpleTestCase, TestCase, override_settings
+from django.urls import reverse
 
 from .forms import ATSAnalysisForm, MultipleFileField
+from .models import ATSResult, CV
 from .views import _validate_public_job_url, calculate_score
 
 
@@ -51,6 +54,7 @@ class ATSScoringTests(SimpleTestCase):
         self.assertIn("dentist", missing)
         self.assertIn("dental", missing)
         self.assertIn("High role mismatch", recommendation)
+
 
     def test_admin_cv_gets_partial_fit_for_airport_admin_role(self):
         cv_text = """
@@ -117,3 +121,77 @@ class ATSScoringTests(SimpleTestCase):
         self.assertLess(score, 50)
         self.assertIn("accountant", missing)
         self.assertIn("High role mismatch", recommendation)
+
+
+@override_settings(SECURE_SSL_REDIRECT=False)
+class CVManagementTests(TestCase):
+    """Prove front-end CV update/delete CRUD and object ownership rules."""
+
+    def setUp(self):
+        self.owner = User.objects.create_user("cv-owner", "owner@example.com", "password")
+        self.other_user = User.objects.create_user("other-user", "other@example.com", "password")
+        self.cv = CV.objects.create(
+            user=self.owner,
+            title="Original CV",
+            file="cvs/original.txt",
+            original_filename="original.txt",
+            file_size=100,
+        )
+
+    def test_manage_page_reads_only_the_users_cvs(self):
+        CV.objects.create(user=self.other_user, title="Private CV", file="cvs/private.txt")
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("upload_cv"))
+        self.assertContains(response, "Original CV")
+        self.assertNotContains(response, "Private CV")
+        self.assertContains(response, reverse("update_cv", args=[self.cv.public_id]))
+        self.assertContains(response, reverse("delete_cv", args=[self.cv.public_id]))
+
+    def test_owner_can_update_cv_title(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(
+            reverse("update_cv", args=[self.cv.public_id]),
+            {"title": "Django Developer CV"},
+        )
+        self.assertRedirects(response, reverse("upload_cv"))
+        self.cv.refresh_from_db()
+        self.assertEqual(self.cv.title, "Django Developer CV")
+
+    def test_user_cannot_update_another_users_cv(self):
+        self.client.force_login(self.other_user)
+        response = self.client.post(
+            reverse("update_cv", args=[self.cv.public_id]),
+            {"title": "Changed without permission"},
+        )
+        self.assertEqual(response.status_code, 404)
+        self.cv.refresh_from_db()
+        self.assertEqual(self.cv.title, "Original CV")
+
+    def test_delete_requires_confirmation_post(self):
+        self.client.force_login(self.owner)
+        url = reverse("delete_cv", args=[self.cv.public_id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Yes, delete CV")
+        self.assertTrue(CV.objects.filter(pk=self.cv.pk).exists())
+
+        response = self.client.post(url)
+        self.assertRedirects(response, reverse("upload_cv"))
+        self.assertFalse(CV.objects.filter(pk=self.cv.pk).exists())
+
+    def test_deleting_cv_cascades_to_related_result(self):
+        result = ATSResult.objects.create(
+            user=self.owner,
+            cv=self.cv,
+            job_title="Developer",
+            job_description="Python and Django developer",
+        )
+        self.client.force_login(self.owner)
+        self.client.post(reverse("delete_cv", args=[self.cv.public_id]))
+        self.assertFalse(ATSResult.objects.filter(pk=result.pk).exists())
+
+    def test_user_cannot_delete_another_users_cv(self):
+        self.client.force_login(self.other_user)
+        response = self.client.post(reverse("delete_cv", args=[self.cv.public_id]))
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(CV.objects.filter(pk=self.cv.pk).exists())

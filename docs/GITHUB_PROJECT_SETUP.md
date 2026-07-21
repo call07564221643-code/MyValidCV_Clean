@@ -90,9 +90,11 @@ In the Project:
 
 Recommended first sprints:
 
-- Sprint 1: finish MVP review and smoke testing.
-- Sprint 2: conversion and report-page improvements.
-- Sprint 3: owner reporting, trust content and polish.
+- Sprint 1: foundation and customer journey (complete).
+- Sprint 2: CV analysis, Enterprise and owner separation (complete).
+- Sprint 3: generated outputs, pricing, payments and deployment (complete).
+- Sprint 4: production readiness and project evidence (complete).
+- Delivery Sprint: 20-21 July 2026; release validation and submission evidence.
 
 ## 6. Create MVP Milestone
 
@@ -103,7 +105,7 @@ In the repository:
 3. Click `New milestone`.
 4. Title: `MVP v1.0`.
 5. Description: `Minimum viable MyValidCV SaaS release with landing, authentication, dashboard, CV upload, ATS result, payment and owner control.`
-6. Due date: choose your final project submission/demo date.
+6. Due date: `21 July 2026`.
 7. Save.
 
 ## 7. Create User Stories As Issues
@@ -164,6 +166,10 @@ Because most MVP coding is complete:
   - Final presentation screenshots
   - Demo script
   - Final README polish
+
+All non-backlog items above belong to `Delivery Sprint (20-21 Jul 2026)` and
+the `MVP v1.0` milestone due **21 July 2026**. Product feedback and taxonomy
+expansion remain post-delivery backlog and must not delay release.
 
 ## 10. Important Difference From The Tutorial
 

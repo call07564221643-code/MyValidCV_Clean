@@ -585,7 +585,11 @@
                                             <small class="text-danger">Needs a stronger CV format before analysis.</small>
                                         {% endif %}
                                     </div>
-                                    <a href="{% url 'ats_analyse' %}?cv={{ cv.id }}" class="btn btn-sm btn-outline-primary">Use</a>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <a href="{% url 'ats_analyse' %}?cv={{ cv.id }}" class="btn btn-sm btn-outline-primary">Use</a>
+                                        <a href="{% url 'update_cv' cv.public_id %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                        <a href="{% url 'delete_cv' cv.public_id %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                                    </div>
                                 </div>
                             {% endfor %}
                         </div>

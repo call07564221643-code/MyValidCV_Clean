@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
+from django.core import mail
 from django.urls import reverse
 from django.utils import timezone
 
@@ -61,6 +62,52 @@ class CustomerNavigationTests(TestCase):
         })
         self.assertRedirects(response, reverse('dashboard'))
 
+    def test_login_accepts_email_case_insensitively(self):
+        response = self.client.post(reverse('login'), {
+            'username': 'CUSTOMER@EXAMPLE.COM',
+            'password': 'password',
+        })
+        self.assertRedirects(response, reverse('dashboard'))
+
+    def test_login_form_explains_username_or_email(self):
+        response = self.client.get(reverse('login'))
+        self.assertContains(response, 'Username or email')
+
+    def test_login_links_to_password_reset(self):
+        response = self.client.get(reverse('login'))
+        self.assertContains(response, reverse('password_reset'))
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_password_reset_sends_one_time_link(self):
+        response = self.client.post(reverse('password_reset'), {
+            'email': 'CUSTOMER@example.com',
+        })
+        self.assertRedirects(response, reverse('password_reset_done'))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('/reset/', mail.outbox[0].body)
+        self.assertIn('customer@example.com', mail.outbox[0].to)
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_password_reset_does_not_reveal_unknown_email(self):
+        response = self.client.post(reverse('password_reset'), {
+            'email': 'unknown@example.com',
+        })
+        self.assertRedirects(response, reverse('password_reset_done'))
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_owner_has_separate_report_explorer(self):
+        owner = User.objects.create_superuser('owner', 'owner@example.com', 'password')
+        self.client.force_login(owner)
+        response = self.client.get(reverse('owner_reports'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Report explorer')
+        self.assertContains(response, 'Owner Reports')
+
+    def test_customer_cannot_access_owner_report_explorer(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('owner_reports'))
+        self.assertEqual(response.status_code, 403)
+
     def test_authenticated_user_cannot_return_to_login(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse('login'))
@@ -75,6 +122,28 @@ class CustomerNavigationTests(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'An account already uses this email address')
+
+    def test_registration_with_email_does_not_require_username(self):
+        response = self.client.post(reverse('register'), {
+            'username': '',
+            'email': 'new.person@example.com',
+            'password1': 'Secure-password-2026!',
+            'password2': 'Secure-password-2026!',
+        })
+        self.assertRedirects(response, reverse('dashboard'))
+        user = User.objects.get(email='new.person@example.com')
+        self.assertTrue(user.username.startswith('newperson'))
+
+    def test_generated_username_is_unique(self):
+        User.objects.create_user('newperson', 'existing@example.com', 'password')
+        self.client.post(reverse('register'), {
+            'username': '',
+            'email': 'new.person@example.com',
+            'password1': 'Secure-password-2026!',
+            'password2': 'Secure-password-2026!',
+        })
+        user = User.objects.get(email='new.person@example.com')
+        self.assertEqual(user.username, 'newperson-2')
 
     def test_active_enterprise_subscription_enables_enterprise_dashboard(self):
         plan = SubscriptionPlan.objects.create(
@@ -93,9 +162,7 @@ class CustomerNavigationTests(TestCase):
         response = self.client.get(reverse('dashboard'))
         self.assertContains(response, 'Enterprise candidate intelligence')
         self.assertContains(response, 'Bulk analysis')
-        self.assertContains(response, 'Enterprise access')
-        self.assertContains(response, 'Subscription started')
-        self.assertContains(response, 'Next payment renewal')
+        self.assertContains(response, 'Enterprise dashboard')
 
     def test_profile_label_without_active_subscription_does_not_enable_bulk(self):
         self.user.profile.plan = 'enterprise'
@@ -103,4 +170,4 @@ class CustomerNavigationTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse('dashboard'))
         self.assertNotContains(response, 'Bulk analysis')
-        self.assertContains(response, 'Free plan services')
+        self.assertContains(response, 'Free dashboard')

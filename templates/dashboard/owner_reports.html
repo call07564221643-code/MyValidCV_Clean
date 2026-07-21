@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Owner Reports - MyValidCV{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-body-tertiary min-vh-100">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
+            <div>
+                <span class="badge text-bg-primary mb-2">Owner only</span>
+                <h1 class="display-6 fw-bold mb-2">Report explorer</h1>
+                <p class="text-body-secondary mb-0">Explore customer ATS and enterprise reports without entering the Enterprise dashboard.</p>
+            </div>
+            <a href="{% url 'owner_console' %}" class="btn btn-outline-primary">Back to Owner Console</a>
+        </div>
+
+        <form method="get" class="card card-body shadow-sm mb-4">
+            <label for="report-search" class="form-label fw-semibold">Search reports</label>
+            <div class="input-group">
+                <input id="report-search" name="q" value="{{ query }}" class="form-control" placeholder="Username, email, CV, job, or batch title">
+                <button class="btn btn-primary" type="submit">Search</button>
+                {% if query %}<a href="{% url 'owner_reports' %}" class="btn btn-outline-secondary">Clear</a>{% endif %}
+            </div>
+        </form>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex justify-content-between"><strong>ATS reports</strong><span>{{ result_count }} found</span></div>
+            <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+                <thead><tr><th>User</th><th>CV</th><th>Job</th><th>Score</th><th>Created</th><th></th></tr></thead>
+                <tbody>{% for result in results %}<tr>
+                    <td>{{ result.user.username }}<br><small class="text-body-secondary">{{ result.user.email }}</small></td>
+                    <td>{{ result.cv.title }}</td><td>{{ result.job_title }}</td><td>{{ result.score }}%</td><td>{{ result.created_at|date:"M d, Y" }}</td>
+                    <td><a href="{% url 'ats_result' result.id %}" class="btn btn-sm btn-outline-primary">Open</a></td>
+                </tr>{% empty %}<tr><td colspan="6" class="text-center text-body-secondary py-4">No ATS reports found.</td></tr>{% endfor %}</tbody>
+            </table></div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between"><strong>Enterprise reports</strong><span>{{ batch_count }} found</span></div>
+            <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+                <thead><tr><th>User</th><th>Report</th><th>Job role</th><th>Candidates</th><th>Created</th><th></th></tr></thead>
+                <tbody>{% for batch in batches %}<tr>
+                    <td>{{ batch.user.username }}<br><small class="text-body-secondary">{{ batch.user.email }}</small></td>
+                    <td>{{ batch.title }}</td><td>{{ batch.job_role.title }}</td><td>{{ batch.candidate_count }}</td><td>{{ batch.created_at|date:"M d, Y" }}</td>
+                    <td><a href="{% url 'enterprise_report' batch.id %}" class="btn btn-sm btn-outline-primary">Open</a></td>
+                </tr>{% empty %}<tr><td colspan="6" class="text-center text-body-secondary py-4">No enterprise reports found.</td></tr>{% endfor %}</tbody>
+            </table></div>
+        </div>
+    </div>
+</section>
+{% endblock %}

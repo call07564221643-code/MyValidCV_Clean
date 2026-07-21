@@ -18,6 +18,29 @@ Milestone for MVP items:
 MVP v1.0
 ```
 
+Milestone due date: **21 July 2026**
+
+## Delivery Arrangement
+
+Stories are ordered by delivery dependency below. Issues #1-#18 are completed
+increments. Issues #19-#28 belong to `Delivery Sprint (20-21 Jul 2026)` and must
+be resolved or carry an explicit delivery-exception note by 21 July. Issues
+#29-#30 are intentionally deferred and do not block MVP delivery.
+
+| Delivery order | Issues | Status on 20 July | Delivery treatment |
+| ---: | --- | --- | --- |
+| 1 | #19, #21, #22 | In review | Critical release gates: UX, payment and scoring |
+| 2 | #23, #27 | In review / Ready | Report clarity and legal/trust completion |
+| 3 | #20, #28 | In review / Ready | Performance evidence and owner guidance |
+| 4 | #25, #26, #24 | Ready | Screenshots/demo, README, then presentation |
+| Post-delivery | #29, #30 | Backlog | Do not pull into the delivery sprint |
+
+Delivery rule: an unchecked live/browser criterion remains open even when its
+implementation story is marked Done. Do not rewrite missing evidence as success.
+
+Register arrangement: **Finalised on 20 July 2026**. Release closure remains
+conditional on the delivery evidence in issues #19-#28.
+
 ## Board Counts
 
 | Status | Count |
@@ -27,6 +50,17 @@ MVP v1.0
 | Ready | 5 |
 | Backlog | 2 |
 | Total | 30 |
+
+## Sprint Totals
+
+| Sprint | Issues | Points | Delivery state |
+| --- | --- | ---: | --- |
+| Sprint 1 | #1-#4 | 16 | Done |
+| Sprint 2 | #5-#8 | 24 | Done |
+| Sprint 3 | #9-#12 | 29 | Done |
+| Sprint 4 | #13-#18 | 18 | Done |
+| Delivery Sprint, 20-21 Jul | #19-#28 | 34 | 5 In review, 5 Ready |
+| Post-delivery backlog | #29-#30 | 11 | Backlog |
 
 ---
 
@@ -859,7 +893,7 @@ Sprint 4
 Status: `In review`
 Labels: `review`, `Must Have`
 Story points: `3`
-Sprint: `Current iteration`
+Sprint: `Delivery Sprint (20-21 Jul 2026)`
 
 ## User Story
 
@@ -891,7 +925,7 @@ Must Have
 
 ## Sprint
 
-Current iteration
+Delivery Sprint (20-21 Jul 2026)
 
 ## Test Notes
 
@@ -906,7 +940,7 @@ Current iteration
 Status: `In review`
 Labels: `review`, `Should Have`
 Story points: `2`
-Sprint: `Current iteration`
+Sprint: `Delivery Sprint (20-21 Jul 2026)`
 
 ## User Story
 
@@ -920,10 +954,26 @@ This removes uncertainty about whether the site feels fast enough for first-time
 
 ## Acceptance Criteria
 
-- [ ] `pagespeed.web.dev` is run on the live homepage.
+- [x] `pagespeed.web.dev` is run on the live homepage.
 - [ ] Mobile score is recorded.
 - [ ] Desktop score is recorded.
 - [ ] Any failing Core Web Vital becomes a backlog issue.
+
+## Mobile Evidence Captured 19 July 2026
+
+- Environment: Lighthouse 13.4.0, emulated Moto G Power, Slow 4G, initial page load.
+- FCP: `2.0 s`; LCP: `2.0 s`; Speed Index: `2.1 s`.
+- Total Blocking Time: `0 ms`; Cumulative Layout Shift: `0`.
+- Accessibility: `91`; Best Practices: `100`; SEO: `100`.
+- Findings: render-blocking CSS (estimated `1,030 ms`), oversized 189 KiB
+  process illustration, missing document compression in the observed response,
+  footer/brand contrast and carousel touch-target size.
+- Action taken locally: improved light-theme contrast, expanded carousel targets,
+  corrected the illustration's intrinsic dimensions, and confirmed that
+  WhiteNoise compressed manifest storage is configured.
+- Still required: create responsive image derivatives, deploy, verify
+  `Content-Encoding` on HTML/CSS, rerun mobile, record the overall Performance
+  score, and capture the desktop result.
 
 ## MoSCoW Priority
 
@@ -935,13 +985,13 @@ Should Have
 
 ## Sprint
 
-Current iteration
+Delivery Sprint (20-21 Jul 2026)
 
 ## Test Notes
 
 - [ ] Local check not required.
-- [ ] Heroku check completed.
-- [ ] Browser/UX smoke test completed.
+- [x] Heroku check completed for the 19 July baseline.
+- [x] Browser/UX smoke test completed for the 19 July mobile baseline.
 
 ---
 
@@ -950,7 +1000,7 @@ Current iteration
 Status: `In review`
 Labels: `review`, `Must Have`
 Story points: `3`
-Sprint: `Current iteration`
+Sprint: `Delivery Sprint (20-21 Jul 2026)`
 
 ## User Story
 
@@ -980,7 +1030,7 @@ Must Have
 
 ## Sprint
 
-Current iteration
+Delivery Sprint (20-21 Jul 2026)
 
 ## Test Notes
 
@@ -995,7 +1045,7 @@ Current iteration
 Status: `In review`
 Labels: `review`, `Should Have`
 Story points: `5`
-Sprint: `Current iteration`
+Sprint: `Delivery Sprint (20-21 Jul 2026)`
 
 ## User Story
 
@@ -1024,7 +1074,7 @@ Should Have
 
 ## Sprint
 
-Current iteration
+Delivery Sprint (20-21 Jul 2026)
 
 ## Test Notes
 
@@ -1039,7 +1089,7 @@ Current iteration
 Status: `In review`
 Labels: `review`, `ux`
 Story points: `5`
-Sprint: `Current iteration`
+Sprint: `Delivery Sprint (20-21 Jul 2026)`
 
 ## User Story
 
@@ -1069,7 +1119,7 @@ Should Have
 
 ## Sprint
 
-Current iteration
+Delivery Sprint (20-21 Jul 2026)
 
 ## Test Notes
 
@@ -1084,7 +1134,7 @@ Current iteration
 Status: `Ready`
 Labels: `presentation`, `Must Have`
 Story points: `5`
-Sprint: `Next iteration`
+Sprint: `Delivery Sprint (20-21 Jul 2026)`
 
 ## User Story
 
@@ -1114,7 +1164,7 @@ Must Have
 
 ## Sprint
 
-Next iteration
+Delivery Sprint (20-21 Jul 2026)
 
 ## Test Notes
 
@@ -1129,7 +1179,7 @@ Next iteration
 Status: `Ready`
 Labels: `presentation`, `Should Have`
 Story points: `3`
-Sprint: `Next iteration`
+Sprint: `Delivery Sprint (20-21 Jul 2026)`
 
 ## User Story
 
@@ -1160,7 +1210,7 @@ Should Have
 
 ## Sprint
 
-Next iteration
+Delivery Sprint (20-21 Jul 2026)
 
 ## Test Notes
 
@@ -1175,7 +1225,7 @@ Next iteration
 Status: `Ready`
 Labels: `Could Have`
 Story points: `2`
-Sprint: `Next iteration`
+Sprint: `Delivery Sprint (20-21 Jul 2026)`
 
 ## User Story
 
@@ -1204,7 +1254,7 @@ Could Have
 
 ## Sprint
 
-Next iteration
+Delivery Sprint (20-21 Jul 2026)
 
 ## Test Notes
 
@@ -1219,7 +1269,7 @@ Next iteration
 Status: `Ready`
 Labels: `Should Have`
 Story points: `3`
-Sprint: `Next iteration`
+Sprint: `Delivery Sprint (20-21 Jul 2026)`
 
 ## User Story
 
@@ -1248,7 +1298,7 @@ Should Have
 
 ## Sprint
 
-Next iteration
+Delivery Sprint (20-21 Jul 2026)
 
 ## Test Notes
 
@@ -1263,7 +1313,7 @@ Next iteration
 Status: `Ready`
 Labels: `Should Have`
 Story points: `3`
-Sprint: `Next iteration`
+Sprint: `Delivery Sprint (20-21 Jul 2026)`
 
 ## User Story
 
@@ -1292,7 +1342,7 @@ Should Have
 
 ## Sprint
 
-Next iteration
+Delivery Sprint (20-21 Jul 2026)
 
 ## Test Notes
 

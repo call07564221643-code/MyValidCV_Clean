@@ -17,6 +17,7 @@ urlpatterns = [
     path('', include('accounts.urls')),
     path('', include('payments.urls')),
     path('owner/', dashboard_views.owner_console, name='owner_console'),
+    path('owner/reports/', dashboard_views.owner_reports, name='owner_reports'),
     path('dashboard/', include('dashboard.urls')),
     path('ats/', include('ats.urls')),
     path('accounts/', include('allauth.urls')),

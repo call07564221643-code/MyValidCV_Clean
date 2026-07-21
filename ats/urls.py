@@ -4,6 +4,8 @@ from . import views
 
 urlpatterns = [
     path("upload/", views.upload_cv, name="upload_cv"),
+    path("cv/<uuid:public_id>/edit/", views.update_cv, name="update_cv"),
+    path("cv/<uuid:public_id>/delete/", views.delete_cv, name="delete_cv"),
     path("analyse/", views.analyse_cv, name="ats_analyse"),
     path("analysis/", RedirectView.as_view(pattern_name="ats_analyse", permanent=True), name="ats_analysis"),
     path("result/<int:result_id>/", views.result_detail, name="ats_result"),

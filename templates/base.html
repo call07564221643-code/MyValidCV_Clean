@@ -38,7 +38,7 @@
             --mvcv-body-text: #0f172a;
             --mvcv-card-bg: #ffffff;
             --mvcv-card-border: #e2e8f0;
-            --mvcv-muted: #64748b;
+            --mvcv-muted: #475569;
         }
 
         .navbar {
@@ -89,7 +89,7 @@
         }
 
         .mvcv-brand-inline span span {
-            color: #9fb8ff;
+            color: #5269a3;
         }
 
         .btn-primary {
@@ -139,7 +139,7 @@
         }
 
         .site-footer-brand span {
-            color: #9fb8ff;
+            color: #5269a3;
         }
 
         .site-footer-nav {
@@ -379,6 +379,9 @@
                         {% if user.is_superuser %}
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'owner_console' %}active{% endif %}" href="{% url 'owner_console' %}">Owner Console</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'owner_reports' %}active{% endif %}" href="{% url 'owner_reports' %}">Owner Reports</a>
                             </li>
                         {% endif %}
                         <li class="nav-item">

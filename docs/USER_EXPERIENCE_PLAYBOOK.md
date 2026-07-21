@@ -40,6 +40,8 @@ Every page should move the user closer to that promise or support their account.
 ### Registration And Login
 
 - Explain that an account saves CVs, reports and usage.
+- Let an existing user sign in with either username or email.
+- Label the identity field `Username or email` and keep authentication errors generic.
 - Social login buttons must reduce friction.
 - Do not show unnecessary marketing images inside the form.
 
@@ -74,7 +76,26 @@ Every page should move the user closer to that promise or support their account.
 
 - Use `/owner/` only for superuser website control.
 - Include users, payments, refunds, subscriptions, reports, promo codes and health.
+- Use `/owner/reports/` as the owner's searchable report explorer.
+- Keep the Owner Reports link distinct from customer and Enterprise report links.
 - Do not expose owner metrics to enterprise users.
+
+## 21 July Delivery Experience
+
+The release demonstration must follow one uninterrupted journey:
+
+1. Understand the promise from the landing page.
+2. Register, or log in with username/email.
+3. Upload a valid CV and see a useful invalid-document error when appropriate.
+4. Add a job, validate and understand the recruiter-facing result.
+5. Review honest suggested wording and cover-letter support.
+6. Understand plan limits before checkout.
+7. Confirm payment and account entitlement.
+8. Show Enterprise bulk reporting separately from `/owner/` and `/owner/reports/`.
+
+For delivery approval, check this journey on mobile and desktop. Record the
+browser, viewport, live URL and outcome; do not treat code review alone as UX
+acceptance.
 
 ## Accessibility And Trust
 

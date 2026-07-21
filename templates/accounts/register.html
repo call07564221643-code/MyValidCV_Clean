@@ -3,10 +3,11 @@
 {% block title %}Sign Up - MyValidCV{% endblock %}
 {% block meta_description %}Create a MyValidCV account with email, Google, or LinkedIn and start checking your CV against job roles.{% endblock %}
 {% block auth_heading %}Create account{% endblock %}
-{% block auth_intro %}Create your account with email, or use one of the secure options below.{% endblock %}
+{% block auth_intro %}Create your account with your email. A separate username is optional.{% endblock %}
 {% block google_label %}Sign up with Google{% endblock %}
 {% block linkedin_label %}Sign up with LinkedIn{% endblock %}
 {% block auth_submit %}Create account{% endblock %}
+{% block password_help %}{% endblock %}
 {% block auth_switch %}Already have an account?
     <a href="{% url 'login' %}?next={{ next|urlencode }}">Log in</a>
 {% endblock %}

@@ -377,10 +377,28 @@
     }
 
     .landing-relief-carousel .carousel-indicators [data-bs-target] {
-        width: 8px;
-        height: 8px;
+        position: relative;
+        width: 44px;
+        height: 44px;
+        margin: 0;
+        border: 0;
         border-radius: 999px;
-        background-color: #9fb8ff;
+        background: transparent;
+        opacity: 1;
+    }
+
+    .landing-relief-carousel .carousel-indicators [data-bs-target]::after {
+        position: absolute;
+        inset: 17px;
+        border-radius: 999px;
+        background: #5269a3;
+        content: "";
+        opacity: 0.65;
+    }
+
+    .landing-relief-carousel .carousel-indicators .active::after {
+        opacity: 1;
+        transform: scale(1.25);
     }
 
     html[data-bs-theme="dark"] .landing-relief-carousel {
@@ -886,7 +904,7 @@
         </section>
 
         <figure class="landing-feature-visual">
-            <img src="{% static 'images/cv-validation-steps.jpg' %}" width="2048" height="683" loading="lazy" decoding="async" alt="Four illustrated steps showing a job seeker uploading a CV, comparing it with a job description, checking ATS compatibility, and improving the application">
+            <img src="{% static 'images/cv-validation-steps.jpg' %}" width="1086" height="362" loading="lazy" decoding="async" alt="Four illustrated steps showing a job seeker uploading a CV, comparing it with a job description, checking ATS compatibility, and improving the application">
         </figure>
 
         <section id="features" class="landing-feature-grid">

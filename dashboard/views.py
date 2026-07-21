@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.utils import timezone
 from accounts.models import UserProfile
 from ats.models import ApplicationReminder, ATSResult, CV, EnterpriseBatch, EnterpriseCandidateResult, GeneratedCV, JobRole
@@ -200,8 +200,8 @@ def owner_console(request):
             "title": "Reports",
             "value": ATSResult.objects.count(),
             "text": "Review ATS results, generated CVs, cover letters, and enterprise reports.",
-            "primary_label": "ATS results",
-            "primary_url": "admin:ats_atsresult_changelist",
+            "primary_label": "Explore reports",
+            "primary_url": "owner_reports",
             "secondary_label": "Enterprise",
             "secondary_url": "admin:ats_enterprisebatch_changelist",
         },
@@ -236,3 +236,31 @@ def owner_console(request):
         "recent_refunds": Refund.objects.select_related("transaction", "transaction__user")[:6],
     }
     return render(request, "dashboard/owner_console.html", context)
+
+
+@login_required(login_url='login')
+def owner_reports(request):
+    """Owner-only report explorer, separate from customer Enterprise tools."""
+    if not request.user.is_superuser:
+        return render(request, "dashboard/owner_forbidden.html", status=403)
+
+    query = request.GET.get("q", "").strip()
+    results = ATSResult.objects.select_related("user", "cv").order_by("-created_at")
+    batches = EnterpriseBatch.objects.select_related("user", "job_role").order_by("-created_at")
+    if query:
+        results = results.filter(
+            Q(user__username__icontains=query) | Q(user__email__icontains=query)
+            | Q(job_title__icontains=query) | Q(cv__title__icontains=query)
+        )
+        batches = batches.filter(
+            Q(user__username__icontains=query) | Q(user__email__icontains=query)
+            | Q(title__icontains=query) | Q(job_role__title__icontains=query)
+        )
+
+    return render(request, "dashboard/owner_reports.html", {
+        "query": query,
+        "results": results[:100],
+        "batches": batches[:100],
+        "result_count": results.count(),
+        "batch_count": batches.count(),
+    })
