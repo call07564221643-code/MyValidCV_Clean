@@ -510,9 +510,10 @@
         margin-bottom: 0.85rem;
     }
 
-    .landing-feature strong {
+    .landing-feature h3 {
         display: block;
         font-size: 0.88rem;
+        font-weight: 700;
         margin-bottom: 0.45rem;
     }
 
@@ -554,13 +555,15 @@
         flex: 0 0 auto;
     }
 
-    .landing-security strong,
+    .landing-security h2,
     .landing-security span {
         display: block;
     }
 
-    .landing-security strong {
+    .landing-security h2 {
+        margin: 0;
         font-size: 0.82rem;
+        font-weight: 700;
     }
 
     .landing-security span {
@@ -758,7 +761,7 @@
 
 {% block app_shell %}
 <main class="wf-shell">
-    <section class="wf-frame landing-frame">
+    <div class="wf-frame landing-frame">
         <header class="landing-nav">
             <div class="landing-nav-left">
                 <a class="wf-logo" href="{% url 'home' %}" aria-label="MyValidCV home">
@@ -788,7 +791,7 @@
             <div class="landing-auth-note">Your validation workspace is syncing. The landing page is available while setup finishes.</div>
         {% endif %}
 
-        <section class="landing-hero">
+        <div class="landing-hero">
             <div class="landing-copy">
                 <h1>Validate Your <span class="landing-heading-cv">CV</span> with <span class="landing-heading-ai">AI</span></h1>
                 <div class="card landing-copy-card">
@@ -804,7 +807,7 @@
                 </div>
             </div>
 
-            <div class="landing-preview-wrap" aria-label="Example CV analysis preview">
+            <div class="landing-preview-wrap" role="region" aria-label="Example CV analysis preview">
                 <div class="landing-card-stack">
                     <div class="landing-cv-card">
                         <div class="landing-cv-head">
@@ -829,7 +832,7 @@
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
 
         <section id="reliefCarousel" class="carousel slide landing-relief-carousel" data-bs-ride="carousel" data-bs-interval="6500" aria-label="Why job seekers choose MyValidCV">
             <div class="carousel-indicators">
@@ -908,24 +911,25 @@
         </figure>
 
         <section id="features" class="landing-feature-grid">
+            <h2 class="visually-hidden">MyValidCV features</h2>
             <article class="wf-card landing-feature">
                 <div class="landing-feature-icon">AI</div>
-                <strong>AI CV Analysis for Job Applications</strong>
+                <h3>AI CV Analysis for Job Applications</h3>
                 <p>Use AI-powered CV analysis to compare your experience, qualifications, and achievements with a specific job description. Identify relevant evidence, missing information, and areas recruiters may expect before submitting your application.</p>
             </article>
             <article class="wf-card landing-feature">
                 <div class="landing-feature-icon">AT</div>
-                <strong>ATS CV Compatibility Checker</strong>
+                <h3>ATS CV Compatibility Checker</h3>
                 <p>Check how well your CV matches the language and requirements of a job advert. Review important skills, role-specific keywords, formatting considerations, and compatibility signals commonly evaluated by Applicant Tracking Systems.</p>
             </article>
             <article class="wf-card landing-feature">
                 <div class="landing-feature-icon">CV</div>
-                <strong>Personalised CV Improvement Suggestions</strong>
+                <h3>Personalised CV Improvement Suggestions</h3>
                 <p>Receive practical CV recommendations based on the role you want. Strengthen relevant experience, clarify professional achievements, improve skills presentation, and focus every section on truthful evidence that supports your application.</p>
             </article>
             <article class="wf-card landing-feature">
                 <div class="landing-feature-icon">IN</div>
-                <strong>Instant CV and Job Match Results</strong>
+                <h3>Instant CV and Job Match Results</h3>
                 <p>View your CV-to-job compatibility score and detailed feedback on the same page. Understand matched strengths, missing requirements, ATS readiness, and priority improvements so you can prepare a more focused application.</p>
             </article>
         </section>
@@ -934,7 +938,7 @@
             <div class="landing-security-copy">
                 <div class="landing-security-icon">S</div>
                 <div>
-                    <strong>Your data is secure and private</strong>
+                    <h2>Your data is secure and private</h2>
                     <span id="privacy">We use strong security controls to protect your personal information.</span>
                 </div>
             </div>
@@ -944,7 +948,7 @@
                 <a class="wf-btn wf-btn-primary" id="validate" href="{% url 'register' %}">Get Started For Free</a>
             {% endif %}
         </section>
-    </section>
+    </div>
 </main>
 {% include "includes/footer.html" %}
 {% endblock %}
