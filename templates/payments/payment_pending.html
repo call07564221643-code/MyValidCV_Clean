@@ -12,6 +12,8 @@
                     <p class="text-muted">
                         Reference: <strong>{{ transaction.checkout_reference }}</strong>
                     </p>
+                    <p>Stripe confirmation can take a few seconds. Use the button below to check again safely; access is enabled only after server-side confirmation.</p>
+                    <a href="{{ request.get_full_path }}" class="btn btn-primary">Check payment status</a>
                     <a href="{% url 'dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
                     <a href="{% url 'pricing' %}" class="btn btn-outline-secondary">Plans</a>
                 </div>

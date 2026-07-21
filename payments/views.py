@@ -193,6 +193,9 @@ def stripe_mock_checkout(request, checkout_reference):
 def stripe_success(request, checkout_reference):
     """Verify the returning user's Checkout Session before activation."""
     transaction = get_object_or_404(PaymentTransaction, checkout_reference=checkout_reference, user=request.user)
+    if transaction.status == "paid":
+        return redirect("payment_receipt", checkout_reference=transaction.checkout_reference)
+
     session_id = request.GET.get("session_id", "")
     if not session_id or session_id != transaction.provider_checkout_id:
         messages.warning(request, "Payment is awaiting Stripe confirmation.")
@@ -264,8 +267,10 @@ def stripe_webhook(request):
         )
     except IntegrityError:
         return JsonResponse({"ok": True, "duplicate": True})
-    if not created:
+    if not created and log.is_processed:
         return JsonResponse({"ok": True, "duplicate": True})
+    if not created:
+        log.error = ""
 
     try:
         if event_type in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
@@ -306,12 +311,15 @@ def stripe_webhook(request):
             stripe_subscription_id = stripe_invoice_subscription_id(stripe_object)
             set_subscription_inactive(stripe_subscription_id, "past_due")
             log.is_processed = True
+        else:
+            # Unsupported events are acknowledged so Stripe does not retry them.
+            log.is_processed = True
     except Exception as exc:
         log.error = str(exc)
         log.save(update_fields=["error"])
         return JsonResponse({"ok": False}, status=500)
 
-    log.save(update_fields=["is_processed"])
+    log.save(update_fields=["is_processed", "error"])
     return JsonResponse({"ok": True})
 
 
@@ -325,6 +333,9 @@ def payment_receipt(request, checkout_reference):
     if not hasattr(transaction, "invoice"):
         logger.error("Paid transaction %s has no invoice record.", transaction.checkout_reference)
         messages.warning(request, "Your payment exists, but the receipt is still being prepared.")
+        return render(request, "payments/payment_pending.html", {"transaction": transaction})
+    if transaction.status != "paid" or transaction.invoice.status != "paid":
+        messages.info(request, "Your payment is still awaiting confirmation.")
         return render(request, "payments/payment_pending.html", {"transaction": transaction})
     return render(request, "payments/receipt.html", {"transaction": transaction})
 

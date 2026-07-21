@@ -39,9 +39,9 @@ legitimately report HTTPS or cookie warnings; the deployed environment must use
 | Payments | Checkout controls, webhook processing, invoice/receipt behaviour and mock-mode safeguards |
 | Core UI | Landing-page calls to action, authenticated navigation, dashboards and Maya's safe fallback when the local Ollama service is unavailable |
 
-The complete suite contains 48 tests. Test output may include an expected logged
-Ollama connection error: the associated test deliberately verifies that Maya
-returns a safe fallback response when that optional service is unavailable.
+The complete suite contains 51 tests. Test output may include expected logged
+Ollama and webhook processing errors: the associated tests deliberately verify
+safe fallback and retry behaviour when an optional or external service fails.
 
 ## CRUD requirement traceability
 

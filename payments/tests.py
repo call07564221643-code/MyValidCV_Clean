@@ -7,13 +7,14 @@ from unittest.mock import MagicMock, patch
 from urllib.parse import parse_qs
 
 from django.contrib.auth.models import User
+from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from accounts.models import UserProfile
 from subscriptions.models import CustomerSubscription, DiscountCode, SubscriptionPlan
 
-from .models import PaymentTransaction
+from .models import Invoice, PaymentTransaction, PaymentWebhookLog
 from .services import create_stripe_checkout_session
 
 
@@ -129,6 +130,14 @@ class StripeCheckoutTests(TestCase):
             currency="GBP",
             status="pending",
         )
+        invoice = Invoice.objects.create(
+            user=self.user,
+            transaction=transaction,
+            invoice_number="MVCV-SUCCESS",
+            amount=self.plan.price,
+            currency="GBP",
+            status="open",
+        )
         retrieve_session.return_value = {
             "id": "cs_test_123",
             "mode": "subscription",
@@ -146,6 +155,66 @@ class StripeCheckoutTests(TestCase):
         transaction.refresh_from_db()
         self.assertEqual(transaction.status, "paid")
         self.assertEqual(UserProfile.objects.get(user=self.user).plan, "plus")
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.status, "paid")
+        self.assertIsNotNone(invoice.paid_at)
+        self.assertIsNotNone(invoice.next_payment_date)
+        self.assertEqual(invoice.receipt_email_status, "sent")
+        self.assertEqual(len(mail.outbox), 1)
+
+        receipt = self.client.get(response.url)
+        self.assertContains(receipt, "Payment confirmed")
+        self.assertContains(receipt, "Your subscription is active")
+
+        repeated = self.client.get(reverse("checkout_success", args=[transaction.checkout_reference]))
+        self.assertRedirects(repeated, reverse("payment_receipt", args=[transaction.checkout_reference]))
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_pending_transaction_cannot_display_confirmed_receipt(self):
+        transaction = PaymentTransaction.objects.create(
+            user=self.user,
+            plan=self.plan,
+            provider="stripe",
+            amount=self.plan.price,
+            currency="GBP",
+            status="pending",
+        )
+        Invoice.objects.create(
+            user=self.user,
+            transaction=transaction,
+            invoice_number="MVCV-PENDING",
+            amount=self.plan.price,
+            currency="GBP",
+            status="open",
+        )
+
+        response = self.client.get(reverse("payment_receipt", args=[transaction.checkout_reference]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "payments/payment_pending.html")
+        self.assertNotContains(response, "Payment confirmed")
+
+    def test_success_return_recovers_when_webhook_already_marked_payment_paid(self):
+        transaction = PaymentTransaction.objects.create(
+            user=self.user,
+            plan=self.plan,
+            provider="stripe",
+            amount=self.plan.price,
+            currency="GBP",
+            status="paid",
+        )
+        Invoice.objects.create(
+            user=self.user,
+            transaction=transaction,
+            invoice_number="MVCV-PAID",
+            amount=self.plan.price,
+            currency="GBP",
+            status="paid",
+        )
+
+        response = self.client.get(reverse("checkout_success", args=[transaction.checkout_reference]))
+
+        self.assertRedirects(response, reverse("payment_receipt", args=[transaction.checkout_reference]))
 
     @override_settings(STRIPE_WEBHOOK_SECRET="whsec_test")
     def test_webhook_rejects_invalid_signature(self):
@@ -204,6 +273,60 @@ class StripeCheckoutTests(TestCase):
         )
         self.assertEqual(duplicate.status_code, 200)
         self.assertTrue(duplicate.json()["duplicate"])
+
+    @override_settings(STRIPE_WEBHOOK_SECRET="whsec_test")
+    def test_failed_webhook_processing_can_be_retried(self):
+        transaction = PaymentTransaction.objects.create(
+            user=self.user,
+            plan=self.plan,
+            provider="stripe",
+            amount=self.plan.price,
+            currency="GBP",
+            status="pending",
+        )
+        payload = json.dumps({
+            "id": "evt_retry_checkout",
+            "type": "checkout.session.completed",
+            "data": {"object": {
+                "id": "cs_retry_checkout",
+                "payment_status": "paid",
+                "customer": "cus_retry_checkout",
+                "subscription": "sub_retry_checkout",
+                "metadata": {"checkout_reference": str(transaction.checkout_reference)},
+            }},
+        }).encode()
+        timestamp = int(time.time())
+        digest = hmac.new(
+            b"whsec_test",
+            f"{timestamp}.".encode() + payload,
+            hashlib.sha256,
+        ).hexdigest()
+        signature = f"t={timestamp},v1={digest}"
+
+        with patch("payments.views.activate_paid_transaction", side_effect=RuntimeError("temporary failure")):
+            failed = self.client.post(
+                reverse("stripe_webhook"),
+                data=payload,
+                content_type="application/json",
+                HTTP_STRIPE_SIGNATURE=signature,
+            )
+        self.assertEqual(failed.status_code, 500)
+        log = PaymentWebhookLog.objects.get(event_id="evt_retry_checkout")
+        self.assertFalse(log.is_processed)
+
+        retried = self.client.post(
+            reverse("stripe_webhook"),
+            data=payload,
+            content_type="application/json",
+            HTTP_STRIPE_SIGNATURE=signature,
+        )
+        self.assertEqual(retried.status_code, 200)
+        self.assertNotIn("duplicate", retried.json())
+        transaction.refresh_from_db()
+        self.assertEqual(transaction.status, "paid")
+        log.refresh_from_db()
+        self.assertTrue(log.is_processed)
+        self.assertEqual(log.error, "")
 
     @override_settings(STRIPE_WEBHOOK_SECRET="whsec_test")
     def test_subscription_deleted_webhook_revokes_paid_access(self):
