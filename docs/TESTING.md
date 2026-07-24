@@ -7,7 +7,7 @@ manual journey testing. The highest-risk areas are authentication, ownership of
 CV data, destructive actions, plan entitlements, payments and external-service
 failures.
 
-The automated suite was last run on 21 July 2026 with Python 3.12, Django 6.0.1
+The automated suite was last run on 24 July 2026 with Python 3.12, Django 6.0.1
 and the test SQLite database. Production uses PostgreSQL, so the live deployment
 must also receive a short smoke test after every release.
 
@@ -34,12 +34,14 @@ legitimately report HTTPS or cookie warnings; the deployed environment must use
 | Accounts | Registration without a username field, unique generated usernames, case-insensitive email login, username login, logout navigation, password-reset email, unknown-email privacy and duplicate-email validation |
 | Authorization | Login protection, owner-only report explorer, customer denial, CV ownership checks and prevention of cross-user update/delete |
 | CV management | Upload validation, list/read, title update, confirmation before deletion, POST deletion and cascading deletion of analysis results |
-| ATS analysis | File limits, executable rejection, private/non-HTTP URL rejection and scoring across relevant and irrelevant job roles |
+| ATS analysis | File signatures and limits, private/non-HTTP/nonstandard-port URL rejection, job-advert validation, evidence-level scoring, negated qualifications, Truth Gate confirmation and relevant/irrelevant role comparisons |
 | Plans | Active-subscription entitlements, Enterprise bulk access and protection against stale profile labels granting paid access |
 | Payments | Checkout controls, webhook processing, invoice/receipt behaviour and mock-mode safeguards |
 | Core UI | Landing-page calls to action, authenticated navigation, dashboards and Maya's safe fallback when the local Ollama service is unavailable |
+| Maya adviser | Curated service-topic retrieval, bounded conversation context, system-message rejection, non-retention metadata, input limits and grounded Ollama/fallback responses |
+| Experience feedback | Anonymous and authenticated ratings, ATS ownership checks, duplicate updates, testimonial consent/moderation, owner-only reporting and approved-only public display |
 
-The complete suite contains 51 tests. Test output may include expected logged
+The complete suite contains 72 tests. Test output may include expected logged
 Ollama and webhook processing errors: the associated tests deliberately verify
 safe fallback and retry behaviour when an optional or external service fails.
 

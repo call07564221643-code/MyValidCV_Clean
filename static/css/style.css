@@ -2255,6 +2255,157 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0.65rem 0.85rem;
 }
 
+/* Reusable experience feedback */
+.mvcv-feedback {
+    border: 1px solid rgba(79, 70, 229, 0.2);
+    border-radius: 18px;
+    background: linear-gradient(145deg, #ffffff, #f7f8ff);
+    box-shadow: 0 14px 34px rgba(31, 51, 116, 0.08);
+    color: #0f172a;
+    overflow: hidden;
+}
+
+.mvcv-feedback > summary {
+    align-items: center;
+    color: #1f3374;
+    cursor: pointer;
+    display: flex;
+    font-weight: 800;
+    gap: 0.55rem;
+    list-style: none;
+    padding: 0.9rem 1rem;
+}
+
+.mvcv-feedback > summary::-webkit-details-marker { display: none; }
+.mvcv-feedback-summary-icon { color: #d69e2e; font-size: 1.15rem; }
+.mvcv-feedback[open] > summary { border-bottom: 1px solid #e2e8f0; }
+
+.mvcv-feedback-form {
+    display: grid;
+    gap: 0.9rem;
+    padding: 1rem;
+}
+
+.mvcv-feedback fieldset {
+    border: 0;
+    margin: 0;
+    min-width: 0;
+    padding: 0;
+}
+
+.mvcv-feedback legend,
+.mvcv-feedback-comment > span {
+    color: #1f3374;
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 800;
+    margin-bottom: 0.45rem;
+}
+
+.mvcv-feedback legend span,
+.mvcv-feedback-comment small {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.mvcv-star-rating {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
+.mvcv-star-rating input {
+    height: 1px;
+    opacity: 0;
+    position: absolute;
+    width: 1px;
+}
+
+.mvcv-star-rating label {
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 1.8rem;
+    line-height: 1;
+    padding: 0.12rem;
+    transition: color 150ms ease, transform 150ms ease;
+}
+
+.mvcv-star-rating label:hover,
+.mvcv-star-rating label:hover ~ label,
+.mvcv-star-rating input:checked ~ label {
+    color: #d69e2e;
+}
+
+.mvcv-star-rating input:focus-visible + label {
+    border-radius: 5px;
+    outline: 3px solid rgba(79, 70, 229, 0.3);
+}
+
+.mvcv-star-rating label:hover { transform: translateY(-2px); }
+
+.mvcv-feedback-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.mvcv-feedback-categories legend { flex-basis: 100%; }
+.mvcv-feedback-categories label {
+    border: 1px solid #dbe3ef;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.76rem;
+    padding: 0.35rem 0.58rem;
+}
+
+.mvcv-feedback-categories label:has(input:checked) {
+    background: #eef3ff;
+    border-color: #4f46e5;
+    color: #1f3374;
+}
+
+.mvcv-feedback-categories input {
+    accent-color: #4f46e5;
+    margin-right: 0.25rem;
+}
+
+.mvcv-feedback-comment textarea,
+.mvcv-testimonial-option select {
+    border: 1px solid #dbe3ef;
+    border-radius: 12px;
+    color: #0f172a;
+    padding: 0.65rem;
+    width: 100%;
+}
+
+.mvcv-testimonial-option {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    display: grid;
+    font-size: 0.8rem;
+    gap: 0.55rem;
+    padding: 0.75rem;
+}
+
+.mvcv-testimonial-option[hidden] { display: none; }
+.mvcv-feedback-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 0.65rem; }
+.mvcv-feedback-actions button {
+    background: #1f3374;
+    border: 0;
+    border-radius: 999px;
+    color: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 800;
+    padding: 0.58rem 0.8rem;
+}
+
+.mvcv-feedback-actions [role="status"] { color: #15803d; font-size: 0.78rem; }
+.mvcv-feedback.compact { box-shadow: none; margin-top: 0.75rem; }
+.mvcv-feedback.compact > summary { font-size: 0.82rem; padding: 0.65rem 0.75rem; }
+.mvcv-feedback.compact .mvcv-feedback-form { padding: 0.75rem; }
+.mvcv-feedback.compact .mvcv-star-rating label { font-size: 1.5rem; }
+
 html[data-bs-theme="dark"] .mvcv-assistant-panel,
 html[data-bs-theme="dark"] .mvcv-assistant-form,
 html[data-bs-theme="dark"] .mvcv-assistant-message.bot,
@@ -2262,6 +2413,26 @@ html[data-bs-theme="dark"] .mvcv-assistant-prompts button {
     background: #111c33;
     color: #f8fafc;
     border-color: #273449;
+}
+
+html[data-bs-theme="dark"] .mvcv-feedback,
+html[data-bs-theme="dark"] .mvcv-testimonial-option {
+    background: #111c33;
+    border-color: #273449;
+    color: #f8fafc;
+}
+
+html[data-bs-theme="dark"] .mvcv-feedback legend,
+html[data-bs-theme="dark"] .mvcv-feedback-comment > span,
+html[data-bs-theme="dark"] .mvcv-feedback > summary {
+    color: #c7d2fe;
+}
+
+html[data-bs-theme="dark"] .mvcv-feedback-comment textarea,
+html[data-bs-theme="dark"] .mvcv-testimonial-option select {
+    background: #0b1224;
+    border-color: #334155;
+    color: #f8fafc;
 }
 
 html[data-bs-theme="dark"] .mvcv-assistant-body {

@@ -1,8 +1,12 @@
 import re
+import logging
 
 from django.core.exceptions import ImproperlyConfigured
 
 from .models import Qualification, RoleTemplate, Skill
+
+
+logger = logging.getLogger(__name__)
 
 
 BASE_SKILLS = [
@@ -49,6 +53,45 @@ MANDATORY_HINTS = (
     "certification", "qualified", "degree", "mandatory",
 )
 
+PREFERRED_HINTS = (
+    "advantage", "beneficial", "desirable", "ideally", "nice to have",
+    "optional", "preferred", "would be useful",
+)
+
+NEGATED_MANDATORY_PATTERNS = (
+    r"\bnot\s+(?:essential|required|mandatory)\b",
+    r"\bno\s+(?:licen[cs]e|qualification|degree|certification)\s+(?:is\s+)?required\b",
+    r"\b(?:licen[cs]e|qualification|degree|certification)\s+not\s+required\b",
+)
+
+EVIDENCE_SIGNALS = (
+    "achieved", "built", "coordinated", "created", "delivered", "developed",
+    "implemented", "improved", "increased", "led", "managed", "reduced",
+    "resolved", "supported", "trained", "using",
+)
+
+JOB_ADVERT_SIGNALS = (
+    "about the role", "candidate", "duties", "essential", "experience",
+    "job", "knowledge", "must", "position", "preferred", "qualification",
+    "required", "requirements", "responsibilities", "role", "skills",
+)
+
+
+def validate_job_description(job_description):
+    """Return whether text is substantial enough to support a meaningful score."""
+    text = re.sub(r"\s+", " ", (job_description or "")).strip()
+    if len(text) < 120:
+        return False, "The job advert is too short to produce a reliable role-match assessment."
+    signal_count = sum(1 for signal in JOB_ADVERT_SIGNALS if signal in text.lower())
+    if signal_count < 2:
+        return False, (
+            "The document does not appear to contain a complete job advert. "
+            "Include the role responsibilities, skills, experience, or qualifications."
+        )
+    if text.lower().startswith("job advert url:"):
+        return False, "The job advert page could not be read. Paste the full advert text instead."
+    return True, ""
+
 
 def calculate_score(cv_text, job_description, job_title=""):
     details = calculate_score_details(cv_text, job_description, job_title)
@@ -91,6 +134,20 @@ def calculate_score_details(cv_text, job_description, job_title=""):
         [term for term in taxonomy["mandatory_terms"] if _term_in_text(term, cv_lower)],
         taxonomy["mandatory_terms"],
     )
+    evidence_map = _build_evidence_map(
+        cv_text,
+        requirement_terms,
+        taxonomy["mandatory_terms"],
+        taxonomy["required_qualifications"],
+        job_lower,
+    )
+    evidenced = [item for item in evidence_map if item["status"] == "verified"]
+    mentioned = [item for item in evidence_map if item["status"] == "mentioned"]
+    evidence_score = min(
+        100,
+        int(((len(evidenced) + (len(mentioned) * 0.45)) / max(len(evidence_map), 1)) * 100),
+    )
+    format_score, format_checks = _calculate_format_score(cv_text)
 
     if not jd_skills and requirement_terms:
         skills_score = requirement_score
@@ -99,10 +156,12 @@ def calculate_score_details(cv_text, job_description, job_title=""):
 
     score = int(
         (skills_score * 0.22)
-        + (requirement_score * 0.32)
+        + (requirement_score * 0.27)
         + (title_score * 0.14)
-        + (keyword_score * 0.20)
+        + (keyword_score * 0.12)
         + (mandatory_score * 0.12)
+        + (evidence_score * 0.08)
+        + (format_score * 0.05)
     )
     score = max(0, min(100, score))
 
@@ -110,6 +169,10 @@ def calculate_score_details(cv_text, job_description, job_title=""):
         score = min(score, 49)
     elif requirement_terms and requirement_score < 20 and title_score < 35:
         score = min(score, 45)
+    elif len(requirement_terms) >= 5 and evidence_score < 20:
+        score = min(score, 59)
+    elif len(requirement_terms) >= 5 and evidence_score < 40:
+        score = min(score, 74)
     elif requirement_terms and requirement_score < 40:
         score = min(score, 59)
     elif missing_requirements and len(missing_requirements) >= max(3, len(requirement_terms) // 2):
@@ -128,6 +191,11 @@ def calculate_score_details(cv_text, job_description, job_title=""):
             "High role mismatch. The CV may be well written, but recruiters are unlikely to see enough evidence "
             "for this specific role. Add truthful role-specific experience before applying."
         )
+    elif len(requirement_terms) >= 5 and evidence_score < 20:
+        recommendation = (
+            "Keyword alignment is present, but the CV does not demonstrate enough of the requirements. "
+            "Add truthful examples, outcomes, qualifications, or project evidence before relying on the match."
+        )
     elif score >= 80:
         recommendation = "Strong role fit. Keep the top third focused on the matched requirements and measurable evidence."
     elif score >= 55:
@@ -138,6 +206,15 @@ def calculate_score_details(cv_text, job_description, job_title=""):
         recommendation = (
             "Weak match for this job. The CV needs clearer role-specific skills, keywords, and evidence before applying."
         )
+
+    requirement_groups = _classify_requirements(job_lower, requirement_terms, taxonomy["mandatory_terms"])
+    confidence_score, confidence_label, confidence_reasons = _calculate_confidence(
+        cv_text,
+        job_description,
+        requirement_terms,
+        evidence_map,
+        taxonomy.get("detected_role", ""),
+    )
 
     return {
         "score": score,
@@ -162,7 +239,18 @@ def calculate_score_details(cv_text, job_description, job_title=""):
             "title": title_score,
             "keywords": keyword_score,
             "mandatory": mandatory_score,
+            "evidence": evidence_score,
+            "format": format_score,
         },
+        "requirement_groups": requirement_groups,
+        "evidence_map": evidence_map,
+        "format_checks": format_checks,
+        "confidence": {
+            "score": confidence_score,
+            "label": confidence_label,
+            "reasons": confidence_reasons,
+        },
+        "model_version": "2.0",
     }
 
 
@@ -205,7 +293,10 @@ def load_taxonomy(job_text, job_title=""):
             "detected_role": role.title,
             "detected_family": role.job_family.name,
         }
-    except (ImproperlyConfigured, Exception):
+    except ImproperlyConfigured:
+        return empty
+    except Exception:
+        logger.exception("ATS taxonomy lookup failed; using advert-led scoring.")
         return empty
 
 
@@ -233,7 +324,9 @@ def _detect_mandatory_qualifications(job_text, qualifications):
     for qualification in qualifications:
         terms = qualification.terms()
         for sentence in sentences:
-            if any(_term_in_text(term, sentence) for term in terms) and (
+            is_negated = any(re.search(pattern, sentence) for pattern in NEGATED_MANDATORY_PATTERNS)
+            is_preferred = any(hint in sentence for hint in PREFERRED_HINTS)
+            if any(_term_in_text(term, sentence) for term in terms) and not is_negated and not is_preferred and (
                 qualification.is_license or any(hint in sentence for hint in MANDATORY_HINTS)
             ):
                 mandatory.append(qualification.normalized_name)
@@ -311,3 +404,124 @@ def _unique_keep_order(items):
             seen.add(normalized)
             unique.append(normalized)
     return unique
+
+
+def _sentences(text):
+    return [
+        re.sub(r"\s+", " ", part).strip(" -•\t")
+        for part in re.split(r"[\n\r]+|(?<=[.!?;])\s+", text or "")
+        if re.sub(r"\s+", " ", part).strip()
+    ]
+
+
+def _classify_requirements(job_text, terms, mandatory_terms):
+    groups = {"mandatory": [], "required": [], "preferred": [], "responsibilities": []}
+    mandatory_set = set(mandatory_terms)
+    for term in terms:
+        matching = [sentence for sentence in _sentences(job_text) if _term_in_text(term, sentence.lower())]
+        context = matching[0] if matching else ""
+        lower = context.lower()
+        if term in mandatory_set or (
+            any(hint in lower for hint in MANDATORY_HINTS)
+            and not any(hint in lower for hint in PREFERRED_HINTS)
+            and not any(re.search(pattern, lower) for pattern in NEGATED_MANDATORY_PATTERNS)
+        ):
+            group = "mandatory"
+        elif any(hint in lower for hint in PREFERRED_HINTS):
+            group = "preferred"
+        elif any(word in lower for word in ("responsib", "duties", "will ", "day-to-day")):
+            group = "responsibilities"
+        else:
+            group = "required"
+        groups[group].append({"term": term, "context": context[:240]})
+    return groups
+
+
+def _build_evidence_map(cv_text, requirements, mandatory_terms, qualification_terms, job_text):
+    cv_sentences = _sentences(cv_text)
+    mandatory_set = set(mandatory_terms)
+    qualification_set = set(qualification_terms)
+    classified = _classify_requirements(job_text, requirements, mandatory_terms)
+    type_by_term = {
+        item["term"]: group
+        for group, items in classified.items()
+        for item in items
+    }
+    evidence = []
+    for term in requirements:
+        passages = [sentence for sentence in cv_sentences if _term_in_text(term, sentence.lower())]
+        passage = passages[0][:300] if passages else ""
+        lower = passage.lower()
+        has_action = any(signal in lower for signal in EVIDENCE_SIGNALS)
+        has_measure = bool(re.search(r"\b\d+(?:\.\d+)?%?\b|£|\$", passage))
+        if passage and (has_action or has_measure or term in qualification_set):
+            status = "verified"
+            strength = "measurable" if has_measure else "demonstrated"
+            action = "Safe to retain after checking the wording against your experience."
+        elif passage:
+            status = "mentioned"
+            strength = "keyword only"
+            action = "Add a truthful example showing where and how you used this."
+        elif term in mandatory_set or term in qualification_set:
+            status = "proof_required"
+            strength = "not evidenced"
+            action = "Do not add this claim without the required qualification, licence, training, or proof."
+        else:
+            status = "confirmation_required"
+            strength = "not evidenced"
+            action = "Confirm that you genuinely have this experience before adding it."
+        evidence.append({
+            "term": term,
+            "requirement_type": type_by_term.get(term, "required"),
+            "status": status,
+            "strength": strength,
+            "passage": passage,
+            "action": action,
+        })
+    return evidence
+
+
+def _calculate_format_score(cv_text):
+    text = cv_text or ""
+    lower = text.lower()
+    checks = {
+        "contact_details": bool(
+            re.search(r"[\w.+-]+@[\w.-]+\.[a-z]{2,}", lower)
+            or re.search(r"\+?\d[\d\s().-]{7,}\d", text)
+        ),
+        "profile_section": any(term in lower for term in ("profile", "summary", "objective")),
+        "skills_section": "skills" in lower or "competencies" in lower,
+        "experience_section": any(term in lower for term in ("experience", "employment", "work history")),
+        "education_section": any(term in lower for term in ("education", "qualification", "certification")),
+        "readable_length": 450 <= len(text) <= 15000,
+        "achievement_evidence": bool(re.search(r"\b\d+(?:\.\d+)?%?\b|£|\$", text)),
+    }
+    score = int((sum(checks.values()) / len(checks)) * 100)
+    return score, checks
+
+
+def _calculate_confidence(cv_text, job_text, requirements, evidence_map, detected_role):
+    score = 0
+    reasons = []
+    if len(cv_text or "") >= 700:
+        score += 25
+    else:
+        reasons.append("The CV contains limited extractable text.")
+    if len(job_text or "") >= 500:
+        score += 25
+    else:
+        reasons.append("The job advert is relatively short.")
+    if len(requirements) >= 5:
+        score += 20
+    else:
+        reasons.append("Few distinct job requirements were detected.")
+    if detected_role:
+        score += 15
+    else:
+        reasons.append("No curated role template matched this advert.")
+    if any(item["passage"] for item in evidence_map):
+        score += 15
+    else:
+        reasons.append("Little requirement-level evidence was located in the CV.")
+    label = "High" if score >= 80 else "Medium" if score >= 55 else "Low"
+    return score, label, reasons or ["The documents contain sufficient detail for this assessment."]

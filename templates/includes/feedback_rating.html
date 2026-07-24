@@ -1,0 +1,63 @@
+<details class="mvcv-feedback {% if feedback_compact %}compact{% endif %}" data-feedback-widget>
+    <summary>
+        <span class="mvcv-feedback-summary-icon" aria-hidden="true">★</span>
+        {% if feedback_feature == "maya" %}Rate your Maya experience{% else %}Rate this experience{% endif %}
+    </summary>
+    <form class="mvcv-feedback-form"
+          data-feedback-form
+          data-feature="{{ feedback_feature }}"
+          data-context-id="{{ feedback_context_id|default:'' }}">
+        {% csrf_token %}
+        <fieldset>
+            <legend>How helpful was this?</legend>
+            <div class="mvcv-star-rating" aria-label="Choose one to five stars">
+                <input id="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-5" type="radio" name="rating" value="5" required>
+                <label for="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-5" title="5 stars"><span aria-hidden="true">★</span><span class="visually-hidden">5 stars</span></label>
+                <input id="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-4" type="radio" name="rating" value="4">
+                <label for="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-4" title="4 stars"><span aria-hidden="true">★</span><span class="visually-hidden">4 stars</span></label>
+                <input id="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-3" type="radio" name="rating" value="3">
+                <label for="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-3" title="3 stars"><span aria-hidden="true">★</span><span class="visually-hidden">3 stars</span></label>
+                <input id="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-2" type="radio" name="rating" value="2">
+                <label for="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-2" title="2 stars"><span aria-hidden="true">★</span><span class="visually-hidden">2 stars</span></label>
+                <input id="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-1" type="radio" name="rating" value="1">
+                <label for="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-1" title="1 star"><span aria-hidden="true">★</span><span class="visually-hidden">1 star</span></label>
+            </div>
+        </fieldset>
+
+        <fieldset class="mvcv-feedback-categories">
+            <legend>What stood out? <span>(optional)</span></legend>
+            <label><input type="checkbox" name="categories" value="clear"> Clear and useful</label>
+            <label><input type="checkbox" name="categories" value="easy"> Easy to use</label>
+            <label><input type="checkbox" name="categories" value="accurate"> Accurate result</label>
+            <label><input type="checkbox" name="categories" value="helpful"> Helpful recommendations</label>
+            <label><input type="checkbox" name="categories" value="needs_improvement"> Needs improvement</label>
+        </fieldset>
+
+        <label class="mvcv-feedback-comment">
+            <span>Anything else? <small>(optional)</small></span>
+            <textarea name="comment" maxlength="1200" rows="3" placeholder="Tell us what worked or what we should improve. Do not include sensitive CV or payment information."></textarea>
+        </label>
+
+        <div class="mvcv-testimonial-option" data-testimonial-option hidden>
+            <label>
+                <input type="checkbox" name="testimonial_consent">
+                You may review this comment for use as a public testimonial.
+            </label>
+            {% if user.is_authenticated %}
+                <label>
+                    Display as
+                    <select name="public_identity">
+                        <option value="anonymous">Verified MyValidCV user</option>
+                        <option value="first_name">My first name</option>
+                        <option value="initials">My initials</option>
+                    </select>
+                </label>
+            {% endif %}
+        </div>
+
+        <div class="mvcv-feedback-actions">
+            <button type="submit">Send feedback</button>
+            <span role="status" aria-live="polite" data-feedback-status></span>
+        </div>
+    </form>
+</details>

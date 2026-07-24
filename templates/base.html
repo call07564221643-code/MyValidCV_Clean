@@ -383,6 +383,9 @@
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'owner_reports' %}active{% endif %}" href="{% url 'owner_reports' %}">Owner Reports</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'owner_feedback' %}active{% endif %}" href="{% url 'owner_feedback' %}">Feedback</a>
+                            </li>
                         {% endif %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Reports</a>
@@ -457,17 +460,20 @@
             </header>
             <div class="mvcv-assistant-body" data-assistant-body>
                 <div class="mvcv-assistant-message bot">
-                    Hi, I am Maya. I can explain how MyValidCV works, what your report means, how payments work, and whether a plan is right for you.
+                    Hi, I am Maya. I understand MyValidCV’s services, ATS v2, plans, privacy, payments and Enterprise workflow. I use approved service information and do not permanently retain this chat.
                 </div>
                 <div class="mvcv-assistant-prompts" aria-label="Suggested questions">
                     <button type="button" data-assistant-prompt="How does MyValidCV work?">How it works</button>
                     <button type="button" data-assistant-prompt="What does the ATS report show?">Report meaning</button>
+                    <button type="button" data-assistant-prompt="What does the Truth Gate mean?">Truth Gate</button>
                     <button type="button" data-assistant-prompt="Which plan should I choose?">Choose plan</button>
                     <button type="button" data-assistant-prompt="How do payments and refunds work?">Payments/refunds</button>
                     <button type="button" data-assistant-prompt="Are there discounts?">Discounts</button>
                 </div>
+                {% include "includes/feedback_rating.html" with feedback_feature="maya" feedback_compact=True %}
             </div>
             <form class="mvcv-assistant-form" data-assistant-form>
+                {% csrf_token %}
                 <input type="text" data-assistant-input placeholder="Ask about CV validation, plans, reports..." aria-label="Ask Maya">
                 <button type="submit">Send</button>
             </form>

@@ -4,13 +4,14 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q, Sum
+from django.db.models import Avg, Count, Q, Sum
 from django.utils import timezone
 from accounts.models import UserProfile
 from ats.models import ApplicationReminder, ATSResult, CV, EnterpriseBatch, EnterpriseCandidateResult, GeneratedCV, JobRole
 from payments.models import Invoice, PaymentTransaction, Refund
 from subscriptions.models import CustomerSubscription, DiscountCode, SubscriptionPlan
 from subscriptions.services import get_entitlements
+from core.models import ExperienceFeedback
 
 
 def owner_required(user):
@@ -215,6 +216,15 @@ def owner_console(request):
             "secondary_label": "Financial inputs",
             "secondary_url": "admin:analytics_financialassumption_changelist",
         },
+        {
+            "title": "Experience feedback",
+            "value": ExperienceFeedback.objects.count(),
+            "text": "Review ratings, comments, feature trends, and testimonial consent.",
+            "primary_label": "Feedback report",
+            "primary_url": "owner_feedback",
+            "secondary_label": "Moderate",
+            "secondary_url": "admin:core_experiencefeedback_changelist",
+        },
     ]
 
     context = {
@@ -263,4 +273,35 @@ def owner_reports(request):
         "batches": batches[:100],
         "result_count": results.count(),
         "batch_count": batches.count(),
+    })
+
+
+@login_required(login_url="login")
+def owner_feedback(request):
+    if not request.user.is_superuser:
+        return render(request, "dashboard/owner_forbidden.html", status=403)
+
+    feedback = ExperienceFeedback.objects.select_related("user")
+    feature = request.GET.get("feature", "").strip()
+    if feature in dict(ExperienceFeedback.FEATURE_CHOICES):
+        feedback = feedback.filter(feature=feature)
+    summary = feedback.aggregate(
+        count=Count("id"),
+        average=Avg("rating"),
+    )
+    distribution = {
+        row["rating"]: row["count"]
+        for row in feedback.values("rating").annotate(count=Count("id"))
+    }
+    return render(request, "dashboard/owner_feedback.html", {
+        "feedback": feedback[:100],
+        "selected_feature": feature,
+        "feature_choices": ExperienceFeedback.FEATURE_CHOICES,
+        "summary": {
+            "count": summary["count"] or 0,
+            "average": round(summary["average"] or 0, 1),
+            "pending_testimonials": feedback.filter(moderation_status="pending").count(),
+            "positive": feedback.filter(rating__gte=4).count(),
+        },
+        "distribution": distribution,
     })

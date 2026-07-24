@@ -4,6 +4,47 @@ MyValidCV is a Django micro-SaaS for CV-to-job ATS analysis, paid individual
 document generation, Enterprise bulk screening, recurring Stripe subscriptions,
 social login and 30-day CV retention.
 
+## ATS v2
+
+ATS v2 provides an explainable **CV-to-role evidence match**, not a prediction
+of hiring success. It validates the job advert, separates mandatory, required,
+preferred and responsibility requirements, and links detected requirements to
+the supporting CV passage.
+
+The Truth Gate classifies each item as:
+
+- verified in the CV;
+- mentioned without supporting evidence;
+- candidate confirmation required; or
+- proof, training, qualification or licence required.
+
+Only verified CV evidence is eligible for automatic reuse. Component scores for
+skills, requirements, evidence and readability are measured independently, and
+the report includes an assessment-confidence indicator. Enterprise rankings are
+advisory, preserve equal ranks for tied scores and always require human review.
+
+## Maya service adviser
+
+Maya is grounded at request time from the maintained MyValidCV service knowledge
+in `core/maya_knowledge.py`. Relevant topics are supplied to Ollama alongside
+safe, minimal account context such as the signed-in user's active service level
+and analysis allowance. Maya can explain ATS v2, Truth Gate evidence, plans,
+documents, Enterprise screening, payments, privacy and service limitations.
+
+Chat messages are not used to train the model or permanently retained by this
+feature. Only a bounded recent conversation is sent for continuity. Maya must
+not invent prices, discounts, entitlements, refund decisions or hiring outcomes,
+and account-specific support remains with `support@myvalidcv.com`.
+
+## Experience feedback
+
+ATS results and Maya include an accessible five-star experience rating with
+optional feedback categories and comments. Feedback is private by default.
+Four- and five-star comments can enter testimonial moderation only when the user
+explicitly grants permission. The owner feedback report shows aggregate ratings
+and recent comments; only owner-approved, opted-in testimonials can appear on
+the public landing page.
+
 ## Product plans
 
 | Plan | Monthly allowance | Included services |
@@ -18,7 +59,7 @@ never grants paid access.
 
 ## Active Django apps
 
-- `core`: read-only landing page.
+- `core`: landing page, Maya service adviser and experience feedback.
 - `accounts`: local/social authentication, settings and usage profile.
 - `subscriptions`: plans, subscriptions, discounts and entitlement policy.
 - `payments`: Stripe Checkout, signed webhooks, invoices and receipts.
@@ -124,3 +165,19 @@ python manage.py check --deploy
 
 Mock Stripe checkout is available only when both `DEBUG=True` and
 `STRIPE_MOCK_MODE=True`; it is unreachable in production.
+
+## Google PageSpeed Insights
+
+### Desktop loading speed
+
+![MyValidCV Google PageSpeed Insights desktop loading speed result](static/images/MVCV-%20Desk%20Top%20Speed%20test%20%26%20performance.png)
+
+### Mobile loading speed
+
+![MyValidCV Google PageSpeed Insights mobile loading speed result](static/images/MVCV-%20Mobil%20Speed%20test%20%26%20performance.png)
+
+## W3C HTML validation
+
+The W3C Nu HTML Checker completed validation with no errors or warnings.
+
+![MyValidCV W3C Nu HTML Checker validation result](static/images/MVCV-%20html%20test%20%26%20performance.png)

@@ -934,6 +934,21 @@
             </article>
         </section>
 
+        {% if testimonials %}
+            <section class="landing-feature-grid" aria-labelledby="testimonialHeading">
+                <h2 id="testimonialHeading" style="grid-column: 1 / -1;">What verified users say</h2>
+                {% for testimonial in testimonials %}
+                    <article class="wf-card landing-feature">
+                        <div class="text-warning" aria-label="{{ testimonial.rating }} out of 5 stars">
+                            ★{% if testimonial.rating >= 2 %}★{% endif %}{% if testimonial.rating >= 3 %}★{% endif %}{% if testimonial.rating >= 4 %}★{% endif %}{% if testimonial.rating >= 5 %}★{% endif %}
+                        </div>
+                        <blockquote class="mb-2">“{{ testimonial.comment }}”</blockquote>
+                        <p class="mb-0"><strong>{{ testimonial.public_name }}</strong> · {{ testimonial.get_feature_display }}</p>
+                    </article>
+                {% endfor %}
+            </section>
+        {% endif %}
+
         <section id="security" class="landing-security">
             <div class="landing-security-copy">
                 <div class="landing-security-icon">S</div>

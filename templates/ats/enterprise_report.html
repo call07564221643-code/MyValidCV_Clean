@@ -32,7 +32,7 @@
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <p class="text-muted mb-1">Shortlist 80%+</p>
+                    <p class="text-muted mb-1">High alignment 80%+</p>
                     <h2 class="h4 mb-0 text-success">{{ summary.shortlisted_count }}</h2>
                 </div>
             </div>
@@ -57,9 +57,9 @@
 
     {% if summary.top_candidate %}
         <div class="alert alert-light border shadow-sm mb-4">
-            <strong>Decision summary:</strong>
-            Top-ranked candidate is {{ summary.top_candidate.candidate_name }} at {{ summary.top_candidate.score }}%.
-            Shortlist candidates above 80%, review 60-79%, and request more evidence below 60%.
+            <strong>Human review required:</strong>
+            The highest document-alignment result is {{ summary.top_candidate.candidate_name }} at {{ summary.top_candidate.score }}%.
+            Scores compare CV text with the role; they must not be used as an automatic hiring or rejection decision.
         </div>
     {% endif %}
 
@@ -89,9 +89,9 @@
                                     </td>
                                     <td>
                                         {% if result.score >= 80 %}
-                                            <span class="badge text-bg-success">Shortlist</span>
+                                            <span class="badge text-bg-success">High-alignment review</span>
                                         {% elif result.score >= 60 %}
-                                            <span class="badge text-bg-warning">Review</span>
+                                            <span class="badge text-bg-warning">Evidence review</span>
                                         {% else %}
                                             <span class="badge text-bg-secondary">Low match</span>
                                         {% endif %}

@@ -5,6 +5,8 @@ object ownership, plan entitlement, quotas and final database writes.
 """
 
 from django import forms
+import zipfile
+
 from .models import CV
 
 
@@ -18,6 +20,34 @@ def validate_document(uploaded_file):
         raise forms.ValidationError("Upload a PDF, DOCX or TXT document.")
     if uploaded_file.size > MAX_DOCUMENT_SIZE:
         raise forms.ValidationError("Each document must be 5 MB or smaller.")
+    uploaded_file.seek(0)
+    header = uploaded_file.read(8)
+    uploaded_file.seek(0)
+    if filename.endswith(".pdf") and not header.startswith(b"%PDF-"):
+        raise forms.ValidationError("This file has a PDF name but does not contain a valid PDF signature.")
+    if filename.endswith(".docx"):
+        if not header.startswith(b"PK"):
+            raise forms.ValidationError("This file has a DOCX name but is not a valid Office document.")
+        try:
+            with zipfile.ZipFile(uploaded_file) as archive:
+                if "word/document.xml" not in archive.namelist():
+                    raise forms.ValidationError("The DOCX file does not contain a readable Word document.")
+        except (zipfile.BadZipFile, OSError):
+            raise forms.ValidationError("The uploaded DOCX file is damaged or invalid.")
+        finally:
+            uploaded_file.seek(0)
+    if filename.endswith(".txt"):
+        sample = uploaded_file.read(min(uploaded_file.size, 4096))
+        uploaded_file.seek(0)
+        if b"\x00" in sample:
+            raise forms.ValidationError("The TXT upload contains binary data and cannot be read safely.")
+        try:
+            sample.decode("utf-8")
+        except UnicodeDecodeError:
+            try:
+                sample.decode("latin-1")
+            except UnicodeDecodeError:
+                raise forms.ValidationError("The TXT upload uses an unsupported text encoding.")
     return uploaded_file
 
 
