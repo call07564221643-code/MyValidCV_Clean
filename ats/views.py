@@ -2,6 +2,7 @@ import re
 import urllib.request
 import csv
 import ipaddress
+import logging
 import socket
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
@@ -28,12 +29,13 @@ from .models import (
 )
 from accounts.models import UserProfile
 from .engine import ats_engine
-from .scoring import calculate_score, calculate_score_details
+from .scoring import calculate_score, calculate_score_details, validate_job_description
 from subscriptions.services import get_active_subscription, get_entitlements
 
 
 APPLY_STRONG_THRESHOLD = 75
 APPLY_MINIMUM_THRESHOLD = 55
+logger = logging.getLogger(__name__)
 
 
 def get_user_profile(user):
@@ -152,6 +154,8 @@ def _validate_public_job_url(url):
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username or parsed.password:
         raise ValueError("Only public HTTP(S) job URLs are allowed.")
+    if parsed.port and parsed.port not in (80, 443):
+        raise ValueError("Job URLs may use only standard HTTP or HTTPS ports.")
     for address in socket.getaddrinfo(parsed.hostname, parsed.port or 443, type=socket.SOCK_STREAM):
         ip = ipaddress.ip_address(address[4][0])
         if not ip.is_global:
@@ -174,6 +178,14 @@ def fetch_job_url_text(url):
         # up a web worker for most of Gunicorn's request timeout.
         opener = urllib.request.build_opener(_SafeJobRedirectHandler())
         with opener.open(request, timeout=4) as response:
+            peer_socket = getattr(getattr(getattr(response, "fp", None), "raw", None), "_sock", None)
+            if peer_socket:
+                peer_ip = ipaddress.ip_address(peer_socket.getpeername()[0])
+                if not peer_ip.is_global:
+                    raise ValueError("The job URL connected to a private or local address.")
+            content_type = response.headers.get_content_type()
+            if content_type not in {"text/html", "text/plain", "application/xhtml+xml"}:
+                raise ValueError("The job URL did not return a readable web page.")
             html = response.read(300000).decode("utf-8", errors="ignore")
         text = re.sub(r"<(script|style).*?</\1>", " ", html, flags=re.DOTALL | re.IGNORECASE)
         text = re.sub(r"<[^>]+>", " ", text)
@@ -192,7 +204,7 @@ def build_job_description(form):
     url_text = fetch_job_url_text(form.cleaned_data["job_url"])
     if url_text:
         return url_text
-    return f"Job advert URL: {form.cleaned_data['job_url']}. Add the full job text if this page cannot be fetched."
+    return ""
 
 
 def infer_job_title(form, job_description):
@@ -310,7 +322,6 @@ Application Decision
 Change Legend
 [GREEN] Rewording only: same evidence, clearer ATS/recruiter wording.
 [YELLOW] Window-dressed wording: stronger presentation of existing evidence; do not invent facts.
-[RED] Evidence gap: CV owner must be ready with training, licence, certification, or truthful proof before claiming it.
 
 Professional Summary
 [GREEN] Candidate with experience relevant to {result.job_title}, with visible evidence in {matched_text}. The profile should keep the strongest role-matched evidence in the first third of the CV.
@@ -318,14 +329,10 @@ Professional Summary
 Key Skills to Emphasise
 [GREEN] {matched_text}
 
-Skills or Evidence to Add Truthfully
-[RED] {missing_text}
-
 Recommended CV Changes
 1. [GREEN] Move the most relevant matched skills into the top third of the CV.
 2. [YELLOW] Add measurable examples beside each matched skill using evidence already in the CV or real work history.
-3. [RED] Add missing skills only when the candidate genuinely has experience, training, licence, or certification.
-4. [YELLOW] Remove or shorten content that does not support this specific role.
+3. [YELLOW] Remove or shorten content that does not support this specific role.
 
 Original CV Content Reference
 {cv_text[:2500]}
@@ -350,7 +357,7 @@ def clean_cover_letter_title(title):
 def clean_cover_letter_company(company):
     company = re.sub(r"\s+", " ", (company or "").strip(" -:"))
     if not company or company.lower() in {"hiring manager", "unknown", "n/a"} or len(company) > 80:
-        return "your team"
+        return "your organisation"
     return company
 
 
@@ -370,18 +377,16 @@ def build_cover_letter(user, result, matched, cv_text=""):
         )
     return f"""Dear Hiring Manager,
 
-I am applying for {role_title}. Your advert appears to prioritise {strengths_text}, and my CV has been tailored to make this evidence easier to identify.
+I am writing to apply for the position of {role_title} at {company}. Having reviewed the requirements, I believe my experience in {strengths_text} would enable me to make a positive contribution.
 
-The strongest CV evidence for this application is: {evidence_text}
+My suitability is supported by the following experience: {evidence_text}
 
-I would welcome the opportunity to discuss how this experience can support {company}. I have kept this application focused on evidence already present in my CV and would be pleased to expand on it at interview.
+I would welcome the opportunity to discuss how my skills and experience align with your priorities for this role. I would be pleased to provide further detail at interview.
 
-Thank you for considering my application.
+Thank you for your time and consideration.
 
 Yours sincerely,
 {name}
-
-Draft note: personalise the greeting, company name, and any figures before sending.
 """
 
 
@@ -390,21 +395,17 @@ def can_download_generated_cv(user):
     return get_entitlements(user).generated_documents
 
 
-def score_breakdown(score, matched, missing):
-    matched_count = len(matched)
-    missing_count = len(missing)
-    skills_score = score
-    keyword_score = min(100, max(35, score + 6 if matched_count else score))
-    experience_score = min(100, max(30, score + 10 if matched_count >= 2 else score - 5))
-    format_score = 86
+def score_breakdown(score, matched, missing, metrics=None):
+    """Return measured ATS v2 components rather than inferred percentages."""
+    components = (metrics or {}).get("score_components", {})
     return {
-        "skills": skills_score,
-        "keywords": keyword_score,
-        "experience": experience_score,
-        "format": format_score,
+        "skills": components.get("skills", 0),
+        "requirements": components.get("requirements", 0),
+        "evidence": components.get("evidence", 0),
+        "format": components.get("format", 0),
         "total": score,
-        "matched_count": matched_count,
-        "missing_count": missing_count,
+        "matched_count": len(matched),
+        "missing_count": len(missing),
     }
 
 
@@ -432,33 +433,33 @@ def build_application_decision(score):
     if score >= APPLY_STRONG_THRESHOLD:
         return {
             "status": "worth",
-            "label": "Worth applying",
+            "label": "Strong CV-to-role alignment",
             "threshold": APPLY_STRONG_THRESHOLD,
             "can_rewrite": True,
             "message": (
-                f"It is worth applying for this job role. Your success signal is above {APPLY_STRONG_THRESHOLD}%, "
-                "which means the CV shows enough role evidence to justify a focused application."
+                f"Your CV is aligned above the {APPLY_STRONG_THRESHOLD}% evidence-review threshold. "
+                "This is not a prediction of hiring success; confirm every claim and mandatory requirement before applying."
             ),
         }
     if score >= APPLY_MINIMUM_THRESHOLD:
         return {
             "status": "improve",
-            "label": "Possible, but improve first",
+            "label": "Strengthen the evidence",
             "threshold": APPLY_MINIMUM_THRESHOLD,
             "can_rewrite": True,
             "message": (
-                f"You may have a chance, but improve the CV before applying. The score is above the minimum "
-                f"{APPLY_MINIMUM_THRESHOLD}% review line, but below the stronger shortlist signal of {APPLY_STRONG_THRESHOLD}%."
+                f"The CV shows partial alignment above the {APPLY_MINIMUM_THRESHOLD}% review threshold. "
+                "Strengthen the identified evidence gaps before deciding whether to apply."
             ),
         }
     return {
         "status": "low",
-        "label": "Low chance for this role",
+        "label": "Significant evidence gap",
         "threshold": APPLY_MINIMUM_THRESHOLD,
         "can_rewrite": False,
         "message": (
-            "You do not currently have a strong chance with this job role because the CV does not meet the minimum "
-            f"{APPLY_MINIMUM_THRESHOLD}% role-fit standard used by MyValidCV for a credible application review."
+            "The CV does not currently meet the minimum "
+            f"{APPLY_MINIMUM_THRESHOLD}% evidence-alignment threshold. This describes the document match, not your personal potential."
         ),
     }
 
@@ -579,17 +580,17 @@ def build_report_insights(result, matched, missing):
     if result.score >= 80:
         readiness_label = "Ready to apply"
         readiness_class = "ready"
-        recruiter_view = "Recruiters are likely to see a clear role match if the strongest evidence stays near the top."
+        recruiter_view = "The document shows clear role alignment when the strongest verified evidence stays near the top."
         weakness_summary = "Main risk: strong evidence may be buried, generic, or not measurable."
     elif result.score >= 55:
         readiness_label = "Needs work before applying"
         readiness_class = "work"
-        recruiter_view = "Recruiters may see partial fit, but the match is not immediate enough."
+        recruiter_view = "The document shows partial fit, but the supporting evidence is not immediate enough."
         weakness_summary = "Main risk: relevant experience is present but not visible or proven enough."
     else:
         readiness_label = "High risk of being screened out"
         readiness_class = "risk"
-        recruiter_view = "Recruiters may not see enough role fit quickly."
+        recruiter_view = "The document does not yet show enough role-specific evidence."
         weakness_summary = "Main risk: visible CV evidence does not meet enough of the role requirements."
 
     top_fixes = [
@@ -615,6 +616,27 @@ def build_report_insights(result, matched, missing):
         "weakness_summary": weakness_summary,
         "top_fixes": top_fixes[:5],
     }
+
+
+def build_interview_prompts(evidence_map):
+    prompts = []
+    for item in evidence_map or []:
+        term = item.get("term", "this requirement")
+        if item.get("status") == "verified":
+            prompt = (
+                f"Tell me about a time you used {term}. Explain the situation, your actions, "
+                "and the measurable result."
+            )
+        elif item.get("status") == "mentioned":
+            prompt = f"Your CV mentions {term}. What specific example proves your level of experience?"
+        elif item.get("status") == "proof_required":
+            prompt = f"If asked about {term}, clearly explain your current qualification, licence, or training status."
+        else:
+            prompt = f"How would you respond honestly if the interviewer asks about your experience with {term}?"
+        prompts.append(prompt)
+        if len(prompts) >= 6:
+            break
+    return prompts
 
 
 def save_inline_cv(request, form):
@@ -769,8 +791,9 @@ def analyse_cv(request):
 
             job_description = build_job_description(form)
 
-            if len(job_description.strip()) < 30:
-                form.add_error(None, "The job description could not be read. Paste the job text directly and try again.")
+            valid_job, job_reason = validate_job_description(job_description)
+            if not valid_job:
+                form.add_error(None, job_reason)
                 return render_home_workspace(form)
 
             job_title = infer_job_title(form, job_description)
@@ -798,9 +821,15 @@ def analyse_cv(request):
             matched = details["matched"]
             missing = details["missing"]
             recommendation = details["recommendation"]
-            metrics = score_breakdown(score, matched, missing)
-            metrics["taxonomy"] = details.get("taxonomy", {})
-            metrics["score_components"] = details.get("score_components", {})
+            metrics = {
+                "taxonomy": details.get("taxonomy", {}),
+                "score_components": details.get("score_components", {}),
+                "requirement_groups": details.get("requirement_groups", {}),
+                "evidence_map": details.get("evidence_map", []),
+                "format_checks": details.get("format_checks", {}),
+                "confidence": details.get("confidence", {}),
+                "model_version": details.get("model_version", "2.0"),
+            }
 
             result = ATSResult.objects.create(
                 user=request.user,
@@ -857,6 +886,7 @@ def analyse_cv(request):
 
 
 @login_required(login_url="login")
+@require_http_methods(["GET", "POST"])
 def result_detail(request, result_id):
     if request.user.is_superuser:
         result = get_object_or_404(ATSResult, id=result_id)
@@ -865,7 +895,42 @@ def result_detail(request, result_id):
     cv_text = extract_cv_text(result.cv)
     matched = [item.strip() for item in result.matched_skills.split(",") if item.strip()]
     missing = [item.strip() for item in result.missing_skills.split(",") if item.strip()]
-    breakdown = score_breakdown(result.score, matched, missing)
+    ats_v2 = result.metrics or {}
+    if ats_v2.get("model_version") != "2.0":
+        current_details = calculate_score_details(cv_text, result.job_description, result.job_title)
+        ats_v2 = {
+            **ats_v2,
+            "score_components": current_details.get("score_components", {}),
+            "requirement_groups": current_details.get("requirement_groups", {}),
+            "evidence_map": current_details.get("evidence_map", []),
+            "format_checks": current_details.get("format_checks", {}),
+            "confidence": current_details.get("confidence", {}),
+            "model_version": "2.0",
+            "historic_score": True,
+        }
+    if request.method == "POST":
+        if result.user_id != request.user.id:
+            messages.error(request, "Only the candidate who owns this report can confirm its evidence.")
+            return redirect("ats_result", result_id=result.id)
+        requirement = re.sub(r"\s+", " ", request.POST.get("requirement", "")).strip().lower()
+        action = request.POST.get("evidence_action", "")
+        allowed_actions = {"confirmed", "training", "not_have"}
+        valid_terms = {item.get("term", "").lower() for item in ats_v2.get("evidence_map", [])}
+        if requirement not in valid_terms or action not in allowed_actions:
+            messages.error(request, "That evidence confirmation could not be recorded.")
+        else:
+            stored_metrics = dict(result.metrics or {})
+            confirmations = dict(stored_metrics.get("candidate_confirmations") or {})
+            confirmations[requirement] = action
+            stored_metrics["candidate_confirmations"] = confirmations
+            result.metrics = stored_metrics
+            result.save(update_fields=["metrics", "updated_at"])
+            messages.success(request, f"Your evidence status for “{requirement}” was recorded.")
+        return redirect("ats_result", result_id=result.id)
+    ats_v2["candidate_confirmations"] = (result.metrics or {}).get("candidate_confirmations", {})
+    for evidence_item in ats_v2.get("evidence_map", []):
+        evidence_item["candidate_action"] = ats_v2["candidate_confirmations"].get(evidence_item.get("term", ""))
+    breakdown = score_breakdown(result.score, matched, missing, ats_v2)
     match_intelligence = build_match_intelligence(result, cv_text)
     report_insights = build_report_insights(result, matched, missing)
     application_decision = build_application_decision(result.score)
@@ -890,6 +955,8 @@ def result_detail(request, result_id):
             "suggested_cv_review": suggested_cv_review,
             "cv_draft_preview": cv_draft_preview,
             "can_download": can_download_generated_cv(request.user),
+            "ats_v2": ats_v2,
+            "interview_prompts": build_interview_prompts(ats_v2.get("evidence_map", [])),
         },
     )
 
@@ -944,8 +1011,9 @@ def enterprise_bulk_upload(request):
                     return render(request, "ats/enterprise_bulk.html", {"form": form})
 
             job_description = build_job_description(form)
-            if len(job_description.strip()) < 30:
-                form.add_error(None, "The job role could not be read. Paste the job text directly and try again.")
+            valid_job, job_reason = validate_job_description(job_description)
+            if not valid_job:
+                form.add_error(None, job_reason)
                 return render(request, "ats/enterprise_bulk.html", {"form": form})
 
             job_title = infer_job_title(form, job_description)
@@ -994,8 +1062,13 @@ def enterprise_bulk_upload(request):
                 candidate_results.append(candidate)
 
             ranked = sorted(candidate_results, key=lambda item: item.score, reverse=True)
+            previous_score = None
+            current_rank = 0
             for index, candidate in enumerate(ranked, start=1):
-                candidate.rank = index
+                if candidate.score != previous_score:
+                    current_rank = index
+                    previous_score = candidate.score
+                candidate.rank = current_rank
                 candidate.save()
 
             messages.success(request, f"Enterprise report created for {len(ranked)} CV(s).")
@@ -1046,7 +1119,15 @@ def enterprise_report_csv(request, batch_id):
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = f'attachment; filename="mvcv-enterprise-report-{batch.id}.csv"'
     writer = csv.writer(response)
-    writer.writerow(["Rank", "Candidate", "Score", "Matched Skills", "Missing Skills", "Recommendation"])
+    writer.writerow([
+        "Advisory Rank",
+        "Candidate",
+        "Document Alignment Score",
+        "Matched Skills",
+        "Missing Evidence",
+        "Recommendation",
+        "Human Review Required",
+    ])
     for result in batch.candidate_results.all():
         writer.writerow([
             result.rank,
@@ -1055,5 +1136,6 @@ def enterprise_report_csv(request, batch_id):
             result.matched_skills,
             result.missing_skills,
             result.recommendation,
+            "Yes - do not use this score as an automatic hiring or rejection decision.",
         ])
     return response

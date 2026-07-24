@@ -187,7 +187,76 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Setup reusable copy buttons
     setupCopyActions();
+
+    // Setup reusable experience ratings
+    setupFeedbackRatings();
 });
+
+function setupFeedbackRatings() {
+    document.querySelectorAll('[data-feedback-form]').forEach((form) => {
+        const widget = form.closest('[data-feedback-widget]');
+        const status = form.querySelector('[data-feedback-status]');
+        const testimonial = form.querySelector('[data-testimonial-option]');
+        const submit = form.querySelector('button[type="submit"]');
+        const ratingInputs = form.querySelectorAll('input[name="rating"]');
+
+        const updateTestimonialOption = () => {
+            const selected = form.querySelector('input[name="rating"]:checked');
+            testimonial.hidden = !selected || Number(selected.value) < 4;
+            if (testimonial.hidden) {
+                const consent = form.querySelector('input[name="testimonial_consent"]');
+                if (consent) consent.checked = false;
+            }
+        };
+        ratingInputs.forEach((input) => input.addEventListener('change', updateTestimonialOption));
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const selected = form.querySelector('input[name="rating"]:checked');
+            if (!selected) {
+                status.textContent = 'Choose one to five stars.';
+                return;
+            }
+            const categories = Array.from(form.querySelectorAll('input[name="categories"]:checked'))
+                .map((input) => input.value);
+            const payload = {
+                feature: form.dataset.feature,
+                context_id: form.dataset.contextId || null,
+                rating: Number(selected.value),
+                categories,
+                comment: form.querySelector('[name="comment"]')?.value || '',
+                testimonial_consent: Boolean(form.querySelector('[name="testimonial_consent"]')?.checked),
+                public_identity: form.querySelector('[name="public_identity"]')?.value || 'anonymous',
+                page_path: window.location.pathname
+            };
+            submit.disabled = true;
+            status.textContent = 'Saving...';
+            try {
+                const response = await fetch('/feedback/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': form.querySelector('[name="csrfmiddlewaretoken"]')?.value || Utils.getCsrfToken()
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Feedback could not be saved.');
+                status.textContent = data.message;
+                form.querySelectorAll('input, textarea, select, button').forEach((field) => {
+                    field.disabled = true;
+                });
+                if (widget) {
+                    const summaryText = widget.querySelector('summary');
+                    summaryText.setAttribute('aria-label', `Feedback saved: ${payload.rating} out of 5 stars`);
+                }
+            } catch (error) {
+                status.textContent = error.message || 'Feedback could not be saved. Please try again.';
+                submit.disabled = false;
+            }
+        });
+    });
+}
 
 function setupCopyActions() {
     const buttons = document.querySelectorAll('[data-copy-target]');
@@ -267,6 +336,8 @@ function setupSiteAssistant() {
     const input = assistant.querySelector('[data-assistant-input]');
     const body = assistant.querySelector('[data-assistant-body]');
     const prompts = assistant.querySelectorAll('[data-assistant-prompt]');
+    const csrfToken = form.querySelector('[name="csrfmiddlewaretoken"]')?.value || '';
+    const history = [];
 
     const addMessage = (text, sender = 'bot') => {
         const message = document.createElement('div');
@@ -274,6 +345,8 @@ function setupSiteAssistant() {
         message.textContent = text;
         body.appendChild(message);
         body.scrollTop = body.scrollHeight;
+        history.push({role: sender === 'user' ? 'user' : 'assistant', content: text});
+        if (history.length > 8) history.splice(0, history.length - 8);
     };
 
     const respond = async (question) => {
@@ -282,8 +355,11 @@ function setupSiteAssistant() {
         try {
             const response = await fetch('/assistant/', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({question})
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({question, history: history.slice(0, -1)})
             });
             if (response.ok) {
                 const data = await response.json();
@@ -335,7 +411,7 @@ function getAssistantAnswer(question) {
     }
 
     if (q.includes('report') || q.includes('score') || q.includes('ats') || q.includes('result')) {
-        return 'Your report explains role fit, matched evidence, missing requirements, must-have gaps, and recruiter-facing recommendations. The most useful part is not the score alone: look at why the CV is weak, what evidence is missing, and whether it is worth applying.';
+        return 'ATS v2 explains your CV-to-role evidence match across skills, requirements, evidence and readability. The Truth Gate distinguishes verified evidence, keyword-only mentions and claims needing confirmation or proof. It improves your documents; it does not predict hiring success.';
     }
 
     if (q.includes('enterprise') || q.includes('bulk') || q.includes('team') || q.includes('hire')) {
@@ -343,7 +419,7 @@ function getAssistantAnswer(question) {
     }
 
     if (q.includes('plan') || q.includes('price') || q.includes('plus') || q.includes('free')) {
-        return 'Free is best for trying MyValidCV with limited daily validations. Plus is for active job seekers who want more validations and downloadable drafts. Enterprise is for hiring teams using bulk reports. Start free if unsure, then upgrade when you need more capacity.';
+        return 'Free includes 5 analyses. Plus includes 20 analyses and generated CV and cover-letter drafts. Enterprise supports up to 50 advisory bulk CV comparisons with human review. Check the Plans page for the current price.';
     }
 
     if (q.includes('how') || q.includes('work') || q.includes('start') || q.includes('upload') || q.includes('validate')) {

@@ -1,11 +1,18 @@
+from types import SimpleNamespace
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.models import User
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
-from .forms import ATSAnalysisForm, MultipleFileField
+from .forms import ATSAnalysisForm, MultipleFileField, validate_document
 from .models import ATSResult, CV
-from .views import _validate_public_job_url, calculate_score
+from .scoring import (
+    _detect_mandatory_qualifications,
+    calculate_score_details,
+    validate_job_description,
+)
+from .views import _validate_public_job_url, build_cover_letter, calculate_score
 
 
 class UploadAndUrlSecurityTests(SimpleTestCase):
@@ -16,6 +23,10 @@ class UploadAndUrlSecurityTests(SimpleTestCase):
     def test_non_http_job_url_is_rejected(self):
         with self.assertRaises(ValueError):
             _validate_public_job_url("file:///etc/passwd")
+
+    def test_nonstandard_job_url_port_is_rejected(self):
+        with self.assertRaises(ValueError):
+            _validate_public_job_url("https://example.com:8443/jobs/1")
 
     def test_executable_disguised_upload_extension_is_rejected(self):
         field = MultipleFileField()
@@ -29,8 +40,126 @@ class UploadAndUrlSecurityTests(SimpleTestCase):
         with self.assertRaisesMessage(Exception, "no more than 50"):
             field.clean(uploads)
 
+    def test_pdf_extension_with_binary_content_is_rejected(self):
+        upload = SimpleUploadedFile("candidate.pdf", b"MZ executable content")
+        with self.assertRaisesMessage(Exception, "valid PDF signature"):
+            validate_document(upload)
 
-class ATSScoringTests(SimpleTestCase):
+    def test_binary_txt_file_is_rejected(self):
+        upload = SimpleUploadedFile("candidate.txt", b"text\x00binary")
+        with self.assertRaisesMessage(Exception, "binary data"):
+            validate_document(upload)
+
+
+class CoverLetterTests(SimpleTestCase):
+    def test_letter_addresses_recipient_and_keeps_drafting_note_outside_content(self):
+        user = SimpleNamespace(
+            username="alex",
+            get_full_name=lambda: "Alex Morgan",
+        )
+        result = SimpleNamespace(
+            job_title="Operations Manager",
+            job_role=SimpleNamespace(company="Northstar Logistics"),
+        )
+
+        letter = build_cover_letter(
+            user,
+            result,
+            ["leadership", "operations"],
+            "Led daily operations and improved delivery performance by 15%.",
+        )
+
+        self.assertTrue(letter.startswith("Dear Hiring Manager,"))
+        self.assertIn("Yours sincerely,\nAlex Morgan", letter)
+        self.assertNotIn("Dear Mr Alex", letter)
+        self.assertNotIn("Draft note:", letter)
+
+
+class ATSV2Tests(TestCase):
+    def test_short_or_placeholder_job_advert_is_rejected(self):
+        valid, reason = validate_job_description("Job advert URL: https://example.com/job")
+        self.assertFalse(valid)
+        self.assertIn("too short", reason)
+
+    def test_job_advert_requires_meaningful_role_signals(self):
+        valid, reason = validate_job_description("This is general website text. " * 20)
+        self.assertFalse(valid)
+        self.assertIn("complete job advert", reason)
+
+    def test_complete_job_advert_is_accepted(self):
+        advert = (
+            "Software Developer role. Responsibilities include building and testing web services. "
+            "Required skills include Python, Django, SQL, Git, communication and API development. "
+            "Candidates must have relevant software experience and knowledge of secure deployment."
+        )
+        valid, reason = validate_job_description(advert)
+        self.assertTrue(valid, reason)
+
+    def test_keyword_only_match_is_not_treated_as_verified_evidence(self):
+        details = calculate_score_details(
+            "Profile\nSkills: Python, Django, SQL.\nExperience\nGeneral office support.\n"
+            "Education\nDiploma\nalex@example.com\n" + ("Additional profile text. " * 25),
+            "Developer role. Required skills include Python, Django and SQL. "
+            "Responsibilities include building, testing and deploying secure web APIs. " * 3,
+            "Django Developer",
+        )
+        django_evidence = next(item for item in details["evidence_map"] if item["term"] == "django")
+        self.assertEqual(django_evidence["status"], "mentioned")
+        self.assertEqual(django_evidence["strength"], "keyword only")
+        self.assertEqual(details["model_version"], "2.0")
+        self.assertIn("evidence", details["score_components"])
+        self.assertIn("format", details["score_components"])
+
+    def test_negated_or_preferred_qualification_is_not_mandatory(self):
+        qualification = SimpleNamespace(
+            normalized_name="forklift licence",
+            is_license=True,
+            terms=lambda: ["forklift licence"],
+        )
+        self.assertEqual(
+            _detect_mandatory_qualifications(
+                "A forklift licence is preferred but not required.",
+                [qualification],
+            ),
+            [],
+        )
+
+    def test_candidate_can_record_truth_gate_confirmation(self):
+        user = User.objects.create_user("candidate", "candidate@example.com", "password")
+        cv = CV.objects.create(user=user, title="Candidate CV", file="cvs/candidate.txt")
+        result = ATSResult.objects.create(
+            user=user,
+            cv=cv,
+            job_title="Developer",
+            job_description=(
+                "Developer role with responsibilities for web services. Required skills include "
+                "Python, Django, SQL and testing. Candidates must have software experience. " * 2
+            ),
+            metrics={
+                "model_version": "2.0",
+                "score_components": {},
+                "evidence_map": [{"term": "django", "status": "mentioned"}],
+                "requirement_groups": {},
+                "confidence": {},
+            },
+        )
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("ats_result", args=[result.id]),
+            {"requirement": "django", "evidence_action": "confirmed"},
+        )
+
+        self.assertRedirects(response, reverse("ats_result", args=[result.id]))
+        result.refresh_from_db()
+        self.assertEqual(result.metrics["candidate_confirmations"]["django"], "confirmed")
+        rendered = self.client.get(reverse("ats_result", args=[result.id]))
+        self.assertEqual(rendered.status_code, 200)
+        self.assertContains(rendered, "Truth Gate and evidence map")
+        self.assertContains(rendered, "I have this experience")
+
+
+class ATSScoringTests(TestCase):
     def test_admin_cv_is_capped_for_dentist_role(self):
         cv_text = """
         Office Administrator
