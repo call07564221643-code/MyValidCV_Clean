@@ -173,6 +173,9 @@ class ATSV2Tests(TestCase):
         self.assertContains(rendered, "I have this experience")
         self.assertContains(rendered, "Interview Studio: Developer")
         self.assertContains(rendered, "Your next action")
+        self.assertContains(rendered, "--truth-card-bg:")
+        self.assertContains(rendered, "--truth-selected-bg:")
+        self.assertContains(rendered, ".truth-status.verified { background: #166534; color: #fff; }")
 
 
 class TruthGateGuidanceTests(SimpleTestCase):

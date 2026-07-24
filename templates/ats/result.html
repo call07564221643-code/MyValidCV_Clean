@@ -877,6 +877,12 @@
     }
 
     .truth-gate-panel {
+        --truth-card-bg: rgba(255, 255, 255, 0.94);
+        --truth-card-ink: #0f172a;
+        --truth-card-muted: #475569;
+        --truth-card-border: rgba(100, 116, 139, 0.38);
+        --truth-control-bg: rgba(255, 255, 255, 0.72);
+        --truth-selected-bg: #1f3374;
         background:
             radial-gradient(circle at 92% 4%, rgba(96, 165, 250, 0.2), transparent 32%),
             linear-gradient(145deg, #eef4ff 0%, #f8fbff 48%, #edfdf8 100%);
@@ -942,8 +948,8 @@
     }
 
     .evidence-item {
-        background: rgba(255, 255, 255, 0.92);
-        border: 1px solid rgba(148, 163, 184, 0.42);
+        background: var(--truth-card-bg);
+        border: 1px solid var(--truth-card-border);
         border-radius: 18px;
         box-shadow: 0 14px 35px rgba(30, 58, 138, 0.08);
         display: flex;
@@ -951,6 +957,17 @@
         min-width: 0;
         padding: 1.1rem;
         scroll-margin-block: 0.5rem;
+    }
+
+    .truth-gate-panel .evidence-item > strong,
+    .truth-gate-panel .truth-progress-label {
+        color: var(--truth-card-ink);
+    }
+
+    .truth-gate-panel .report-muted,
+    .truth-gate-panel .evidence-passage,
+    .truth-gate-panel .truth-carousel-position {
+        color: var(--truth-card-muted);
     }
 
     .truth-gate-panel.is-enhanced .truth-gate-scroll {
@@ -988,10 +1005,10 @@
         text-transform: uppercase;
     }
 
-    .truth-status.verified { background: #dcfce7; color: #166534; }
-    .truth-status.mentioned { background: #fef3c7; color: #92400e; }
+    .truth-status.verified { background: #166534; color: #fff; }
+    .truth-status.mentioned { background: #92400e; color: #fff; }
     .truth-status.confirmation_required,
-    .truth-status.proof_required { background: #fee2e2; color: #991b1b; }
+    .truth-status.proof_required { background: #991b1b; color: #fff; }
 
     .evidence-passage {
         border-left: 3px solid var(--report-line);
@@ -1010,10 +1027,10 @@
 
     .evidence-actions button {
         align-items: center;
-        background: transparent;
-        border: 1px solid var(--report-line);
+        background: var(--truth-control-bg);
+        border: 1px solid var(--truth-card-border);
         border-radius: 14px;
-        color: var(--report-ink);
+        color: var(--truth-card-ink);
         display: inline-flex;
         font-size: 0.76rem;
         font-weight: 700;
@@ -1025,8 +1042,8 @@
     }
 
     .evidence-actions button::before {
-        background: #fff;
-        border: 2px solid #94a3b8;
+        background: var(--truth-card-bg);
+        border: 2px solid var(--truth-card-muted);
         border-radius: 50%;
         content: "";
         flex: 0 0 0.9rem;
@@ -1044,8 +1061,8 @@
     .evidence-actions.selected-confirmed button[value="confirmed"],
     .evidence-actions.selected-training button[value="training"],
     .evidence-actions.selected-not_have button[value="not_have"] {
-        background: var(--report-navy);
-        border-color: var(--report-navy);
+        background: var(--truth-selected-bg);
+        border-color: var(--truth-selected-bg);
         color: #fff;
     }
 
@@ -1054,7 +1071,7 @@
     .evidence-actions.selected-not_have button[value="not_have"]::before {
         background: #fff;
         border: 3px solid #fff;
-        box-shadow: inset 0 0 0 4px var(--report-navy), 0 0 0 2px rgba(255, 255, 255, 0.55);
+        box-shadow: inset 0 0 0 4px var(--truth-selected-bg), 0 0 0 2px rgba(255, 255, 255, 0.55);
     }
 
     .truth-carousel-controls {
@@ -1223,10 +1240,25 @@
     }
 
     html[data-bs-theme="dark"] .truth-gate-panel {
+        --truth-card-bg: rgba(11, 18, 36, 0.96);
+        --truth-card-ink: #f8fafc;
+        --truth-card-muted: #cbd5e1;
+        --truth-card-border: rgba(148, 163, 184, 0.36);
+        --truth-control-bg: rgba(30, 41, 59, 0.82);
+        --truth-selected-bg: #1d4ed8;
         background:
             radial-gradient(circle at 92% 4%, rgba(59, 130, 246, 0.2), transparent 32%),
             linear-gradient(145deg, #101c35, #111827 55%, #0f2928);
         border-color: #334155;
+    }
+
+    html[data-bs-theme="dark"] .truth-gate-panel .evidence-item {
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+    }
+
+    html[data-bs-theme="dark"] .truth-gate-panel .evidence-actions button:hover,
+    html[data-bs-theme="dark"] .truth-gate-panel .evidence-actions button:focus-visible {
+        border-color: #9fb8ff;
     }
 
     html[data-bs-theme="dark"] .component-track {
@@ -1287,6 +1319,28 @@
         html:not([data-bs-theme="light"]) .gap-pill {
             background: #20335f;
             color: #f8fafc;
+        }
+
+        html:not([data-bs-theme="light"]) .truth-gate-panel {
+            --truth-card-bg: rgba(11, 18, 36, 0.96);
+            --truth-card-ink: #f8fafc;
+            --truth-card-muted: #cbd5e1;
+            --truth-card-border: rgba(148, 163, 184, 0.36);
+            --truth-control-bg: rgba(30, 41, 59, 0.82);
+            --truth-selected-bg: #1d4ed8;
+            background:
+                radial-gradient(circle at 92% 4%, rgba(59, 130, 246, 0.2), transparent 32%),
+                linear-gradient(145deg, #101c35, #111827 55%, #0f2928);
+            border-color: #334155;
+        }
+
+        html:not([data-bs-theme="light"]) .truth-gate-panel .evidence-item {
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+        }
+
+        html:not([data-bs-theme="light"]) .truth-gate-panel .evidence-actions button:hover,
+        html:not([data-bs-theme="light"]) .truth-gate-panel .evidence-actions button:focus-visible {
+            border-color: #9fb8ff;
         }
 
         html:not([data-bs-theme="light"]) .component-track {
