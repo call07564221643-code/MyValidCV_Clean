@@ -176,9 +176,10 @@ class ATSV2Tests(TestCase):
         self.assertContains(rendered, "Your next action")
         self.assertContains(rendered, "--truth-card-bg:")
         self.assertContains(rendered, "--truth-selected-bg:")
-        self.assertContains(rendered, ".truth-status.verified { background: #1e8e3e; color: #fff; }")
+        self.assertContains(rendered, ".truth-status.verified { background: #1f3374; color: #fff; }")
         self.assertContains(rendered, 'aria-label="Your report journey"')
         self.assertContains(rendered, "requirement-title")
+        self.assertContains(rendered, "truth-ring")
 
 
 class TruthGateGuidanceTests(SimpleTestCase):
@@ -198,6 +199,9 @@ class TruthGateGuidanceTests(SimpleTestCase):
         self.assertEqual(summary["confirmed"], 1)
         self.assertEqual(summary["training"], 1)
         self.assertEqual(summary["not_have"], 1)
+        self.assertEqual(summary["confirmed_percentage"], 33)
+        self.assertEqual(summary["training_percentage"], 33)
+        self.assertEqual(summary["gap_percentage"], 33)
         self.assertIn("unsupported requirements", summary["next_action"])
 
     def test_interview_plan_uses_role_and_truth_gate_evidence(self):
