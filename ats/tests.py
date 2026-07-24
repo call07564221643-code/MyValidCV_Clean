@@ -180,6 +180,9 @@ class ATSV2Tests(TestCase):
         self.assertContains(rendered, 'aria-label="Your report journey"')
         self.assertContains(rendered, "requirement-title")
         self.assertContains(rendered, "truth-ring")
+        self.assertContains(rendered, 'class="truth-gate-title"')
+        self.assertContains(rendered, "font-size: 1.65rem")
+        self.assertContains(rendered, "font-size: 1.45rem")
 
 
 class TruthGateGuidanceTests(SimpleTestCase):

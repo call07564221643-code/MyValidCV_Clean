@@ -956,14 +956,32 @@
         display: flex;
         gap: 1rem;
         justify-content: space-between;
+        margin-bottom: 1rem;
     }
 
     .truth-gate-kicker {
         color: var(--report-navy);
-        font-size: 0.72rem;
+        font-size: 0.74rem;
         font-weight: 850;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.11em;
         text-transform: uppercase;
+    }
+
+    .truth-gate-panel .truth-gate-title {
+        color: var(--truth-card-ink);
+        font-size: 1.65rem;
+        font-weight: 780;
+        letter-spacing: -0.035em;
+        line-height: 1.15;
+        margin: 0.35rem 0 0.55rem;
+    }
+
+    .truth-gate-description {
+        color: var(--truth-card-muted);
+        font-size: 0.98rem;
+        line-height: 1.55;
+        margin: 0;
+        max-width: 46rem;
     }
 
     .truth-progress {
@@ -972,10 +990,16 @@
 
     .truth-progress-label {
         display: flex;
-        font-size: 0.78rem;
+        font-size: 0.75rem;
         font-weight: 750;
         justify-content: space-between;
-        margin-bottom: 0.35rem;
+        margin-bottom: 0.45rem;
+    }
+
+    .truth-progress-label [data-truth-progress-text] {
+        font-size: 0.9rem;
+        font-weight: 850;
+        line-height: 1;
     }
 
     .truth-progress-track {
@@ -1059,7 +1083,7 @@
         display: inline-flex;
         font-size: 0.72rem;
         font-weight: 800;
-        margin-bottom: 0.45rem;
+        margin-bottom: 0.65rem;
         padding: 0.25rem 0.55rem;
         text-transform: uppercase;
     }
@@ -1077,11 +1101,12 @@
 
     .requirement-title {
         color: var(--truth-card-ink);
-        font-size: clamp(1.15rem, 2.4vw, 1.3rem);
+        font-size: clamp(1.25rem, 2.4vw, 1.4rem);
         font-weight: 780;
         letter-spacing: -0.02em;
-        line-height: 1.25;
+        line-height: 1.28;
         margin: 0.25rem 0 0.55rem;
+        overflow-wrap: anywhere;
     }
 
     .requirement-meta {
@@ -1669,6 +1694,18 @@
             flex-direction: column;
         }
 
+        .truth-gate-panel .truth-gate-title {
+            font-size: 1.45rem;
+        }
+
+        .truth-gate-description {
+            font-size: 0.92rem;
+        }
+
+        .requirement-title {
+            font-size: 1.25rem;
+        }
+
         .truth-progress {
             flex-basis: auto;
         }
@@ -1811,8 +1848,8 @@
             <div class="truth-gate-head">
                 <div>
                     <span class="truth-gate-kicker">Evidence decision studio</span>
-                    <h3 class="mt-1">Truth Gate</h3>
-                    <p class="report-muted">Make one honest evidence decision at a time. Your answers shape the recommended next action and interview preparation.</p>
+                    <h3 class="truth-gate-title">Truth Gate</h3>
+                    <p class="truth-gate-description">Make one honest evidence decision at a time. Your answers shape the recommended next action and interview preparation.</p>
                 </div>
                 <div class="truth-progress" aria-label="{{ truth_gate_summary.completion }} percent of Truth Gate complete">
                     <div class="truth-progress-label">
