@@ -618,6 +618,26 @@ def build_report_insights(result, matched, missing):
     }
 
 
+REQUIREMENT_DISPLAY_LABELS = {
+    "skillsproficiency": "Skills proficiency",
+    "workexperience": "Work experience",
+    "customerservice": "Customer service",
+    "problemsolving": "Problem solving",
+    "projectmanagement": "Project management",
+    "timemanagement": "Time management",
+}
+
+
+def humanize_requirement_term(term):
+    cleaned = re.sub(r"[_-]+", " ", str(term or "").strip())
+    cleaned = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    known_label = REQUIREMENT_DISPLAY_LABELS.get(cleaned.replace(" ", "").lower())
+    if known_label:
+        return known_label
+    return cleaned[:1].upper() + cleaned[1:] if cleaned else "This requirement"
+
+
 def build_truth_gate_summary(evidence_map):
     items = list(evidence_map or [])[:12]
     actions = [item.get("candidate_action") for item in items]
@@ -676,35 +696,36 @@ def build_interview_plan(evidence_map, job_title):
     focus_terms = []
     for item in (evidence_map or [])[:12]:
         term = item.get("term", "this requirement")
-        focus_terms.append(term)
+        display_term = humanize_requirement_term(term)
+        focus_terms.append(display_term)
         candidate_action = item.get("candidate_action")
         if candidate_action == "confirmed":
             prompt = (
-                f"Show how you used {term} in a real situation. What did you personally do, "
+                f"Show how you used {display_term} in a real situation. What did you personally do, "
                 "what changed, and how would you prove the result?"
             )
         elif candidate_action == "training":
             prompt = (
-                f"Explain what you are currently learning about {term}, how you are practising it, "
+                f"Explain what you are currently learning about {display_term}, how you are practising it, "
                 "and when you expect to be work-ready."
             )
         elif candidate_action == "not_have":
             prompt = (
-                f"Prepare an honest response about not yet having {term}. Which transferable strength "
+                f"Prepare an honest response about not yet having {display_term}. Which transferable strength "
                 "reduces the gap, and what realistic learning plan would you offer?"
             )
         elif item.get("status") == "verified":
             prompt = (
-                f"Tell me about a time you used {term}. Explain the situation, your actions, "
+                f"Tell me about a time you used {display_term}. Explain the situation, your actions, "
                 "and the measurable result."
             )
         elif item.get("status") == "mentioned":
-            prompt = f"Your CV mentions {term}. What specific example proves your level of experience?"
+            prompt = f"Your CV mentions {display_term}. What specific example proves your level of experience?"
         elif item.get("status") == "proof_required":
-            prompt = f"If asked about {term}, clearly explain your current qualification, licence, or training status."
+            prompt = f"If asked about {display_term}, clearly explain your current qualification, licence, or training status."
         else:
-            prompt = f"How would you respond honestly if the interviewer asks about your experience with {term}?"
-        tailored.append({"term": term, "prompt": prompt, "status": candidate_action or item.get("status")})
+            prompt = f"How would you respond honestly if the interviewer asks about your experience with {display_term}?"
+        tailored.append({"term": display_term, "prompt": prompt, "status": candidate_action or item.get("status")})
         if len(tailored) >= 6:
             break
 
@@ -1037,6 +1058,7 @@ def result_detail(request, result_id):
     ats_v2["candidate_confirmations"] = (result.metrics or {}).get("candidate_confirmations", {})
     for evidence_item in ats_v2.get("evidence_map", []):
         evidence_item["candidate_action"] = ats_v2["candidate_confirmations"].get(evidence_item.get("term", ""))
+        evidence_item["display_term"] = humanize_requirement_term(evidence_item.get("term", ""))
     truth_gate_summary = build_truth_gate_summary(ats_v2.get("evidence_map", []))
     interview_plan = build_interview_plan(ats_v2.get("evidence_map", []), result.job_title)
     breakdown = score_breakdown(result.score, matched, missing, ats_v2)

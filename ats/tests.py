@@ -18,6 +18,7 @@ from .views import (
     build_interview_plan,
     build_truth_gate_summary,
     calculate_score,
+    humanize_requirement_term,
 )
 
 
@@ -175,10 +176,16 @@ class ATSV2Tests(TestCase):
         self.assertContains(rendered, "Your next action")
         self.assertContains(rendered, "--truth-card-bg:")
         self.assertContains(rendered, "--truth-selected-bg:")
-        self.assertContains(rendered, ".truth-status.verified { background: #166534; color: #fff; }")
+        self.assertContains(rendered, ".truth-status.verified { background: #1e8e3e; color: #fff; }")
+        self.assertContains(rendered, 'aria-label="Your report journey"')
+        self.assertContains(rendered, "requirement-title")
 
 
 class TruthGateGuidanceTests(SimpleTestCase):
+    def test_requirement_labels_are_human_readable(self):
+        self.assertEqual(humanize_requirement_term("skillsproficiency"), "Skills proficiency")
+        self.assertEqual(humanize_requirement_term("project_management"), "Project management")
+
     def test_completion_summary_reflects_candidate_actions(self):
         summary = build_truth_gate_summary([
             {"term": "python", "candidate_action": "confirmed"},
@@ -201,7 +208,7 @@ class TruthGateGuidanceTests(SimpleTestCase):
 
         self.assertEqual(plan["role"], "Care Assistant")
         self.assertIn("Care Assistant", plan["standard"][0]["prompt"])
-        self.assertIn("currently learning about safeguarding", plan["tailored"][0]["prompt"])
+        self.assertIn("currently learning about Safeguarding", plan["tailored"][0]["prompt"])
 
 
 class ATSScoringTests(TestCase):
