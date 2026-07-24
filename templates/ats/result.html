@@ -941,6 +941,7 @@
         --truth-card-border: rgba(100, 116, 139, 0.38);
         --truth-control-bg: rgba(255, 255, 255, 0.72);
         --truth-selected-bg: #1f3374;
+        --truth-ring-track: #dbe7ff;
         background:
             radial-gradient(circle at 92% 4%, rgba(96, 165, 250, 0.2), transparent 32%),
             linear-gradient(145deg, #eef4ff 0%, #f8fbff 48%, #edfdf8 100%);
@@ -985,7 +986,7 @@
     }
 
     .truth-progress-fill {
-        background: linear-gradient(90deg, #1d4ed8, #0d9488);
+        background: linear-gradient(90deg, #1f3374, #1a73e8);
         border-radius: inherit;
         height: 100%;
         transition: width 320ms ease;
@@ -1069,9 +1070,9 @@
         letter-spacing: 0.035em;
     }
 
-    .truth-status.verified { background: #1e8e3e; color: #fff; }
+    .truth-status.verified { background: #1f3374; color: #fff; }
     .truth-status.mentioned { background: #1a73e8; color: #fff; }
-    .truth-status.confirmation_required { background: #5b5fc7; color: #fff; }
+    .truth-status.confirmation_required { background: #174ea6; color: #fff; }
     .truth-status.proof_required { background: #d93025; color: #fff; }
 
     .requirement-title {
@@ -1190,43 +1191,82 @@
     }
 
     .truth-summary {
-        background: rgba(15, 23, 42, 0.94);
-        border-radius: 18px;
-        color: #e2e8f0;
+        border-top: 1px solid var(--truth-card-border);
         display: grid;
-        gap: 1rem;
+        gap: 1.1rem;
         grid-template-columns: repeat(4, minmax(0, 1fr)) 2fr;
-        margin-top: 1rem;
-        padding: 1rem;
+        margin-top: 1.15rem;
+        padding: 1.15rem 0 0;
     }
 
-    .truth-summary-stat strong {
-        color: #fff;
-        display: block;
-        font-size: 1.35rem;
+    .truth-summary-stat {
+        align-items: center;
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        text-align: center;
     }
 
-    .truth-summary-stat span,
-    .truth-next-action p {
-        color: #cbd5e1;
+    .truth-ring {
+        align-items: center;
+        aspect-ratio: 1;
+        background: conic-gradient(
+            var(--ring-color, #1a73e8) calc(var(--ring-value, 0) * 1%),
+            var(--truth-ring-track) 0
+        );
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        position: relative;
+        width: 4.5rem;
+    }
+
+    .truth-ring::before {
+        background: var(--truth-card-bg);
+        border-radius: 50%;
+        content: "";
+        inset: 0.42rem;
+        position: absolute;
+    }
+
+    .truth-ring strong {
+        color: var(--truth-card-ink);
+        font-size: 1.25rem;
+        line-height: 1;
+        position: relative;
+        z-index: 1;
+    }
+
+    .truth-summary-stat > span {
+        color: var(--truth-card-muted);
         font-size: 0.78rem;
+        font-weight: 700;
         margin: 0;
     }
 
     .truth-next-action {
-        border-left: 1px solid rgba(255, 255, 255, 0.17);
-        padding-left: 1rem;
+        align-self: center;
+        border-left: 3px solid #1a73e8;
+        padding: 0.2rem 0 0.2rem 1rem;
     }
 
     .truth-next-action strong {
-        color: #7dd3fc;
+        color: var(--truth-card-ink);
         display: block;
+        font-size: 1rem;
         margin-bottom: 0.25rem;
+    }
+
+    .truth-next-action p {
+        color: var(--truth-card-muted);
+        font-size: 0.86rem;
+        line-height: 1.55;
+        margin: 0;
     }
 
     .interview-launch-card {
         align-items: center;
-        background: linear-gradient(125deg, #172554, #1e3a8a 54%, #0f766e);
+        background: linear-gradient(125deg, #172554, #1f3374 54%, #1a73e8);
         border-radius: 20px;
         box-shadow: 0 18px 42px rgba(30, 58, 138, 0.2);
         color: #fff;
@@ -1241,7 +1281,7 @@
     .interview-launch-card .btn { flex: 0 0 auto; }
     .interview-modal .modal-content { border: 0; border-radius: 22px; overflow: hidden; }
     .interview-modal .modal-header {
-        background: linear-gradient(125deg, #172554, #1e3a8a 58%, #0f766e);
+        background: linear-gradient(125deg, #172554, #1f3374 58%, #1a73e8);
         color: #fff;
         padding: 1.4rem;
     }
@@ -1354,6 +1394,7 @@
         --truth-card-border: rgba(148, 163, 184, 0.36);
         --truth-control-bg: rgba(30, 41, 59, 0.82);
         --truth-selected-bg: #1d4ed8;
+        --truth-ring-track: #334155;
         background:
             radial-gradient(circle at 92% 4%, rgba(59, 130, 246, 0.2), transparent 32%),
             linear-gradient(145deg, #101c35, #111827 55%, #0f2928);
@@ -1461,6 +1502,7 @@
             --truth-card-border: rgba(148, 163, 184, 0.36);
             --truth-control-bg: rgba(30, 41, 59, 0.82);
             --truth-selected-bg: #1d4ed8;
+            --truth-ring-track: #334155;
             background:
                 radial-gradient(circle at 92% 4%, rgba(59, 130, 246, 0.2), transparent 32%),
                 linear-gradient(145deg, #101c35, #111827 55%, #0f2928);
@@ -1574,7 +1616,7 @@
 
         .truth-next-action {
             border-left: 0;
-            border-top: 1px solid rgba(255, 255, 255, 0.17);
+            border-top: 3px solid #1a73e8;
             grid-column: 1 / -1;
             padding-left: 0;
             padding-top: 0.8rem;
@@ -1831,10 +1873,30 @@
                 </div>
             {% endif %}
             <div class="truth-summary truth-summary-{{ truth_gate_summary.tone }}" aria-live="polite">
-                <div class="truth-summary-stat"><strong>{{ truth_gate_summary.answered }}</strong><span>Answered</span></div>
-                <div class="truth-summary-stat"><strong>{{ truth_gate_summary.confirmed }}</strong><span>Confirmed</span></div>
-                <div class="truth-summary-stat"><strong>{{ truth_gate_summary.training }}</strong><span>In training</span></div>
-                <div class="truth-summary-stat"><strong>{{ truth_gate_summary.not_have }}</strong><span>Evidence gaps</span></div>
+                <div class="truth-summary-stat">
+                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.completion }}; --ring-color: #1f3374">
+                        <strong>{{ truth_gate_summary.answered }}</strong>
+                    </div>
+                    <span>Answered</span>
+                </div>
+                <div class="truth-summary-stat">
+                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.confirmed_percentage }}; --ring-color: #1a73e8">
+                        <strong>{{ truth_gate_summary.confirmed }}</strong>
+                    </div>
+                    <span>Confirmed</span>
+                </div>
+                <div class="truth-summary-stat">
+                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.training_percentage }}; --ring-color: #174ea6">
+                        <strong>{{ truth_gate_summary.training }}</strong>
+                    </div>
+                    <span>In training</span>
+                </div>
+                <div class="truth-summary-stat">
+                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.gap_percentage }}; --ring-color: #d93025">
+                        <strong>{{ truth_gate_summary.not_have }}</strong>
+                    </div>
+                    <span>Evidence gaps</span>
+                </div>
                 <div class="truth-next-action">
                     <strong>{% if truth_gate_summary.complete %}Your next action{% else %}Complete your review{% endif %}</strong>
                     <p>{{ truth_gate_summary.next_action }}</p>
