@@ -100,10 +100,14 @@
   "environments": {
     "test": {
       "env": {
-        "TEST_USE_SQLITE": "True"
+        "TEST_USE_SQLITE": "True",
+        "SECURE_SSL_REDIRECT": "False",
+        "SESSION_COOKIE_SECURE": "False",
+        "CSRF_COOKIE_SECURE": "False",
+        "SECURE_HSTS_SECONDS": "0"
       },
       "scripts": {
-        "test": "python manage.py test"
+        "test": "python manage.py collectstatic --noinput && python manage.py test"
       }
     }
   }
