@@ -12,7 +12,13 @@ from .scoring import (
     calculate_score_details,
     validate_job_description,
 )
-from .views import _validate_public_job_url, build_cover_letter, calculate_score
+from .views import (
+    _validate_public_job_url,
+    build_cover_letter,
+    build_interview_plan,
+    build_truth_gate_summary,
+    calculate_score,
+)
 
 
 class UploadAndUrlSecurityTests(SimpleTestCase):
@@ -160,11 +166,39 @@ class ATSV2Tests(TestCase):
         self.assertEqual(result.metrics["candidate_confirmations"]["django"], "confirmed")
         rendered = self.client.get(reverse("ats_result", args=[result.id]))
         self.assertEqual(rendered.status_code, 200)
-        self.assertContains(rendered, "Truth Gate and evidence map")
+        self.assertContains(rendered, "Evidence decision studio")
         self.assertContains(rendered, 'id="truth-gate"')
         self.assertContains(rendered, 'class="truth-gate-scroll"')
         self.assertContains(rendered, "selected-confirmed")
         self.assertContains(rendered, "I have this experience")
+        self.assertContains(rendered, "Interview Studio: Developer")
+        self.assertContains(rendered, "Your next action")
+
+
+class TruthGateGuidanceTests(SimpleTestCase):
+    def test_completion_summary_reflects_candidate_actions(self):
+        summary = build_truth_gate_summary([
+            {"term": "python", "candidate_action": "confirmed"},
+            {"term": "testing", "candidate_action": "training"},
+            {"term": "aws", "candidate_action": "not_have"},
+        ])
+
+        self.assertTrue(summary["complete"])
+        self.assertEqual(summary["completion"], 100)
+        self.assertEqual(summary["confirmed"], 1)
+        self.assertEqual(summary["training"], 1)
+        self.assertEqual(summary["not_have"], 1)
+        self.assertIn("unsupported requirements", summary["next_action"])
+
+    def test_interview_plan_uses_role_and_truth_gate_evidence(self):
+        plan = build_interview_plan(
+            [{"term": "safeguarding", "status": "mentioned", "candidate_action": "training"}],
+            "Care Assistant",
+        )
+
+        self.assertEqual(plan["role"], "Care Assistant")
+        self.assertIn("Care Assistant", plan["standard"][0]["prompt"])
+        self.assertIn("currently learning about safeguarding", plan["tailored"][0]["prompt"])
 
 
 class ATSScoringTests(TestCase):
