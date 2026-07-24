@@ -618,11 +618,82 @@ def build_report_insights(result, matched, missing):
     }
 
 
-def build_interview_prompts(evidence_map):
-    prompts = []
-    for item in evidence_map or []:
+def build_truth_gate_summary(evidence_map):
+    items = list(evidence_map or [])[:12]
+    actions = [item.get("candidate_action") for item in items]
+    confirmed = actions.count("confirmed")
+    training = actions.count("training")
+    not_have = actions.count("not_have")
+    answered = confirmed + training + not_have
+    total = len(items)
+    remaining = max(total - answered, 0)
+    completion = int((answered / total) * 100) if total else 0
+
+    if total == 0:
+        next_action = "No requirement-level questions are available for this report."
+        tone = "neutral"
+    elif remaining:
+        next_action = (
+            f"Answer the remaining {remaining} requirement"
+            f"{'' if remaining == 1 else 's'} to unlock your evidence-based next step."
+        )
+        tone = "progress"
+    elif not_have:
+        next_action = (
+            "Keep unsupported requirements out of the CV. Focus the application on confirmed strengths, "
+            "then review whether the missing requirements are mandatory before applying."
+        )
+        tone = "caution"
+    elif training:
+        next_action = (
+            "Continue with the application using confirmed evidence only. Present training as in progress "
+            "and prepare a clear completion timeline for interview."
+        )
+        tone = "developing"
+    else:
+        next_action = (
+            "Your review is complete. Use the confirmed strengths in the suggested CV, then open the "
+            "role-specific interview studio to prepare evidence-based examples."
+        )
+        tone = "ready"
+
+    return {
+        "total": total,
+        "answered": answered,
+        "remaining": remaining,
+        "confirmed": confirmed,
+        "training": training,
+        "not_have": not_have,
+        "completion": completion,
+        "complete": bool(total and answered == total),
+        "next_action": next_action,
+        "tone": tone,
+    }
+
+
+def build_interview_plan(evidence_map, job_title):
+    tailored = []
+    focus_terms = []
+    for item in (evidence_map or [])[:12]:
         term = item.get("term", "this requirement")
-        if item.get("status") == "verified":
+        focus_terms.append(term)
+        candidate_action = item.get("candidate_action")
+        if candidate_action == "confirmed":
+            prompt = (
+                f"Show how you used {term} in a real situation. What did you personally do, "
+                "what changed, and how would you prove the result?"
+            )
+        elif candidate_action == "training":
+            prompt = (
+                f"Explain what you are currently learning about {term}, how you are practising it, "
+                "and when you expect to be work-ready."
+            )
+        elif candidate_action == "not_have":
+            prompt = (
+                f"Prepare an honest response about not yet having {term}. Which transferable strength "
+                "reduces the gap, and what realistic learning plan would you offer?"
+            )
+        elif item.get("status") == "verified":
             prompt = (
                 f"Tell me about a time you used {term}. Explain the situation, your actions, "
                 "and the measurable result."
@@ -633,10 +704,39 @@ def build_interview_prompts(evidence_map):
             prompt = f"If asked about {term}, clearly explain your current qualification, licence, or training status."
         else:
             prompt = f"How would you respond honestly if the interviewer asks about your experience with {term}?"
-        prompts.append(prompt)
-        if len(prompts) >= 6:
+        tailored.append({"term": term, "prompt": prompt, "status": candidate_action or item.get("status")})
+        if len(tailored) >= 6:
             break
-    return prompts
+
+    role_name = job_title or "this role"
+    return {
+        "role": role_name,
+        "focus_terms": focus_terms[:4],
+        "standard": [
+            {
+                "title": "Your 60-second introduction",
+                "prompt": (
+                    f"Connect your current experience to {role_name}, name two relevant strengths, "
+                    "and explain why this move makes sense now."
+                ),
+            },
+            {
+                "title": "STAR evidence",
+                "prompt": (
+                    "Prepare one concise Situation, Task, Action and Result example. Spend most of the "
+                    "answer on your own actions and finish with a verifiable outcome."
+                ),
+            },
+            {
+                "title": "Your questions",
+                "prompt": (
+                    f"Prepare two informed questions about expectations, priorities or success measures "
+                    f"for {role_name}; avoid questions answered clearly in the advert."
+                ),
+            },
+        ],
+        "tailored": tailored,
+    }
 
 
 def save_inline_cv(request, form):
@@ -937,6 +1037,8 @@ def result_detail(request, result_id):
     ats_v2["candidate_confirmations"] = (result.metrics or {}).get("candidate_confirmations", {})
     for evidence_item in ats_v2.get("evidence_map", []):
         evidence_item["candidate_action"] = ats_v2["candidate_confirmations"].get(evidence_item.get("term", ""))
+    truth_gate_summary = build_truth_gate_summary(ats_v2.get("evidence_map", []))
+    interview_plan = build_interview_plan(ats_v2.get("evidence_map", []), result.job_title)
     breakdown = score_breakdown(result.score, matched, missing, ats_v2)
     match_intelligence = build_match_intelligence(result, cv_text)
     report_insights = build_report_insights(result, matched, missing)
@@ -963,7 +1065,8 @@ def result_detail(request, result_id):
             "cv_draft_preview": cv_draft_preview,
             "can_download": can_download_generated_cv(request.user),
             "ats_v2": ats_v2,
-            "interview_prompts": build_interview_prompts(ats_v2.get("evidence_map", [])),
+            "truth_gate_summary": truth_gate_summary,
+            "interview_plan": interview_plan,
         },
     )
 

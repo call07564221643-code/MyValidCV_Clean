@@ -877,7 +877,54 @@
     }
 
     .truth-gate-panel {
+        background:
+            radial-gradient(circle at 92% 4%, rgba(96, 165, 250, 0.2), transparent 32%),
+            linear-gradient(145deg, #eef4ff 0%, #f8fbff 48%, #edfdf8 100%);
+        border: 1px solid #bfdbfe;
+        overflow: hidden;
+        position: relative;
         scroll-margin-top: 5.5rem;
+    }
+
+    .truth-gate-head {
+        align-items: flex-start;
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+    }
+
+    .truth-gate-kicker {
+        color: var(--report-navy);
+        font-size: 0.72rem;
+        font-weight: 850;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
+    .truth-progress {
+        flex: 0 0 min(15rem, 42%);
+    }
+
+    .truth-progress-label {
+        display: flex;
+        font-size: 0.78rem;
+        font-weight: 750;
+        justify-content: space-between;
+        margin-bottom: 0.35rem;
+    }
+
+    .truth-progress-track {
+        background: rgba(148, 163, 184, 0.3);
+        border-radius: 999px;
+        height: 0.55rem;
+        overflow: hidden;
+    }
+
+    .truth-progress-fill {
+        background: linear-gradient(90deg, #1d4ed8, #0d9488);
+        border-radius: inherit;
+        height: 100%;
+        transition: width 320ms ease;
     }
 
     .truth-gate-scroll {
@@ -895,13 +942,40 @@
     }
 
     .evidence-item {
-        border: 1px solid var(--report-line);
-        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(148, 163, 184, 0.42);
+        border-radius: 18px;
+        box-shadow: 0 14px 35px rgba(30, 58, 138, 0.08);
         display: flex;
         flex-direction: column;
         min-width: 0;
-        padding: 0.85rem;
+        padding: 1.1rem;
         scroll-margin-block: 0.5rem;
+    }
+
+    .truth-gate-panel.is-enhanced .truth-gate-scroll {
+        max-height: none;
+        overflow: visible;
+        padding: 0;
+    }
+
+    .truth-gate-panel.is-enhanced .evidence-list {
+        display: block;
+    }
+
+    .truth-gate-panel.is-enhanced .evidence-item {
+        display: none;
+        min-height: 18rem;
+    }
+
+    .truth-gate-panel.is-enhanced .evidence-item.is-active {
+        animation: truthCardIn 260ms ease both;
+        display: flex;
+    }
+
+    @keyframes truthCardIn {
+        from { opacity: 0; transform: translateX(16px) scale(0.99); }
+        to { opacity: 1; transform: translateX(0) scale(1); }
     }
 
     .truth-status {
@@ -935,15 +1009,30 @@
     }
 
     .evidence-actions button {
+        align-items: center;
         background: transparent;
         border: 1px solid var(--report-line);
-        border-radius: 999px;
+        border-radius: 14px;
         color: var(--report-ink);
+        display: inline-flex;
         font-size: 0.76rem;
         font-weight: 700;
+        gap: 0.45rem;
+        justify-content: center;
         line-height: 1.2;
         min-height: 2.45rem;
         padding: 0.35rem 0.65rem;
+    }
+
+    .evidence-actions button::before {
+        background: #fff;
+        border: 2px solid #94a3b8;
+        border-radius: 50%;
+        content: "";
+        flex: 0 0 0.9rem;
+        height: 0.9rem;
+        transition: 180ms ease;
+        width: 0.9rem;
     }
 
     .evidence-actions button:hover,
@@ -958,6 +1047,129 @@
         background: var(--report-navy);
         border-color: var(--report-navy);
         color: #fff;
+    }
+
+    .evidence-actions.selected-confirmed button[value="confirmed"]::before,
+    .evidence-actions.selected-training button[value="training"]::before,
+    .evidence-actions.selected-not_have button[value="not_have"]::before {
+        background: #fff;
+        border: 3px solid #fff;
+        box-shadow: inset 0 0 0 4px var(--report-navy), 0 0 0 2px rgba(255, 255, 255, 0.55);
+    }
+
+    .truth-carousel-controls {
+        align-items: center;
+        display: none;
+        gap: 0.75rem;
+        justify-content: space-between;
+        margin-top: 0.9rem;
+    }
+
+    .truth-gate-panel.is-enhanced .truth-carousel-controls {
+        display: flex;
+    }
+
+    .truth-carousel-position {
+        color: var(--report-muted);
+        font-size: 0.82rem;
+        font-weight: 750;
+    }
+
+    .truth-summary {
+        background: rgba(15, 23, 42, 0.94);
+        border-radius: 18px;
+        color: #e2e8f0;
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) 2fr;
+        margin-top: 1rem;
+        padding: 1rem;
+    }
+
+    .truth-summary-stat strong {
+        color: #fff;
+        display: block;
+        font-size: 1.35rem;
+    }
+
+    .truth-summary-stat span,
+    .truth-next-action p {
+        color: #cbd5e1;
+        font-size: 0.78rem;
+        margin: 0;
+    }
+
+    .truth-next-action {
+        border-left: 1px solid rgba(255, 255, 255, 0.17);
+        padding-left: 1rem;
+    }
+
+    .truth-next-action strong {
+        color: #7dd3fc;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .interview-launch-card {
+        align-items: center;
+        background: linear-gradient(125deg, #172554, #1e3a8a 54%, #0f766e);
+        border-radius: 20px;
+        box-shadow: 0 18px 42px rgba(30, 58, 138, 0.2);
+        color: #fff;
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        padding: 1.25rem;
+    }
+
+    .interview-launch-card p { color: #dbeafe; margin: 0.3rem 0 0; }
+    .interview-launch-card .btn { flex: 0 0 auto; }
+    .interview-modal .modal-content { border: 0; border-radius: 22px; overflow: hidden; }
+    .interview-modal .modal-header {
+        background: linear-gradient(125deg, #172554, #1e3a8a 58%, #0f766e);
+        color: #fff;
+        padding: 1.4rem;
+    }
+    .interview-modal .btn-close { filter: invert(1); }
+    .interview-modal .modal-body { background: var(--report-bg); padding: 1.4rem; }
+    .interview-framework {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-bottom: 1.2rem;
+    }
+    .interview-prep-card {
+        background: var(--report-card);
+        border: 1px solid var(--report-line);
+        border-radius: 15px;
+        padding: 1rem;
+    }
+    .interview-prep-card strong { color: var(--report-navy); display: block; margin-bottom: 0.35rem; }
+    .interview-question-list { counter-reset: interview-question; display: grid; gap: 0.7rem; }
+    .interview-question {
+        background: var(--report-card);
+        border: 1px solid var(--report-line);
+        border-radius: 15px;
+        padding: 0.95rem 0.95rem 0.95rem 3.1rem;
+        position: relative;
+    }
+    .interview-question::before {
+        align-items: center;
+        background: var(--report-navy);
+        border-radius: 50%;
+        color: #fff;
+        content: counter(interview-question);
+        counter-increment: interview-question;
+        display: flex;
+        font-size: 0.78rem;
+        font-weight: 800;
+        height: 1.8rem;
+        justify-content: center;
+        left: 0.85rem;
+        position: absolute;
+        top: 0.85rem;
+        width: 1.8rem;
     }
 
     .candidate-confirmation {
@@ -1008,6 +1220,13 @@
     html[data-bs-theme="dark"] .gap-pill {
         background: #20335f;
         color: #f8fafc;
+    }
+
+    html[data-bs-theme="dark"] .truth-gate-panel {
+        background:
+            radial-gradient(circle at 92% 4%, rgba(59, 130, 246, 0.2), transparent 32%),
+            linear-gradient(145deg, #101c35, #111827 55%, #0f2928);
+        border-color: #334155;
     }
 
     html[data-bs-theme="dark"] .component-track {
@@ -1136,6 +1355,22 @@
         .evidence-list {
             grid-template-columns: 1fr;
         }
+
+        .truth-summary {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .truth-next-action {
+            border-left: 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.17);
+            grid-column: 1 / -1;
+            padding-left: 0;
+            padding-top: 0.8rem;
+        }
+
+        .interview-framework {
+            grid-template-columns: 1fr;
+        }
     }
 
     @media (max-width: 575px) {
@@ -1159,6 +1394,28 @@
 
         .evidence-actions {
             grid-template-columns: 1fr;
+        }
+
+        .truth-gate-head,
+        .interview-launch-card {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .truth-progress {
+            flex-basis: auto;
+        }
+
+        .truth-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .truth-next-action {
+            grid-column: 1 / -1;
+        }
+
+        .truth-carousel-controls .btn {
+            padding-inline: 0.7rem;
         }
     }
 </style>
@@ -1275,13 +1532,27 @@
             </div>
         </div>
 
-        <div class="v2-panel truth-gate-panel mb-4" id="truth-gate">
-            <h3>Truth Gate and evidence map</h3>
-            <p class="report-muted">Review each requirement and select the answer that accurately reflects your current evidence. Your selected answer is highlighted.</p>
+        <div class="v2-panel truth-gate-panel mb-4" id="truth-gate" data-truth-gate>
+            <div class="truth-gate-head">
+                <div>
+                    <span class="truth-gate-kicker">Evidence decision studio</span>
+                    <h3 class="mt-1">Truth Gate</h3>
+                    <p class="report-muted">Make one honest evidence decision at a time. Your answers shape the recommended next action and interview preparation.</p>
+                </div>
+                <div class="truth-progress" aria-label="{{ truth_gate_summary.completion }} percent of Truth Gate complete">
+                    <div class="truth-progress-label">
+                        <span>Review progress</span>
+                        <span data-truth-progress-text>{{ truth_gate_summary.answered }}/{{ truth_gate_summary.total }}</span>
+                    </div>
+                    <div class="truth-progress-track">
+                        <div class="truth-progress-fill" data-truth-progress style="width: {{ truth_gate_summary.completion }}%"></div>
+                    </div>
+                </div>
+            </div>
             <div class="truth-gate-scroll" tabindex="0" aria-label="Scrollable Truth Gate requirements">
                 <div class="evidence-list">
                 {% for item in ats_v2.evidence_map|slice:":12" %}
-                    <article class="evidence-item" id="truth-gate-item-{{ forloop.counter }}">
+                    <article class="evidence-item" id="truth-gate-item-{{ forloop.counter }}" data-truth-card data-card-index="{{ forloop.counter0 }}" data-answered="{% if item.candidate_action %}true{% else %}false{% endif %}">
                         <span class="truth-status {{ item.status }}">
                             {% if item.status == "verified" %}Verified in CV
                             {% elif item.status == "mentioned" %}Keyword only
@@ -1316,15 +1587,87 @@
                 {% endfor %}
                 </div>
             </div>
+            {% if truth_gate_summary.total %}
+                <div class="truth-carousel-controls" aria-label="Truth Gate navigation">
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-truth-previous>&larr; Previous</button>
+                    <span class="truth-carousel-position" data-truth-position>Question 1 of {{ truth_gate_summary.total }}</span>
+                    <button type="button" class="btn btn-primary btn-sm" data-truth-next>Next &rarr;</button>
+                </div>
+            {% endif %}
+            <div class="truth-summary truth-summary-{{ truth_gate_summary.tone }}" aria-live="polite">
+                <div class="truth-summary-stat"><strong>{{ truth_gate_summary.answered }}</strong><span>Answered</span></div>
+                <div class="truth-summary-stat"><strong>{{ truth_gate_summary.confirmed }}</strong><span>Confirmed</span></div>
+                <div class="truth-summary-stat"><strong>{{ truth_gate_summary.training }}</strong><span>In training</span></div>
+                <div class="truth-summary-stat"><strong>{{ truth_gate_summary.not_have }}</strong><span>Evidence gaps</span></div>
+                <div class="truth-next-action">
+                    <strong>{% if truth_gate_summary.complete %}Your next action{% else %}Complete your review{% endif %}</strong>
+                    <p>{{ truth_gate_summary.next_action }}</p>
+                </div>
+            </div>
         </div>
 
-        {% if interview_prompts %}
-            <div class="v2-panel mb-4">
-                <h3>Interview preparation from your evidence</h3>
-                <p class="report-muted">Use these prompts to prepare truthful STAR examples; do not memorise unsupported answers.</p>
-                <ol class="compact-list">
-                    {% for prompt in interview_prompts %}<li>{{ prompt }}</li>{% endfor %}
-                </ol>
+        {% if interview_plan.tailored %}
+            <div class="interview-launch-card">
+                <div>
+                    <span class="truth-gate-kicker text-info">Role-specific preparation</span>
+                    <h3 class="h5 mt-1 mb-0">Interview Studio: {{ interview_plan.role }}</h3>
+                    <p>Standard preparation structure, tailored questions from this job advert, and honest evidence prompts from your Truth Gate.</p>
+                </div>
+                <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#interviewStudio">
+                    Open interview studio
+                </button>
+            </div>
+            <div class="modal fade interview-modal" id="interviewStudio" tabindex="-1" aria-labelledby="interviewStudioTitle" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <div>
+                                <span class="truth-gate-kicker text-info">MyValidCV interview studio</span>
+                                <h2 class="modal-title h4 mt-1" id="interviewStudioTitle">{{ interview_plan.role }}</h2>
+                                <p class="mb-0 text-white-50">Prepare truthful examples—never memorise invented claims.</p>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close interview studio"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h3 class="h6">Your preparation framework</h3>
+                            <div class="interview-framework">
+                                {% for item in interview_plan.standard %}
+                                    <article class="interview-prep-card">
+                                        <strong>{{ item.title }}</strong>
+                                        <p class="report-muted mb-0">{{ item.prompt }}</p>
+                                    </article>
+                                {% endfor %}
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap mb-3">
+                                <div>
+                                    <span class="truth-gate-kicker">Generated from this role</span>
+                                    <h3 class="h5 mt-1 mb-0">Questions to rehearse</h3>
+                                </div>
+                                <span class="report-muted small">
+                                    Focus:
+                                    {% for term in interview_plan.focus_terms %}
+                                        {{ term }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </span>
+                            </div>
+                            <div class="interview-question-list">
+                                {% for item in interview_plan.tailored %}
+                                    <article class="interview-question">
+                                        <strong>{{ item.term|capfirst }}</strong>
+                                        <p class="report-muted mb-0">{{ item.prompt }}</p>
+                                    </article>
+                                {% endfor %}
+                            </div>
+                            <div class="value-note mt-3">
+                                Build short notes, not a script. Use genuine examples, name your personal contribution, quantify outcomes when possible, and clearly label training that is still in progress.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close and continue report</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         {% endif %}
 
@@ -1476,4 +1819,73 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(() => {
+    const initialiseTruthGate = () => {
+        const panel = document.querySelector('[data-truth-gate]');
+        if (!panel) return;
+
+        const cards = Array.from(panel.querySelectorAll('[data-truth-card]'));
+        const previous = panel.querySelector('[data-truth-previous]');
+        const next = panel.querySelector('[data-truth-next]');
+        const position = panel.querySelector('[data-truth-position]');
+        if (!cards.length || !previous || !next || !position) return;
+
+        panel.classList.add('is-enhanced');
+        const hashMatch = window.location.hash.match(/^#truth-gate-item-(\d+)$/);
+        const firstUnanswered = cards.findIndex((card) => card.dataset.answered !== 'true');
+        let activeIndex = hashMatch
+            ? Math.min(Math.max(Number(hashMatch[1]) - 1, 0), cards.length - 1)
+            : (firstUnanswered >= 0 ? firstUnanswered : 0);
+
+        const showCard = (index, shouldFocus = false) => {
+            activeIndex = Math.min(Math.max(index, 0), cards.length - 1);
+            cards.forEach((card, cardIndex) => {
+                const active = cardIndex === activeIndex;
+                card.classList.toggle('is-active', active);
+                card.setAttribute('aria-hidden', String(!active));
+            });
+            previous.disabled = activeIndex === 0;
+            next.disabled = activeIndex === cards.length - 1;
+            position.textContent = `Question ${activeIndex + 1} of ${cards.length}`;
+            if (shouldFocus) {
+                cards[activeIndex].setAttribute('tabindex', '-1');
+                cards[activeIndex].focus({preventScroll: true});
+            }
+        };
+
+        previous.addEventListener('click', () => showCard(activeIndex - 1, true));
+        next.addEventListener('click', () => showCard(activeIndex + 1, true));
+        panel.addEventListener('keydown', (event) => {
+            if (event.target.closest('button, input, a')) return;
+            if (event.key === 'ArrowLeft') showCard(activeIndex - 1);
+            if (event.key === 'ArrowRight') showCard(activeIndex + 1);
+        });
+
+        panel.querySelectorAll('.evidence-actions button').forEach((button) => {
+            button.addEventListener('click', () => {
+                const form = button.form;
+                if (!form) return;
+                form.classList.remove('selected-confirmed', 'selected-training', 'selected-not_have', 'selected-none');
+                form.classList.add(`selected-${button.value}`);
+                button.setAttribute('aria-pressed', 'true');
+                form.querySelectorAll('button').forEach((other) => {
+                    if (other !== button) other.setAttribute('aria-pressed', 'false');
+                });
+            });
+        });
+
+        showCard(activeIndex);
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialiseTruthGate);
+    } else {
+        initialiseTruthGate();
+    }
+})();
+</script>
 {% endblock %}
