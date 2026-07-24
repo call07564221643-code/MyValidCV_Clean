@@ -909,9 +909,16 @@ def result_detail(request, result_id):
             "historic_score": True,
         }
     if request.method == "POST":
+        submitted_item = request.POST.get("truth_gate_item", "")
+        truth_gate_anchor = (
+            f"truth-gate-item-{submitted_item}"
+            if submitted_item.isdigit() and 1 <= int(submitted_item) <= 12
+            else "truth-gate"
+        )
+        truth_gate_url = f"{reverse('ats_result', args=[result.id])}#{truth_gate_anchor}"
         if result.user_id != request.user.id:
             messages.error(request, "Only the candidate who owns this report can confirm its evidence.")
-            return redirect("ats_result", result_id=result.id)
+            return redirect(truth_gate_url)
         requirement = re.sub(r"\s+", " ", request.POST.get("requirement", "")).strip().lower()
         action = request.POST.get("evidence_action", "")
         allowed_actions = {"confirmed", "training", "not_have"}
@@ -926,7 +933,7 @@ def result_detail(request, result_id):
             result.metrics = stored_metrics
             result.save(update_fields=["metrics", "updated_at"])
             messages.success(request, f"Your evidence status for “{requirement}” was recorded.")
-        return redirect("ats_result", result_id=result.id)
+        return redirect(truth_gate_url)
     ats_v2["candidate_confirmations"] = (result.metrics or {}).get("candidate_confirmations", {})
     for evidence_item in ats_v2.get("evidence_map", []):
         evidence_item["candidate_action"] = ats_v2["candidate_confirmations"].get(evidence_item.get("term", ""))

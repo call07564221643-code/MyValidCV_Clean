@@ -876,11 +876,32 @@
         text-transform: capitalize;
     }
 
-    .evidence-list { display: grid; gap: 0.75rem; }
+    .truth-gate-panel {
+        scroll-margin-top: 5.5rem;
+    }
+
+    .truth-gate-scroll {
+        max-height: min(68vh, 38rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 0.15rem 0.55rem 0.35rem 0.1rem;
+        scrollbar-gutter: stable;
+    }
+
+    .evidence-list {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .evidence-item {
         border: 1px solid var(--report-line);
         border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
         padding: 0.85rem;
+        scroll-margin-block: 0.5rem;
     }
 
     .truth-status {
@@ -907,9 +928,9 @@
     }
 
     .evidence-actions {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
         gap: 0.4rem;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         margin-top: 0.7rem;
     }
 
@@ -920,7 +941,23 @@
         color: var(--report-ink);
         font-size: 0.76rem;
         font-weight: 700;
+        line-height: 1.2;
+        min-height: 2.45rem;
         padding: 0.35rem 0.65rem;
+    }
+
+    .evidence-actions button:hover,
+    .evidence-actions button:focus-visible {
+        border-color: var(--report-navy);
+        box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.12);
+    }
+
+    .evidence-actions.selected-confirmed button[value="confirmed"],
+    .evidence-actions.selected-training button[value="training"],
+    .evidence-actions.selected-not_have button[value="not_have"] {
+        background: var(--report-navy);
+        border-color: var(--report-navy);
+        color: #fff;
     }
 
     .candidate-confirmation {
@@ -1095,6 +1132,10 @@
         .intelligence-grid {
             grid-template-columns: 1fr;
         }
+
+        .evidence-list {
+            grid-template-columns: 1fr;
+        }
     }
 
     @media (max-width: 575px) {
@@ -1109,6 +1150,15 @@
         .cv-preview-page {
             min-height: auto;
             padding: 1rem;
+        }
+
+        .truth-gate-scroll {
+            max-height: 31rem;
+            padding-right: 0.35rem;
+        }
+
+        .evidence-actions {
+            grid-template-columns: 1fr;
         }
     }
 </style>
@@ -1225,12 +1275,13 @@
             </div>
         </div>
 
-        <div class="v2-panel mb-4">
+        <div class="v2-panel truth-gate-panel mb-4" id="truth-gate">
             <h3>Truth Gate and evidence map</h3>
-            <p class="report-muted">Only verified evidence is safe to reuse automatically. Review every statement before adding it to an application.</p>
-            <div class="evidence-list">
+            <p class="report-muted">Review each requirement and select the answer that accurately reflects your current evidence. Your selected answer is highlighted.</p>
+            <div class="truth-gate-scroll" tabindex="0" aria-label="Scrollable Truth Gate requirements">
+                <div class="evidence-list">
                 {% for item in ats_v2.evidence_map|slice:":12" %}
-                    <article class="evidence-item">
+                    <article class="evidence-item" id="truth-gate-item-{{ forloop.counter }}">
                         <span class="truth-status {{ item.status }}">
                             {% if item.status == "verified" %}Verified in CV
                             {% elif item.status == "mentioned" %}Keyword only
@@ -1250,9 +1301,10 @@
                             </span>
                         {% endif %}
                         {% if result.user_id == request.user.id %}
-                            <form method="post" class="evidence-actions" aria-label="Confirm your evidence for {{ item.term }}">
+                            <form method="post" class="evidence-actions selected-{{ item.candidate_action|default:'none' }}" aria-label="Confirm your evidence for {{ item.term }}">
                                 {% csrf_token %}
                                 <input type="hidden" name="requirement" value="{{ item.term }}">
+                                <input type="hidden" name="truth_gate_item" value="{{ forloop.counter }}">
                                 <button type="submit" name="evidence_action" value="confirmed">I have this</button>
                                 <button type="submit" name="evidence_action" value="training">I’m training</button>
                                 <button type="submit" name="evidence_action" value="not_have">I don’t have this</button>
@@ -1262,6 +1314,7 @@
                 {% empty %}
                     <p class="report-muted mb-0">No requirement-level evidence map is available.</p>
                 {% endfor %}
+                </div>
             </div>
         </div>
 

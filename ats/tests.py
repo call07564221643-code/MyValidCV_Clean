@@ -147,15 +147,23 @@ class ATSV2Tests(TestCase):
 
         response = self.client.post(
             reverse("ats_result", args=[result.id]),
-            {"requirement": "django", "evidence_action": "confirmed"},
+            {
+                "requirement": "django",
+                "evidence_action": "confirmed",
+                "truth_gate_item": "1",
+            },
         )
 
-        self.assertRedirects(response, reverse("ats_result", args=[result.id]))
+        expected_url = f"{reverse('ats_result', args=[result.id])}#truth-gate-item-1"
+        self.assertRedirects(response, expected_url)
         result.refresh_from_db()
         self.assertEqual(result.metrics["candidate_confirmations"]["django"], "confirmed")
         rendered = self.client.get(reverse("ats_result", args=[result.id]))
         self.assertEqual(rendered.status_code, 200)
         self.assertContains(rendered, "Truth Gate and evidence map")
+        self.assertContains(rendered, 'id="truth-gate"')
+        self.assertContains(rendered, 'class="truth-gate-scroll"')
+        self.assertContains(rendered, "selected-confirmed")
         self.assertContains(rendered, "I have this experience")
 
 
