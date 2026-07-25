@@ -34,8 +34,8 @@ from .models import (
 )
 from accounts.models import UserProfile
 from .engine import ats_engine
-from .cv_drafting import build_structured_cv_draft, cv_text_to_docx
-from .scoring import calculate_score, calculate_score_details, validate_job_description
+from .cv_drafting import build_structured_cv_draft, cv_text_to_docx, is_legacy_generated_cv
+from .scoring import ATS_MODEL_VERSION, calculate_score, calculate_score_details, validate_job_description
 from subscriptions.services import get_active_subscription, get_entitlements
 
 
@@ -618,6 +618,51 @@ def format_document_heading(value):
     return formatted[0].upper() + formatted[1:] if formatted else ""
 
 
+def resolve_generated_cv_draft(result, generated_cv=None, cv_text=""):
+    """Return the current clean draft and its provenance without rewriting saved data."""
+    cv_text = cv_text or extract_cv_text(result.cv)
+    matched = [item.strip() for item in result.matched_skills.split(",") if item.strip()]
+    missing = [item.strip() for item in result.missing_skills.split(",") if item.strip()]
+    preview = build_cv_draft_preview(result, matched, missing, cv_text)
+    structured = build_structured_cv_draft(
+        cv_text,
+        preview["target_role"],
+        preview["summary"],
+        preview["skills"],
+        missing,
+    )
+
+    saved_content = (getattr(generated_cv, "content", "") or "").strip()
+    if not saved_content:
+        state = "system_proposal"
+        editable_content = structured["full_text"]
+        state_label = "System proposal"
+        state_note = "Generated from the source CV and ready for candidate review."
+    elif is_legacy_generated_cv(saved_content):
+        state = "legacy_upgraded"
+        editable_content = structured["full_text"]
+        state_label = "Legacy draft upgraded"
+        state_note = "The older advisory format was converted for review; its saved record was not overwritten."
+    elif saved_content == structured["full_text"].strip():
+        state = "system_proposal"
+        editable_content = saved_content
+        state_label = "System proposal"
+        state_note = "Generated from the source CV and not yet edited by the candidate."
+    else:
+        state = "candidate_edited"
+        editable_content = saved_content
+        state_label = "Candidate-edited"
+        state_note = "This version contains changes saved by the candidate."
+
+    structured.update({
+        "editable_content": editable_content,
+        "draft_state": state,
+        "draft_state_label": state_label,
+        "draft_state_note": state_note,
+    })
+    return structured
+
+
 def build_report_insights(result, matched, missing):
     if result.score >= 80:
         readiness_label = "Ready to apply"
@@ -1043,7 +1088,7 @@ def analyse_cv(request):
                 "evidence_map": details.get("evidence_map", []),
                 "format_checks": details.get("format_checks", {}),
                 "confidence": details.get("confidence", {}),
-                "model_version": details.get("model_version", "2.0"),
+                "model_version": details.get("model_version", ATS_MODEL_VERSION),
             }
 
             result = ATSResult.objects.create(
@@ -1111,16 +1156,17 @@ def result_detail(request, result_id):
     matched = [item.strip() for item in result.matched_skills.split(",") if item.strip()]
     missing = [item.strip() for item in result.missing_skills.split(",") if item.strip()]
     ats_v2 = result.metrics or {}
-    if ats_v2.get("model_version") != "2.0":
+    if ats_v2.get("model_version") != ATS_MODEL_VERSION:
         current_details = calculate_score_details(cv_text, result.job_description, result.job_title)
         ats_v2 = {
             **ats_v2,
+            "taxonomy": current_details.get("taxonomy", {}),
             "score_components": current_details.get("score_components", {}),
             "requirement_groups": current_details.get("requirement_groups", {}),
             "evidence_map": current_details.get("evidence_map", []),
             "format_checks": current_details.get("format_checks", {}),
             "confidence": current_details.get("confidence", {}),
-            "model_version": "2.0",
+            "model_version": ATS_MODEL_VERSION,
             "historic_score": True,
         }
     if request.method == "POST":
@@ -1165,17 +1211,8 @@ def result_detail(request, result_id):
     application_decision = build_application_decision(result.score)
     suggested_cv_review = build_suggested_cv_review(result, matched, missing)
     cv_draft_preview = build_cv_draft_preview(result, matched, missing, cv_text)
-    structured_cv_draft = build_structured_cv_draft(
-        cv_text,
-        cv_draft_preview["target_role"],
-        cv_draft_preview["summary"],
-        cv_draft_preview["skills"],
-        missing,
-    )
-    if hasattr(result, "generated_cv") and result.generated_cv.content.strip():
-        structured_cv_draft["editable_content"] = result.generated_cv.content
-    else:
-        structured_cv_draft["editable_content"] = structured_cv_draft["full_text"]
+    generated_cv = result.generated_cv if hasattr(result, "generated_cv") else None
+    structured_cv_draft = resolve_generated_cv_draft(result, generated_cv, cv_text)
     if hasattr(result, "generated_cover_letter"):
         refreshed_letter = build_cover_letter(request.user, result, matched, cv_text)
         if result.generated_cover_letter.content != refreshed_letter:
@@ -1211,7 +1248,8 @@ def download_generated_cv(request, result_id):
         messages.error(request, "Tailored CV generation is available on the Plus plan.")
         return redirect("ats_result", result_id=result.id)
     generated_cv = get_object_or_404(GeneratedCV, ats_result=result, user=request.user)
-    response = HttpResponse(generated_cv.content, content_type="text/plain")
+    draft = resolve_generated_cv_draft(result, generated_cv)
+    response = HttpResponse(draft["editable_content"], content_type="text/plain")
     response["Content-Disposition"] = f'attachment; filename="mvcv-tailored-cv-{result.id}.txt"'
     return response
 
@@ -1250,7 +1288,8 @@ def download_generated_cv_docx(request, result_id):
         return redirect(f"{reverse('ats_result', args=[result.id])}#suggested-cv")
 
     generated_cv = get_object_or_404(GeneratedCV, ats_result=result, user=request.user)
-    document_bytes = cv_text_to_docx(generated_cv.content, title=generated_cv.title)
+    draft = resolve_generated_cv_draft(result, generated_cv)
+    document_bytes = cv_text_to_docx(draft["editable_content"], title=generated_cv.title)
     response = HttpResponse(
         document_bytes,
         content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
