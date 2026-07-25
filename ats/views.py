@@ -25,6 +25,7 @@ from .models import (
     ApplicationReminder,
     ATSResult,
     CV,
+    CVBulletSuggestion,
     CVStorage,
     EnterpriseBatch,
     EnterpriseCandidateResult,
@@ -32,6 +33,7 @@ from .models import (
     GeneratedCV,
     JobRole,
 )
+from .bullet_rewriting import apply_bullet_decisions, extract_experience_bullets
 from accounts.models import UserProfile
 from .engine import ats_engine
 from .cv_drafting import build_structured_cv_draft, cv_text_to_docx, is_legacy_generated_cv
@@ -338,6 +340,26 @@ Original CV Content Reference
         missing,
     )
     return structured["full_text"]
+
+
+def create_bullet_suggestions(result, cv_text="", matched=None):
+    """Create deterministic Stage 2 suggestions once for an owned result."""
+    if result.bullet_suggestions.exists():
+        return result.bullet_suggestions.all()
+    cv_text = cv_text or extract_cv_text(result.cv)
+    matched = matched if matched is not None else [
+        item.strip() for item in result.matched_skills.split(",") if item.strip()
+    ]
+    proposals = extract_experience_bullets(cv_text, matched)
+    CVBulletSuggestion.objects.bulk_create([
+        CVBulletSuggestion(
+            user=result.user,
+            ats_result=result,
+            **proposal,
+        )
+        for proposal in proposals
+    ], ignore_conflicts=True)
+    return result.bullet_suggestions.all()
 
 
 def clean_cover_letter_title(title):
@@ -1119,6 +1141,8 @@ def analyse_cv(request):
                     title=f"Cover letter for {job_title}",
                     content=build_cover_letter(request.user, result, matched, cv_text),
                 )
+                if build_application_decision(result.score)["can_rewrite"]:
+                    create_bullet_suggestions(result, cv_text, matched)
 
             if job_role.deadline and form.cleaned_data.get("email_reminder"):
                 reminder_date = max(timezone.localdate(), job_role.deadline - timedelta(days=2))
@@ -1213,6 +1237,14 @@ def result_detail(request, result_id):
     cv_draft_preview = build_cv_draft_preview(result, matched, missing, cv_text)
     generated_cv = result.generated_cv if hasattr(result, "generated_cv") else None
     structured_cv_draft = resolve_generated_cv_draft(result, generated_cv, cv_text)
+    bullet_suggestions = list(result.bullet_suggestions.all())
+    bullet_review_summary = {
+        "total": len(bullet_suggestions),
+        "pending": sum(item.status == "pending" for item in bullet_suggestions),
+        "accepted": sum(item.status == "accepted" for item in bullet_suggestions),
+        "edited": sum(item.status == "edited" for item in bullet_suggestions),
+        "rejected": sum(item.status == "rejected" for item in bullet_suggestions),
+    }
     if hasattr(result, "generated_cover_letter"):
         refreshed_letter = build_cover_letter(request.user, result, matched, cv_text)
         if result.generated_cover_letter.content != refreshed_letter:
@@ -1232,6 +1264,8 @@ def result_detail(request, result_id):
             "suggested_cv_review": suggested_cv_review,
             "cv_draft_preview": cv_draft_preview,
             "structured_cv_draft": structured_cv_draft,
+            "bullet_suggestions": bullet_suggestions,
+            "bullet_review_summary": bullet_review_summary,
             "can_download": can_download_generated_cv(request.user),
             "ats_v2": ats_v2,
             "truth_gate_summary": truth_gate_summary,
@@ -1239,6 +1273,80 @@ def result_detail(request, result_id):
             "interview_plan": interview_plan,
         },
     )
+
+
+@login_required(login_url="login")
+@require_http_methods(["POST"])
+def start_bullet_review(request, result_id):
+    result = get_object_or_404(ATSResult, id=result_id, user=request.user)
+    if not can_download_generated_cv(request.user):
+        messages.error(request, "Bullet-level CV review is available on the Plus plan.")
+        return redirect("ats_result", result_id=result.id)
+    if not build_application_decision(result.score)["can_rewrite"]:
+        messages.error(request, "Bullet rewriting is unavailable until the CV meets the evidence threshold.")
+        return redirect(f"{reverse('ats_result', args=[result.id])}#stage-2-bullet-review")
+    suggestions = create_bullet_suggestions(result)
+    if suggestions.exists():
+        messages.success(request, "Your evidence-grounded bullet review is ready.")
+    else:
+        messages.info(request, "No complete experience statements were detected for bullet review.")
+    return redirect(f"{reverse('ats_result', args=[result.id])}#stage-2-bullet-review")
+
+
+@login_required(login_url="login")
+@require_http_methods(["POST"])
+def decide_bullet_suggestion(request, result_id, suggestion_id):
+    result = get_object_or_404(ATSResult, id=result_id, user=request.user)
+    if not can_download_generated_cv(request.user):
+        messages.error(request, "Bullet-level CV review is available on the Plus plan.")
+        return redirect("ats_result", result_id=result.id)
+    suggestion = get_object_or_404(
+        CVBulletSuggestion,
+        id=suggestion_id,
+        ats_result=result,
+        user=request.user,
+    )
+    decision = request.POST.get("decision", "")
+    if decision not in {"accepted", "edited", "rejected", "pending"}:
+        messages.error(request, "Choose a valid bullet-review decision.")
+        return redirect(f"{reverse('ats_result', args=[result.id])}#bullet-{suggestion.id}")
+
+    update_fields = ["status", "updated_at"]
+    if decision == "edited":
+        edited_text = re.sub(r"\s+", " ", request.POST.get("edited_text", "")).strip()
+        if not 20 <= len(edited_text) <= 600:
+            messages.error(request, "Edited bullet wording must contain between 20 and 600 characters.")
+            return redirect(f"{reverse('ats_result', args=[result.id])}#bullet-{suggestion.id}")
+        suggestion.edited_text = edited_text
+        update_fields.append("edited_text")
+    suggestion.status = decision
+    suggestion.save(update_fields=update_fields)
+    messages.success(request, f"Bullet {suggestion.position + 1} marked {suggestion.get_status_display().lower()}.")
+    return redirect(f"{reverse('ats_result', args=[result.id])}#bullet-{suggestion.id}")
+
+
+@login_required(login_url="login")
+@require_http_methods(["POST"])
+def apply_bullet_review(request, result_id):
+    result = get_object_or_404(ATSResult, id=result_id, user=request.user)
+    if not can_download_generated_cv(request.user):
+        messages.error(request, "Bullet-level CV review is available on the Plus plan.")
+        return redirect("ats_result", result_id=result.id)
+    generated_cv = get_object_or_404(GeneratedCV, ats_result=result, user=request.user)
+    suggestions = result.bullet_suggestions.filter(status__in=["accepted", "edited"])
+    if not suggestions.exists():
+        messages.info(request, "Accept or edit at least one bullet before applying changes.")
+        return redirect(f"{reverse('ats_result', args=[result.id])}#stage-2-bullet-review")
+
+    draft = resolve_generated_cv_draft(result, generated_cv)
+    rebuilt_content, applied = apply_bullet_decisions(draft["editable_content"], suggestions)
+    if not applied:
+        messages.error(request, "The selected source wording was not found in the current CV draft.")
+        return redirect(f"{reverse('ats_result', args=[result.id])}#stage-2-bullet-review")
+    generated_cv.content = rebuilt_content
+    generated_cv.save(update_fields=["content"])
+    messages.success(request, f"Applied {applied} reviewed bullet change{'s' if applied != 1 else ''} to the CV draft.")
+    return redirect(f"{reverse('ats_result', args=[result.id])}#full-cv-workspace")
 
 
 @login_required(login_url="login")
