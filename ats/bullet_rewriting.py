@@ -88,7 +88,13 @@ def extract_experience_bullets(cv_text, matched_terms, limit=12):
                     or any(re.search(rf"\b{verb}\b", lower) for verb in GERUND_TO_ACTION)
                 )
                 has_measure = bool(re.search(r"\b\d+(?:\.\d+)?%?\b|£|\$", cleaned))
-                # Employment headings commonly contain dates but no action.
+                likely_employment_heading = (
+                    not has_action
+                    and bool(re.search(r"\b(?:19|20)\d{2}\b", cleaned))
+                    and ("|" in cleaned or re.search(r"\b(?:19|20)\d{2}\s*[-–]\s*(?:present|(?:19|20)\d{2})", cleaned, re.IGNORECASE))
+                )
+                if likely_employment_heading:
+                    continue
                 if not has_action and not has_measure:
                     continue
                 terms = [term for term in matched_terms if _term_matches(term, cleaned)][:5]
