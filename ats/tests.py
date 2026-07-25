@@ -26,6 +26,7 @@ from .views import (
     calculate_score,
     enterprise_daily_usage,
     humanize_requirement_term,
+    format_document_heading,
 )
 
 
@@ -152,6 +153,16 @@ Business Administration Diploma
         document = cv_text_to_docx(self.source_cv, "Alex CV")
         self.assertTrue(document.startswith(b"PK"))
         self.assertGreater(len(document), 1000)
+
+    def test_document_headings_are_normalised_centrally(self):
+        self.assertEqual(
+            format_document_heading("alex morgan - hr cv"),
+            "Alex Morgan - HR CV",
+        )
+        self.assertEqual(
+            format_document_heading("hr coordinator"),
+            "HR Coordinator",
+        )
 
 
 class EditableCVDraftEndpointTests(TestCase):
