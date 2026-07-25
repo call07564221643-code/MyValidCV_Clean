@@ -1,8 +1,21 @@
-<details class="mvcv-feedback {% if feedback_compact %}compact{% endif %}" data-feedback-widget>
-    <summary>
+{% if feedback_compact %}
+<details class="mvcv-feedback compact" data-feedback-widget>
+    <summary><span class="mvcv-feedback-summary-icon" aria-hidden="true">★</span>Rate your Maya experience</summary>
+{% else %}
+<section class="mvcv-feedback mvcv-feedback-visible" data-feedback-widget aria-labelledby="feedback-title-{{ feedback_context_id|default:'global' }}">
+    <header class="mvcv-feedback-header">
+        <div>
+            <span class="mvcv-feedback-kicker">MyValidCV Feedback Circle</span>
+            <h2 id="feedback-title-{{ feedback_context_id|default:'global' }}">Rate this experience</h2>
+            <p>Your perspective helps shape a clearer, more useful service.</p>
+        </div>
         <span class="mvcv-feedback-summary-icon" aria-hidden="true">★</span>
-        {% if feedback_feature == "maya" %}Rate your Maya experience{% else %}Rate this experience{% endif %}
-    </summary>
+    </header>
+    <aside class="mvcv-feedback-recognition" aria-label="Feedback recognition">
+        <span aria-hidden="true">✦</span>
+        <p><strong>A considered thank-you.</strong> Selected, actionable feedback may receive a private MyValidCV benefit code after review.</p>
+    </aside>
+{% endif %}
     <form class="mvcv-feedback-form"
           data-feedback-form
           data-feature="{{ feedback_feature }}"
@@ -44,14 +57,12 @@
                 You may review this comment for use as a public testimonial.
             </label>
             {% if user.is_authenticated %}
-                <label>
-                    Display as
-                    <select name="public_identity">
-                        <option value="anonymous">Verified MyValidCV user</option>
-                        <option value="first_name">My first name</option>
-                        <option value="initials">My initials</option>
-                    </select>
-                </label>
+                <fieldset class="mvcv-identity-options">
+                    <legend>Display as</legend>
+                    <label><input type="radio" name="public_identity" value="anonymous" checked> Verified user</label>
+                    <label><input type="radio" name="public_identity" value="first_name"> First name</label>
+                    <label><input type="radio" name="public_identity" value="initials"> Initials</label>
+                </fieldset>
             {% endif %}
         </div>
 
@@ -60,4 +71,8 @@
             <span role="status" aria-live="polite" data-feedback-status></span>
         </div>
     </form>
+{% if feedback_compact %}
 </details>
+{% else %}
+</section>
+{% endif %}
