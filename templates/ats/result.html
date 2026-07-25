@@ -950,6 +950,100 @@
         white-space: pre-wrap;
     }
 
+    .full-cv-workspace {
+        border-top: 1px solid var(--report-line);
+        margin-top: 1.25rem;
+        padding-top: 1.25rem;
+    }
+
+    .full-cv-workspace-header {
+        align-items: flex-start;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+
+    .full-cv-workspace-header h3 {
+        color: var(--report-ink);
+        font-size: 1.15rem;
+        font-weight: 780;
+        margin: 0 0 0.3rem;
+    }
+
+    .cv-change-review {
+        display: grid;
+        gap: 0.85rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-bottom: 1rem;
+    }
+
+    .cv-change-review article,
+    .evidence-citation {
+        background: var(--report-soft);
+        border: 1px solid var(--report-line);
+        border-radius: 14px;
+        padding: 0.9rem;
+    }
+
+    .cv-change-review strong,
+    .evidence-citations h4 {
+        color: var(--report-ink);
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 800;
+        margin-bottom: 0.4rem;
+    }
+
+    .cv-change-review p,
+    .evidence-citation p {
+        color: var(--report-muted);
+        font-size: 0.86rem;
+        line-height: 1.55;
+        margin: 0;
+    }
+
+    .evidence-citations {
+        margin-bottom: 1rem;
+    }
+
+    .evidence-citation + .evidence-citation {
+        margin-top: 0.55rem;
+    }
+
+    .evidence-citation span {
+        color: var(--report-navy);
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 780;
+        margin-top: 0.35rem;
+    }
+
+    .cv-draft-editor,
+    .cv-draft-readonly {
+        background: var(--report-card);
+        border: 1px solid var(--report-line);
+        border-radius: 14px;
+        color: var(--report-ink);
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 0.92rem;
+        line-height: 1.6;
+        padding: 1.1rem;
+        white-space: pre-wrap;
+    }
+
+    .cv-draft-editor {
+        min-height: 640px;
+        resize: vertical;
+        width: 100%;
+    }
+
+    .cv-draft-readonly {
+        max-height: 640px;
+        overflow: auto;
+    }
+
     .letter-draft-note {
         align-items: flex-start;
         background: var(--report-soft);
@@ -1735,6 +1829,10 @@
             min-height: auto;
         }
 
+        .cv-change-review {
+            grid-template-columns: 1fr;
+        }
+
         .intelligence-grid {
             grid-template-columns: 1fr;
         }
@@ -1785,6 +1883,10 @@
         .cv-preview-page {
             min-height: auto;
             padding: 1rem;
+        }
+
+        .cv-draft-editor {
+            min-height: 520px;
         }
 
         .truth-gate-scroll {
@@ -2237,6 +2339,60 @@
                         </div>
                     </div>
                 </div>
+
+                <section class="full-cv-workspace" id="full-cv-workspace" aria-labelledby="full-cv-workspace-title">
+                    <div class="full-cv-workspace-header">
+                        <div>
+                            <h3 id="full-cv-workspace-title">Evidence-grounded full CV workspace</h3>
+                            <p class="report-muted mb-0">The source CV structure is preserved. Review every line before using or exporting the draft.</p>
+                        </div>
+                        {% if result.generated_cv and can_download %}
+                            <div class="d-flex gap-2 flex-wrap">
+                                <a href="{% url 'download_generated_cv' result.id %}" class="btn btn-outline-primary btn-sm">Download TXT</a>
+                                <a href="{% url 'download_generated_cv_docx' result.id %}" class="btn btn-primary btn-sm">Download DOCX</a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {% for change in structured_cv_draft.changes %}
+                        <div class="cv-change-review" aria-label="{{ change.section }} comparison">
+                            <article>
+                                <strong>Original {{ change.section }}</strong>
+                                <p>{{ change.original }}</p>
+                            </article>
+                            <article>
+                                <strong>Proposed {{ change.section }}</strong>
+                                <p>{{ change.proposed }}</p>
+                            </article>
+                        </div>
+                        <p class="report-muted small"><strong>Why this changed:</strong> {{ change.reason }}</p>
+                    {% endfor %}
+
+                    <div class="evidence-citations">
+                        <h4>Source evidence supporting the proposal</h4>
+                        {% for citation in structured_cv_draft.citations %}
+                            <article class="evidence-citation">
+                                <p>“{{ citation.text }}”</p>
+                                <span>Supports: {{ citation.terms|join:", " }}</span>
+                            </article>
+                        {% empty %}
+                            <div class="value-note">No strong source passage was detected. Treat the proposal as guidance and add verified evidence before using it.</div>
+                        {% endfor %}
+                    </div>
+
+                    {% if result.generated_cv and can_download %}
+                        <form method="post" action="{% url 'save_generated_cv_draft' result.id %}">
+                            {% csrf_token %}
+                            <label class="fw-bold mb-2" for="cvDraftEditor">Edit your clean CV draft</label>
+                            <textarea class="cv-draft-editor" id="cvDraftEditor" name="cv_draft_content" maxlength="50000" aria-describedby="cvDraftHelp">{{ structured_cv_draft.editable_content }}</textarea>
+                            <p class="report-muted small mt-2" id="cvDraftHelp">Saving changes updates both TXT and DOCX downloads. Keep names, dates, employers, qualifications and results accurate.</p>
+                            <button class="btn btn-primary" type="submit">Save CV draft</button>
+                        </form>
+                    {% else %}
+                        <div class="cv-draft-readonly" aria-label="Full CV draft preview">{{ structured_cv_draft.full_text }}</div>
+                        <p class="report-muted small mt-2 mb-0">This preview is read-only. Plus users can edit, save and export the evidence-grounded draft.</p>
+                    {% endif %}
+                </section>
                 {% else %}
                     <div class="v2-grid mb-3">
                         <div class="v2-panel">

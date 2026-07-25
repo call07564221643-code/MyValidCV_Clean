@@ -10,6 +10,8 @@ urlpatterns = [
     path("analysis/", RedirectView.as_view(pattern_name="ats_analyse", permanent=True), name="ats_analysis"),
     path("result/<int:result_id>/", views.result_detail, name="ats_result"),
     path("result/<int:result_id>/download-cv/", views.download_generated_cv, name="download_generated_cv"),
+    path("result/<int:result_id>/save-cv-draft/", views.save_generated_cv_draft, name="save_generated_cv_draft"),
+    path("result/<int:result_id>/download-cv-docx/", views.download_generated_cv_docx, name="download_generated_cv_docx"),
     path("result/<int:result_id>/download-cover-letter/", views.download_cover_letter, name="download_cover_letter"),
     path("enterprise/bulk/", views.enterprise_bulk_upload, name="enterprise_bulk"),
     path("enterprise/report/<int:batch_id>/", views.enterprise_report, name="enterprise_report"),
