@@ -103,8 +103,8 @@ def parse_cv_sections(cv_text):
     return sections
 
 
-def find_evidence_citations(cv_text, terms, limit=6):
-    """Return exact source lines supporting matched terms."""
+def find_evidence_citations(cv_text, terms, limit=4):
+    """Return the strongest concise source lines supporting matched terms."""
     def term_matches_line(term, line):
         term_words = re.findall(r"[a-z0-9]+", term.lower())
         line_words = re.findall(r"[a-z0-9]+", line.lower())
@@ -118,20 +118,37 @@ def find_evidence_citations(cv_text, terms, limit=6):
                 return False
         return True
 
-    citations = []
+    candidates = []
     seen = set()
     for raw_line in re.split(r"\r?\n|(?<=[.!?])\s+", cv_text or ""):
         line = re.sub(r"\s+", " ", raw_line).strip(" -•*\t")
-        if not 20 <= len(line) <= 260:
+        # Short labels such as "Recruitment coordination" are keywords, not
+        # useful evidence. Prefer complete statements a candidate can verify.
+        if not 42 <= len(line) <= 260:
             continue
         matched_terms = [term for term in terms if term_matches_line(term, line)]
         key = line.lower()
         if matched_terms and key not in seen:
-            citations.append({"text": line, "terms": matched_terms[:4]})
+            quality = len(matched_terms) * 5
+            quality += 4 if re.search(r"\d|%|percent|per cent", line, re.IGNORECASE) else 0
+            quality += 2 if len(line) >= 70 else 0
+            quality += 2 if re.search(
+                r"\b(achieved|coordinated|created|delivered|improved|maintained|managed|"
+                r"prepared|produced|reduced|resolved|supported)\b",
+                line,
+                re.IGNORECASE,
+            ) else 0
+            candidates.append({
+                "text": line,
+                "terms": matched_terms[:4],
+                "quality": quality,
+            })
             seen.add(key)
-        if len(citations) >= limit:
-            break
-    return citations
+    candidates.sort(key=lambda item: (-item["quality"], -len(item["text"])))
+    return [
+        {"text": item["text"], "terms": item["terms"]}
+        for item in candidates[:limit]
+    ]
 
 
 def build_structured_cv_draft(cv_text, target_role, proposed_summary, matched, missing):

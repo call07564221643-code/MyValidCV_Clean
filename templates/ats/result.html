@@ -1005,19 +1005,61 @@
     }
 
     .evidence-citations {
+        background: var(--report-soft);
+        border: 1px solid var(--report-line);
+        border-radius: 14px;
         margin-bottom: 1rem;
+        overflow: hidden;
     }
 
-    .evidence-citation + .evidence-citation {
-        margin-top: 0.55rem;
+    .evidence-citations summary {
+        align-items: center;
+        color: var(--report-ink);
+        cursor: pointer;
+        display: flex;
+        font-size: 0.88rem;
+        font-weight: 800;
+        justify-content: space-between;
+        list-style: none;
+        padding: 0.9rem 1rem;
     }
 
-    .evidence-citation span {
+    .evidence-citations summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .evidence-citations summary::after {
         color: var(--report-navy);
-        display: block;
+        content: "+";
+        font-size: 1.15rem;
+    }
+
+    .evidence-citations[open] summary::after {
+        content: "−";
+    }
+
+    .evidence-citation-list {
+        border-top: 1px solid var(--report-line);
+        display: grid;
+        gap: 0.55rem;
+        padding: 0.7rem;
+    }
+
+    .evidence-citation {
+        background: var(--report-card);
+        padding: 0.75rem 0.85rem;
+    }
+
+    .evidence-term {
+        background: color-mix(in srgb, var(--report-navy) 9%, var(--report-card));
+        border: 1px solid var(--report-line);
+        border-radius: 999px;
+        color: var(--report-navy);
+        display: inline-block;
         font-size: 0.72rem;
         font-weight: 780;
-        margin-top: 0.35rem;
+        margin: 0.45rem 0.25rem 0 0;
+        padding: 0.18rem 0.48rem;
     }
 
     .cv-draft-editor,
@@ -2368,17 +2410,26 @@
                         <p class="report-muted small"><strong>Why this changed:</strong> {{ change.reason }}</p>
                     {% endfor %}
 
-                    <div class="evidence-citations">
-                        <h4>Source evidence supporting the proposal</h4>
-                        {% for citation in structured_cv_draft.citations %}
-                            <article class="evidence-citation">
-                                <p>“{{ citation.text }}”</p>
-                                <span>Supports: {{ citation.terms|join:", " }}</span>
-                            </article>
-                        {% empty %}
-                            <div class="value-note">No strong source passage was detected. Treat the proposal as guidance and add verified evidence before using it.</div>
-                        {% endfor %}
-                    </div>
+                    {% if structured_cv_draft.citations %}
+                        <details class="evidence-citations">
+                            <summary>
+                                <span>Source evidence used</span>
+                                <span class="report-muted fw-normal">{{ structured_cv_draft.citations|length }} strongest examples</span>
+                            </summary>
+                            <div class="evidence-citation-list">
+                                {% for citation in structured_cv_draft.citations %}
+                                    <article class="evidence-citation">
+                                        <p>“{{ citation.text }}”</p>
+                                        {% for term in citation.terms %}
+                                            <span class="evidence-term">{{ term }}</span>
+                                        {% endfor %}
+                                    </article>
+                                {% endfor %}
+                            </div>
+                        </details>
+                    {% else %}
+                        <div class="value-note mb-3">No strong source passage was detected. Add verified evidence before using the proposal.</div>
+                    {% endif %}
 
                     {% if result.generated_cv and can_download %}
                         <form method="post" action="{% url 'save_generated_cv_draft' result.id %}">
