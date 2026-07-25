@@ -8,6 +8,8 @@ from .models import Qualification, RoleTemplate, Skill
 
 logger = logging.getLogger(__name__)
 
+ATS_MODEL_VERSION = "2.1"
+
 
 BASE_SKILLS = [
     "python", "django", "sql", "postgresql", "html", "css", "javascript",
@@ -39,13 +41,18 @@ STOP_WORDS = {
 }
 
 GENERIC_REQUIREMENT_TERMS = {
-    "ability", "able", "applicant", "apply", "benefits", "business", "client",
-    "clients", "company", "deadline", "department", "duties", "employee",
-    "environment", "excellent", "expected", "full", "good", "high", "hours",
-    "ideal", "join", "knowledge", "level", "minimum", "needed", "people",
-    "person", "preferred", "previous", "proven", "required", "requires",
-    "responsible", "salary", "successful", "support", "team", "teams",
-    "using", "weekly", "within", "working",
+    "ability", "able", "across", "applicant", "apply", "attention", "benefits",
+    "business", "capabilities", "capability", "client", "clients", "company",
+    "complete", "coordinate", "coordinating", "deadline", "department", "direct",
+    "duties", "employee",
+    "environment", "essential", "excellent", "expected", "full", "good",
+    "growing", "high", "hours", "ideal", "include", "includes", "including",
+    "join", "knowledge", "level", "minimum", "monthly", "needed", "people", "person",
+    "presenting",
+    "preferred", "previous", "proven", "qualification", "qualifications",
+    "required", "requires", "responsible", "results", "salary", "senior",
+    "successful", "support", "team", "teams", "using", "weekly", "within",
+    "working",
 }
 
 MANDATORY_HINTS = (
@@ -113,17 +120,28 @@ def calculate_score_details(cv_text, job_description, job_title=""):
     requirement_terms = _extract_requirement_terms(job_lower, job_title, known_terms)
     required_taxonomy_terms = taxonomy["required_skills"] + taxonomy["required_qualifications"]
     requirement_terms = _unique_keep_order(requirement_terms + required_taxonomy_terms)
+    qualification_terms = taxonomy.get("qualification_terms", taxonomy["required_qualifications"])
 
-    matched_requirements = [term for term in requirement_terms if _term_in_text(term, cv_lower)]
-    missing_requirements = [term for term in requirement_terms if not _term_in_text(term, cv_lower)]
+    matched_requirements = [
+        term for term in requirement_terms
+        if _has_requirement_evidence(term, cv_text, qualification_terms)
+    ]
+    missing_requirements = [
+        term for term in requirement_terms
+        if not _has_requirement_evidence(term, cv_text, qualification_terms)
+    ]
     matched_title_terms = [term for term in title_terms if _term_in_text(term, cv_lower)]
     jd_keywords = _extract_relevant_keywords(job_lower)
     cv_keywords = _extract_relevant_keywords(cv_lower)
-    matched_keywords = [term for term in jd_keywords if term in cv_keywords]
+    matched_keywords = [
+        term for term in jd_keywords
+        if term in cv_keywords
+        and _has_requirement_evidence(term, cv_text, qualification_terms)
+    ]
     missing_keywords = [term for term in jd_keywords if term not in cv_keywords]
     missing_mandatory = [
         term for term in taxonomy["mandatory_terms"]
-        if not _term_in_text(term, cv_lower)
+        if not _has_requirement_evidence(term, cv_text, qualification_terms)
     ]
 
     skills_score = _ratio_score(matched_skills, jd_skills)
@@ -131,14 +149,17 @@ def calculate_score_details(cv_text, job_description, job_title=""):
     title_score = _ratio_score(matched_title_terms, title_terms)
     keyword_score = _ratio_score(matched_keywords, jd_keywords[:12])
     mandatory_score = 100 if not taxonomy["mandatory_terms"] else _ratio_score(
-        [term for term in taxonomy["mandatory_terms"] if _term_in_text(term, cv_lower)],
+        [
+            term for term in taxonomy["mandatory_terms"]
+            if _has_requirement_evidence(term, cv_text, qualification_terms)
+        ],
         taxonomy["mandatory_terms"],
     )
     evidence_map = _build_evidence_map(
         cv_text,
         requirement_terms,
         taxonomy["mandatory_terms"],
-        taxonomy["required_qualifications"],
+        qualification_terms,
         job_lower,
     )
     evidenced = [item for item in evidence_map if item["status"] == "verified"]
@@ -226,11 +247,12 @@ def calculate_score_details(cv_text, job_description, job_title=""):
             "detected_family": taxonomy.get("detected_family", ""),
             "required_skills": taxonomy["required_skills"],
             "required_qualifications": taxonomy["required_qualifications"],
+            "qualification_terms": qualification_terms,
             "mandatory_terms": taxonomy["mandatory_terms"],
             "missing_mandatory": missing_mandatory,
             "matched_required": [
                 term for term in taxonomy["required_skills"] + taxonomy["required_qualifications"]
-                if _term_in_text(term, cv_lower)
+                if _has_requirement_evidence(term, cv_text, qualification_terms)
             ],
         },
         "score_components": {
@@ -250,7 +272,7 @@ def calculate_score_details(cv_text, job_description, job_title=""):
             "label": confidence_label,
             "reasons": confidence_reasons,
         },
-        "model_version": "2.0",
+        "model_version": ATS_MODEL_VERSION,
     }
 
 
@@ -259,6 +281,7 @@ def load_taxonomy(job_text, job_title=""):
         "skills": [],
         "required_skills": [],
         "required_qualifications": [],
+        "qualification_terms": [],
         "mandatory_terms": [],
         "detected_role": "",
         "detected_family": "",
@@ -269,26 +292,44 @@ def load_taxonomy(job_text, job_title=""):
             skills.extend(skill.terms())
 
         qualifications = list(Qualification.objects.all())
+        advert_qualification_terms = [
+            qualification.normalized_name
+            for qualification in qualifications
+            if any(_term_in_text(term, job_text) for term in qualification.terms())
+        ]
         role = find_best_role_template(job_text, job_title)
         if not role:
             mandatory = _detect_mandatory_qualifications(job_text, qualifications)
-            return {**empty, "skills": _unique_keep_order(skills), "mandatory_terms": mandatory}
+            return {
+                **empty,
+                "skills": _unique_keep_order(skills),
+                "qualification_terms": _unique_keep_order(advert_qualification_terms),
+                "mandatory_terms": mandatory,
+            }
 
         required_skills = [
             req.skill.normalized_name
             for req in role.skill_requirements.select_related("skill")
             if req.importance == "required"
         ]
+        role_qualification_requirements = list(
+            role.qualification_requirements.select_related("qualification")
+        )
         required_qualifications = [
             req.qualification.normalized_name
-            for req in role.qualification_requirements.select_related("qualification")
+            for req in role_qualification_requirements
             if req.importance == "required"
+        ]
+        qualification_terms = advert_qualification_terms + [
+            req.qualification.normalized_name
+            for req in role_qualification_requirements
         ]
         mandatory = _unique_keep_order(required_qualifications + _detect_mandatory_qualifications(job_text, qualifications))
         return {
             "skills": _unique_keep_order(skills),
             "required_skills": _unique_keep_order(required_skills),
             "required_qualifications": _unique_keep_order(required_qualifications),
+            "qualification_terms": _unique_keep_order(qualification_terms),
             "mandatory_terms": mandatory,
             "detected_role": role.title,
             "detected_family": role.job_family.name,
@@ -389,6 +430,59 @@ def _term_in_text(term, text):
     return re.search(r"\b" + re.escape(term.lower()) + r"\b", text) is not None
 
 
+def _qualification_evidence_state(term, cv_text):
+    """Classify qualification wording without treating every mention as proof."""
+    passages = [
+        sentence for sentence in _sentences(cv_text)
+        if _term_in_text(term, sentence.lower())
+    ]
+    if not passages:
+        return "not_evidenced", ""
+
+    passage = passages[0]
+    context = " ".join(passages).lower()
+    not_held_patterns = (
+        r"\b(?:researching|considering|interested in|planning|intend(?:ing)? to)\b",
+        r"\bnot\s+(?:yet\s+)?(?:enrolled|qualified|certified|completed|held)\b",
+        r"\b(?:do not|does not|don't|doesn't)\s+(?:hold|have)\b",
+        r"\bwithout\b",
+    )
+    training_patterns = (
+        r"\b(?:working|studying)\s+towards\b",
+        r"\b(?:currently\s+)?(?:enrolled|studying|training)\b",
+        r"\b(?:course|qualification|certification)\s+in\s+progress\b",
+        r"\bcurrently\s+completing\b",
+    )
+    expired_patterns = (
+        r"\bexpired\b", r"\blapsed\b", r"\bout[- ]of[- ]date\b",
+        r"\bno longer valid\b",
+    )
+    held_patterns = (
+        r"\b(?:achieved|awarded|completed|earned|obtained)\b",
+        r"\b(?:certified|qualified|licensed|registered)\b",
+        r"\b(?:hold|holds|holding)\b",
+    )
+
+    if any(re.search(pattern, context) for pattern in not_held_patterns):
+        return "not_held", passage
+    if any(re.search(pattern, context) for pattern in expired_patterns):
+        return "expired", passage
+    if any(re.search(pattern, context) for pattern in training_patterns):
+        return "training", passage
+    if any(re.search(pattern, context) for pattern in held_patterns):
+        return "held", passage
+    if re.search(r"\b(?:19|20)\d{2}\b|\blevel\s+\d+\b", context):
+        return "held", passage
+    return "mentioned", passage
+
+
+def _has_requirement_evidence(term, cv_text, qualification_terms):
+    if term in set(qualification_terms):
+        state, _passage = _qualification_evidence_state(term, cv_text)
+        return state == "held"
+    return _term_in_text(term, (cv_text or "").lower())
+
+
 def _ratio_score(matched, required):
     if not required:
         return 0
@@ -454,7 +548,35 @@ def _build_evidence_map(cv_text, requirements, mandatory_terms, qualification_te
         lower = passage.lower()
         has_action = any(signal in lower for signal in EVIDENCE_SIGNALS)
         has_measure = bool(re.search(r"\b\d+(?:\.\d+)?%?\b|£|\$", passage))
-        if passage and (has_action or has_measure or term in qualification_set):
+        qualification_status = ""
+        if term in qualification_set:
+            qualification_status, qualification_passage = _qualification_evidence_state(term, cv_text)
+            passage = qualification_passage[:300]
+            if qualification_status == "held":
+                status = "verified"
+                strength = "qualification evidenced"
+                action = "Retain only if the qualification details and date are accurate."
+            elif qualification_status == "training":
+                status = "training"
+                strength = "in training"
+                action = "Describe this as in progress. Do not present it as completed."
+            elif qualification_status == "expired":
+                status = "expired"
+                strength = "expired or lapsed"
+                action = "Do not present this as current. State the expiry status if relevant."
+            elif qualification_status == "not_held":
+                status = "not_held"
+                strength = "not held"
+                action = "Keep this out of the CV as a held qualification."
+            elif qualification_status == "mentioned":
+                status = "mentioned"
+                strength = "mention only"
+                action = "Confirm whether this is held, in progress, expired, or only being considered."
+            else:
+                status = "proof_required"
+                strength = "not evidenced"
+                action = "Do not add this claim without the qualification, licence, or proof."
+        elif passage and (has_action or has_measure):
             status = "verified"
             strength = "measurable" if has_measure else "demonstrated"
             action = "Safe to retain after checking the wording against your experience."
@@ -477,6 +599,7 @@ def _build_evidence_map(cv_text, requirements, mandatory_terms, qualification_te
             "strength": strength,
             "passage": passage,
             "action": action,
+            "qualification_status": qualification_status,
         })
     return evidence
 

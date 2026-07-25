@@ -998,6 +998,28 @@
         margin: 0 0 0.3rem;
     }
 
+    .cv-draft-state {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 0.45rem;
+    }
+
+    .cv-draft-state strong {
+        background: color-mix(in srgb, var(--report-navy) 9%, var(--report-card));
+        border: 1px solid var(--report-line);
+        border-radius: 999px;
+        color: var(--report-navy);
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+    }
+
+    .cv-draft-state span {
+        color: var(--report-muted);
+        font-size: 0.75rem;
+    }
+
     .cv-change-review {
         display: grid;
         gap: 0.85rem;
@@ -1332,6 +1354,9 @@
     .truth-status.mentioned { background: #1a73e8; color: #fff; }
     .truth-status.confirmation_required { background: #174ea6; color: #fff; }
     .truth-status.proof_required { background: #d93025; color: #fff; }
+    .truth-status.training { background: #a6a4a4; color: #fff; }
+    .truth-status.expired,
+    .truth-status.not_held { background: #fa3737; color: #fff; }
 
     .requirement-title {
         color: var(--truth-card-ink);
@@ -2161,6 +2186,9 @@
                         <span class="truth-status {{ item.status }}">
                             {% if item.status == "verified" %}Verified in CV
                             {% elif item.status == "mentioned" %}Keyword only
+                            {% elif item.status == "training" %}Training in progress
+                            {% elif item.status == "expired" %}Expired or lapsed
+                            {% elif item.status == "not_held" %}Not held
                             {% elif item.status == "proof_required" %}Proof or licence required
                             {% else %}Candidate confirmation required{% endif %}
                         </span>
@@ -2416,6 +2444,10 @@
                         <div>
                             <h3 id="full-cv-workspace-title">Evidence-grounded full CV workspace</h3>
                             <p class="report-muted mb-0">The source CV structure is preserved. Review every line before using or exporting the draft.</p>
+                            <div class="cv-draft-state" aria-label="CV draft status">
+                                <strong>{{ structured_cv_draft.draft_state_label }}</strong>
+                                <span>{{ structured_cv_draft.draft_state_note }}</span>
+                            </div>
                         </div>
                         {% if result.generated_cv and can_download %}
                             <div class="d-flex gap-2 flex-wrap">

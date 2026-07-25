@@ -16,6 +16,7 @@ SECTION_ALIASES = {
     "summary": {
         "profile", "professional profile", "personal profile", "summary",
         "professional summary", "career summary", "personal statement",
+        "about me", "career objective", "objective", "executive summary",
     },
     "skills": {
         "skills", "key skills", "core skills", "technical skills",
@@ -24,16 +25,21 @@ SECTION_ALIASES = {
     "experience": {
         "experience", "work experience", "employment", "employment history",
         "professional experience", "career history", "work history",
+        "employment experience", "professional background",
     },
     "education": {
         "education", "education and training", "academic background",
-        "qualifications", "academic qualifications",
+        "qualifications", "academic qualifications", "education qualifications",
     },
     "certifications": {
         "certifications", "certificates", "licences", "licenses",
-        "professional development", "training",
+        "professional development", "training", "courses",
+        "professional qualifications", "certifications training",
     },
     "projects": {"projects", "key projects", "selected projects"},
+    "achievements": {"achievements", "key achievements", "awards", "awards achievements"},
+    "languages": {"languages", "language skills"},
+    "volunteering": {"volunteering", "voluntary experience", "community involvement"},
     "interests": {"interests", "hobbies", "interests and activities"},
     "references": {"references"},
 }
@@ -46,6 +52,9 @@ SECTION_TITLES = {
     "education": "Education and Qualifications",
     "certifications": "Certifications and Training",
     "projects": "Selected Projects",
+    "achievements": "Key Achievements",
+    "languages": "Languages",
+    "volunteering": "Volunteering",
     "interests": "Interests",
     "references": "References",
     "other": "Additional Information",
@@ -53,7 +62,9 @@ SECTION_TITLES = {
 
 
 def _normalise_heading(line):
-    return re.sub(r"[^a-z0-9& ]+", "", line.lower()).strip()
+    cleaned = re.sub(r"^\s*(?:section\s+)?\d+\s*[.)-]?\s*", "", line.lower())
+    cleaned = re.sub(r"\s*(?:/|&)\s*", " ", cleaned)
+    return re.sub(r"[^a-z0-9 ]+", "", cleaned).strip()
 
 
 def identify_section_heading(line):
@@ -209,6 +220,19 @@ def build_structured_cv_draft(cv_text, target_role, proposed_summary, matched, m
         "verified_skills": matched[:10],
         "excluded_gaps": missing[:10],
     }
+
+
+def is_legacy_generated_cv(content):
+    """Identify the pre-workspace advisory format without altering saved content."""
+    text = (content or "").strip().lower()
+    legacy_markers = (
+        "targeted cv section draft for",
+        "cv evidence plan for",
+        "review notes - do not paste",
+        "original cv content reference",
+        "proposed replacement summary",
+    )
+    return any(marker in text for marker in legacy_markers)
 
 
 def cv_text_to_docx(content, title="Tailored CV"):

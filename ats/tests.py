@@ -1,5 +1,7 @@
+from io import BytesIO
 from types import SimpleNamespace
 
+from docx import Document
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.models import User
 from django.test import SimpleTestCase, TestCase, override_settings
@@ -7,12 +9,20 @@ from django.urls import reverse
 
 from subscriptions.models import CustomerSubscription, SubscriptionPlan
 
-from .cv_drafting import build_structured_cv_draft, cv_text_to_docx, parse_cv_sections
+from .cv_drafting import (
+    build_structured_cv_draft,
+    cv_text_to_docx,
+    is_legacy_generated_cv,
+    parse_cv_sections,
+)
 from .forms import ATSAnalysisForm, MultipleFileField, validate_document
 from .models import ATSResult, CV, EnterpriseBatch, EnterpriseCandidateResult, GeneratedCV, JobRole
 from .scoring import (
+    _build_evidence_map,
     _calculate_confidence,
     _detect_mandatory_qualifications,
+    _extract_requirement_terms,
+    _has_requirement_evidence,
     calculate_score_details,
     validate_job_description,
 )
@@ -27,6 +37,7 @@ from .views import (
     enterprise_daily_usage,
     humanize_requirement_term,
     format_document_heading,
+    resolve_generated_cv_draft,
 )
 
 
@@ -153,6 +164,24 @@ Business Administration Diploma
         document = cv_text_to_docx(self.source_cv, "Alex CV")
         self.assertTrue(document.startswith(b"PK"))
         self.assertGreater(len(document), 1000)
+        parsed = Document(BytesIO(document))
+        self.assertEqual(parsed.paragraphs[0].text, "Alex Example")
+        self.assertIn("Professional Summary", [paragraph.text for paragraph in parsed.paragraphs])
+
+    def test_parser_understands_decorated_and_alternative_headings(self):
+        sections = parse_cv_sections(
+            "Alex Example\n\n1. ABOUT ME\nProfile text.\n\n"
+            "02 - PROFESSIONAL BACKGROUND\nRole history.\n\n"
+            "EDUCATION / QUALIFICATIONS\nDiploma.\n\nAWARDS & ACHIEVEMENTS\nAward."
+        )
+        self.assertEqual(
+            [section["key"] for section in sections],
+            ["header", "summary", "experience", "education", "achievements"],
+        )
+
+    def test_legacy_generated_format_is_detected(self):
+        self.assertTrue(is_legacy_generated_cv("Targeted CV Section Draft for HR Coordinator"))
+        self.assertFalse(is_legacy_generated_cv(self.source_cv))
 
     def test_document_headings_are_normalised_centrally(self):
         self.assertEqual(
@@ -205,6 +234,10 @@ class EditableCVDraftEndpointTests(TestCase):
         )
         self.generated_cv.refresh_from_db()
         self.assertEqual(self.generated_cv.content, revised.strip())
+        self.assertEqual(
+            resolve_generated_cv_draft(self.result, self.generated_cv)["draft_state"],
+            "candidate_edited",
+        )
 
         export_response = self.client.get(reverse("download_generated_cv_docx", args=[self.result.id]))
         self.assertEqual(export_response.status_code, 200)
@@ -222,6 +255,25 @@ class EditableCVDraftEndpointTests(TestCase):
             {"cv_draft_content": "Unauthorised change " * 20},
         )
         self.assertEqual(response.status_code, 404)
+
+    def test_legacy_draft_is_upgraded_without_overwriting_saved_record(self):
+        legacy = (
+            "Targeted CV Section Draft for Operations Manager\n\n"
+            "Proposed Replacement Summary\nLegacy advisory wording.\n\n"
+            "Original CV Content Reference\nOld reference."
+        )
+        self.generated_cv.content = legacy
+        self.generated_cv.save(update_fields=["content"])
+
+        draft = resolve_generated_cv_draft(self.result, self.generated_cv)
+        self.assertEqual(draft["draft_state"], "legacy_upgraded")
+        self.assertNotIn("Targeted CV Section Draft", draft["editable_content"])
+        self.generated_cv.refresh_from_db()
+        self.assertEqual(self.generated_cv.content, legacy)
+
+        response = self.client.get(reverse("download_generated_cv", args=[self.result.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Targeted CV Section Draft")
 
 
 class CoverLetterTests(SimpleTestCase):
@@ -249,6 +301,56 @@ class CoverLetterTests(SimpleTestCase):
 
 
 class ATSV2Tests(TestCase):
+    def test_generic_advert_grammar_is_not_promoted_to_requirements(self):
+        terms = _extract_requirement_terms(
+            (
+                "Essential capabilities include recruitment and onboarding for a growing team. "
+                "The successful candidate will coordinate the complete process."
+            ),
+            "HR Coordinator",
+            ["recruitment", "onboarding"],
+        )
+        self.assertIn("recruitment", terms)
+        self.assertIn("onboarding", terms)
+        for generic in (
+            "essential", "capabilities", "include", "growing", "successful",
+            "coordinate", "complete",
+        ):
+            self.assertNotIn(generic, terms)
+
+    def test_qualification_mentions_are_classified_without_false_verification(self):
+        scenarios = (
+            ("Currently researching CIPD Level 3 but not yet enrolled.", "not_held"),
+            ("Currently studying towards CIPD Level 3.", "training"),
+            ("CIPD membership lapsed in 2023.", "expired"),
+            ("Awarded CIPD Level 3 in 2023.", "verified"),
+        )
+        for cv_text, expected_status in scenarios:
+            with self.subTest(cv_text=cv_text):
+                evidence = _build_evidence_map(
+                    cv_text,
+                    ["cipd"],
+                    [],
+                    ["cipd"],
+                    "CIPD qualification is preferred.",
+                )
+                self.assertEqual(evidence[0]["status"], expected_status)
+
+        self.assertFalse(
+            _has_requirement_evidence(
+                "cipd",
+                "Currently researching CIPD Level 3 but not yet enrolled.",
+                ["cipd"],
+            )
+        )
+        self.assertTrue(
+            _has_requirement_evidence(
+                "cipd",
+                "Awarded CIPD Level 3 in 2023.",
+                ["cipd"],
+            )
+        )
+
     def test_short_or_placeholder_job_advert_is_rejected(self):
         valid, reason = validate_job_description("Job advert URL: https://example.com/job")
         self.assertFalse(valid)
@@ -279,7 +381,7 @@ class ATSV2Tests(TestCase):
         django_evidence = next(item for item in details["evidence_map"] if item["term"] == "django")
         self.assertEqual(django_evidence["status"], "mentioned")
         self.assertEqual(django_evidence["strength"], "keyword only")
-        self.assertEqual(details["model_version"], "2.0")
+        self.assertEqual(details["model_version"], "2.1")
         self.assertIn("evidence", details["score_components"])
         self.assertIn("format", details["score_components"])
 
@@ -309,7 +411,7 @@ class ATSV2Tests(TestCase):
                 "Python, Django, SQL and testing. Candidates must have software experience. " * 2
             ),
             metrics={
-                "model_version": "2.0",
+                "model_version": "2.1",
                 "score_components": {},
                 "evidence_map": [{"term": "django", "status": "mentioned"}],
                 "requirement_groups": {},
