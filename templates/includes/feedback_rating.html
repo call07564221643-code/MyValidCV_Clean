@@ -5,11 +5,9 @@
 <section class="mvcv-feedback mvcv-feedback-visible" data-feedback-widget aria-labelledby="feedback-title-{{ feedback_context_id|default:'global' }}">
     <header class="mvcv-feedback-header">
         <div>
-            <span class="mvcv-feedback-kicker">MyValidCV Feedback Circle</span>
-            <h2 id="feedback-title-{{ feedback_context_id|default:'global' }}">Rate this experience</h2>
+            <h2 id="feedback-title-{{ feedback_context_id|default:'global' }}">Rate your experience</h2>
+            <p>Selected feedback may receive a private thank-you code.</p>
         </div>
-        <span class="mvcv-feedback-summary-icon" aria-hidden="true">★</span>
-        <p class="mvcv-feedback-recognition"><span aria-hidden="true">✦</span> Selected, actionable feedback may receive a private MyValidCV benefit code.</p>
     </header>
 {% endif %}
     <form class="mvcv-feedback-form"
@@ -19,7 +17,7 @@
         {% csrf_token %}
         <div class="mvcv-feedback-quick">
             <fieldset>
-                <legend>How helpful?</legend>
+                <legend class="visually-hidden">How helpful was this experience?</legend>
                 <div class="mvcv-star-rating" aria-label="Choose one to five stars">
                     <input id="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-5" type="radio" name="rating" value="5" required>
                     <label for="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-5" title="5 stars"><span aria-hidden="true">★</span><span class="visually-hidden">5 stars</span></label>
@@ -40,7 +38,7 @@
         </div>
 
         <details class="mvcv-feedback-more">
-            <summary>Add a comment or detail <span>Optional</span></summary>
+            <summary>+ Comment <span>Optional</span></summary>
             <div class="mvcv-feedback-more-body">
                 <fieldset class="mvcv-feedback-categories">
                     <legend>What stood out?</legend>
