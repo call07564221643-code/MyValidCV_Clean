@@ -864,6 +864,32 @@
         margin: 0.25rem 0 0;
     }
 
+    .cv-preview-meta {
+        align-items: baseline;
+        display: grid;
+        gap: 0.25rem 0.6rem;
+        grid-template-columns: max-content minmax(0, 1fr);
+        margin: 0.35rem 0 0;
+        text-align: left;
+    }
+
+    .cv-preview-meta dt,
+    .cv-preview-meta dd {
+        margin: 0;
+    }
+
+    .cv-preview-meta dt {
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .cv-preview-meta dd {
+        color: #334155;
+        font-size: 0.9rem;
+        font-weight: 650;
+    }
+
     .cv-preview-section {
         margin-top: 1rem;
     }
@@ -2348,7 +2374,10 @@
                         <div class="cv-preview-page">
                             <div class="cv-preview-header">
                                 <h3>{{ cv_draft_preview.candidate_name }}</h3>
-                                <p>Target role: {{ cv_draft_preview.target_role }}</p>
+                                <dl class="cv-preview-meta">
+                                    <dt>Target role</dt>
+                                    <dd>{{ cv_draft_preview.target_role }}</dd>
+                                </dl>
                             </div>
 
                             <div class="cv-preview-section">

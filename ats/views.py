@@ -567,9 +567,10 @@ def build_cv_draft_preview(result, matched, missing, cv_text=""):
     taxonomy = (result.metrics or {}).get("taxonomy", {})
     if safe_role.strip().lower() in {"imported job role", "advertised role"}:
         safe_role = taxonomy.get("detected_role") or "the advertised role"
+    safe_role = format_document_heading(safe_role)
     evidence_lines = extract_cv_evidence_lines(cv_text, matched, limit=4)
     return {
-        "candidate_name": result.cv.title,
+        "candidate_name": format_document_heading(result.cv.title),
         "target_role": safe_role,
         "summary": (
             f"Professional targeting {safe_role}, with source-CV evidence in {matched_text}. "
@@ -585,6 +586,36 @@ def build_cv_draft_preview(result, matched, missing, cv_text=""):
             f"Not evidenced strongly enough in the source CV: {missing_text}."
         ),
     }
+
+
+def format_document_heading(value):
+    """Normalise user-supplied report headings without damaging mixed-case names."""
+    text = re.sub(r"\s+", " ", (value or "").strip())
+    if not text:
+        return ""
+
+    acronyms = {
+        "ats": "ATS",
+        "cv": "CV",
+        "gdpr": "GDPR",
+        "hr": "HR",
+        "it": "IT",
+        "uk": "UK",
+    }
+    normalise_words = text.islower()
+    words = []
+    for word in text.split(" "):
+        bare_word = re.sub(r"[^A-Za-z0-9]+", "", word).lower()
+        if bare_word in acronyms:
+            replacement = acronyms[bare_word]
+            words.append(re.sub(re.escape(bare_word), replacement, word, flags=re.IGNORECASE))
+        elif normalise_words and word:
+            words.append(word[0].upper() + word[1:])
+        else:
+            words.append(word)
+
+    formatted = " ".join(words)
+    return formatted[0].upper() + formatted[1:] if formatted else ""
 
 
 def build_report_insights(result, matched, missing):
