@@ -296,6 +296,51 @@ class GeneratedCV(models.Model):
         return self.title
 
 
+class CVBulletSuggestion(models.Model):
+    """One auditable Stage 2 rewrite decision linked to an owned ATS result."""
+    STATUS_CHOICES = [
+        ("pending", "Pending review"),
+        ("accepted", "Accepted"),
+        ("edited", "Candidate-edited"),
+        ("rejected", "Rejected"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="cv_bullet_suggestions")
+    ats_result = models.ForeignKey(
+        ATSResult,
+        on_delete=models.CASCADE,
+        related_name="bullet_suggestions",
+    )
+    position = models.PositiveIntegerField(default=0)
+    fingerprint = models.CharField(max_length=64)
+    original_text = models.TextField()
+    proposed_text = models.TextField()
+    edited_text = models.TextField(blank=True)
+    evidence_terms = models.JSONField(default=list, blank=True)
+    evidence_passage = models.TextField(blank=True)
+    rationale = models.CharField(max_length=300)
+    has_measure = models.BooleanField(default=False)
+    measurement_prompt = models.CharField(max_length=220, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["position", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["ats_result", "fingerprint"],
+                name="unique_result_bullet_suggestion",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["user", "ats_result", "status"], name="bullet_user_result_status_idx")
+        ]
+
+    def __str__(self):
+        return f"{self.ats_result_id} bullet {self.position + 1} ({self.status})"
+
+
 class GeneratedCoverLetter(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="generated_cover_letters")
     ats_result = models.OneToOneField(ATSResult, on_delete=models.CASCADE, related_name="generated_cover_letter")

@@ -1134,6 +1134,120 @@
         overflow: auto;
     }
 
+    .bullet-review-studio {
+        border-top: 1px solid var(--report-line);
+        margin-top: 1.2rem;
+        padding-top: 1.2rem;
+    }
+
+    .bullet-review-head {
+        align-items: flex-start;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        justify-content: space-between;
+        margin-bottom: 0.85rem;
+    }
+
+    .bullet-review-head h3 {
+        color: var(--report-ink);
+        font-size: 1.12rem;
+        font-weight: 800;
+        margin: 0 0 0.2rem;
+    }
+
+    .bullet-review-progress {
+        color: var(--report-muted);
+        font-size: 0.76rem;
+    }
+
+    .bullet-suggestion {
+        background: var(--report-card);
+        border: 1px solid var(--report-line);
+        border-radius: 14px;
+        margin-top: 0.7rem;
+        padding: 0.85rem;
+    }
+
+    .bullet-suggestion-top {
+        align-items: center;
+        display: flex;
+        gap: 0.5rem;
+        justify-content: space-between;
+        margin-bottom: 0.65rem;
+    }
+
+    .bullet-state {
+        background: var(--report-soft);
+        border: 1px solid var(--report-line);
+        border-radius: 999px;
+        color: var(--report-muted);
+        font-size: 0.68rem;
+        font-weight: 800;
+        padding: 0.18rem 0.45rem;
+        text-transform: uppercase;
+    }
+
+    .bullet-state.accepted,
+    .bullet-state.edited { background: rgba(115, 209, 121, 0.16); color: #237a3b; }
+    .bullet-state.rejected { background: rgba(250, 55, 55, 0.12); color: #b42318; }
+
+    .bullet-comparison {
+        display: grid;
+        gap: 0.6rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .bullet-comparison > div {
+        background: var(--report-soft);
+        border-radius: 10px;
+        padding: 0.7rem;
+    }
+
+    .bullet-comparison strong {
+        color: var(--report-ink);
+        display: block;
+        font-size: 0.72rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .bullet-comparison p {
+        color: var(--report-muted);
+        font-size: 0.82rem;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .bullet-review-actions {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 0.7rem;
+    }
+
+    .bullet-edit {
+        flex-basis: 100%;
+    }
+
+    .bullet-edit summary {
+        color: var(--report-navy);
+        cursor: pointer;
+        font-size: 0.76rem;
+        font-weight: 750;
+    }
+
+    .bullet-edit textarea {
+        background: var(--report-card);
+        border: 1px solid var(--report-line);
+        border-radius: 10px;
+        color: var(--report-ink);
+        margin: 0.5rem 0;
+        min-height: 92px;
+        padding: 0.65rem;
+        width: 100%;
+    }
+
     .letter-draft-note {
         align-items: flex-start;
         background: var(--report-soft);
@@ -1926,6 +2040,10 @@
             grid-template-columns: 1fr;
         }
 
+        .bullet-comparison {
+            grid-template-columns: 1fr;
+        }
+
         .intelligence-grid {
             grid-template-columns: 1fr;
         }
@@ -2438,6 +2556,85 @@
                         </div>
                     </div>
                 </div>
+
+                <section class="bullet-review-studio" id="stage-2-bullet-review" aria-labelledby="bullet-review-title">
+                    <div class="bullet-review-head">
+                        <div>
+                            <h3 id="bullet-review-title">Stage 2: Experience bullet review</h3>
+                            <p class="report-muted mb-0">Review one evidence-safe wording decision at a time. Nothing enters the CV until you accept or edit it and apply the review.</p>
+                        </div>
+                        {% if bullet_review_summary.total %}
+                            <span class="bullet-review-progress">
+                                {{ bullet_review_summary.total }} suggestions ·
+                                {{ bullet_review_summary.pending }} pending ·
+                                {{ bullet_review_summary.accepted|add:bullet_review_summary.edited }} approved
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    {% if can_download %}
+                        {% if bullet_suggestions %}
+                            {% for suggestion in bullet_suggestions %}
+                                <article class="bullet-suggestion" id="bullet-{{ suggestion.id }}">
+                                    <div class="bullet-suggestion-top">
+                                        <strong>Experience bullet {{ forloop.counter }}</strong>
+                                        <span class="bullet-state {{ suggestion.status }}">{{ suggestion.get_status_display }}</span>
+                                    </div>
+                                    <div class="bullet-comparison">
+                                        <div>
+                                            <strong>Original evidence</strong>
+                                            <p>{{ suggestion.original_text }}</p>
+                                        </div>
+                                        <div>
+                                            <strong>Proposed wording</strong>
+                                            <p>{% if suggestion.status == "edited" %}{{ suggestion.edited_text }}{% else %}{{ suggestion.proposed_text }}{% endif %}</p>
+                                        </div>
+                                    </div>
+                                    <p class="report-muted small mt-2 mb-1">{{ suggestion.rationale }}</p>
+                                    {% if suggestion.evidence_terms %}
+                                        <div>
+                                            {% for term in suggestion.evidence_terms %}<span class="evidence-term">{{ term }}</span>{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if suggestion.measurement_prompt %}
+                                        <div class="value-note mt-2">{{ suggestion.measurement_prompt }}</div>
+                                    {% endif %}
+                                    <div class="bullet-review-actions">
+                                        <form method="post" action="{% url 'decide_bullet_suggestion' result.id suggestion.id %}">
+                                            {% csrf_token %}<input type="hidden" name="decision" value="accepted">
+                                            <button class="btn btn-primary btn-sm" type="submit">Accept</button>
+                                        </form>
+                                        <form method="post" action="{% url 'decide_bullet_suggestion' result.id suggestion.id %}">
+                                            {% csrf_token %}<input type="hidden" name="decision" value="rejected">
+                                            <button class="btn btn-outline-secondary btn-sm" type="submit">Reject</button>
+                                        </form>
+                                        <details class="bullet-edit">
+                                            <summary>Edit before accepting</summary>
+                                            <form method="post" action="{% url 'decide_bullet_suggestion' result.id suggestion.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="decision" value="edited">
+                                                <textarea name="edited_text" maxlength="600">{{ suggestion.edited_text|default:suggestion.proposed_text }}</textarea>
+                                                <button class="btn btn-primary btn-sm" type="submit">Save edited wording</button>
+                                            </form>
+                                        </details>
+                                    </div>
+                                </article>
+                            {% endfor %}
+                            <form class="mt-3" method="post" action="{% url 'apply_bullet_review' result.id %}">
+                                {% csrf_token %}
+                                <button class="btn btn-primary" type="submit">Apply approved bullets to CV draft</button>
+                                <p class="report-muted small mt-2 mb-0">Pending and rejected bullets remain unchanged. Review the rebuilt full CV before downloading it.</p>
+                            </form>
+                        {% else %}
+                            <form method="post" action="{% url 'start_bullet_review' result.id %}">
+                                {% csrf_token %}
+                                <button class="btn btn-primary" type="submit">Start experience bullet review</button>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <div class="value-note">Plus users can review, accept, edit and apply experience-bullet changes.</div>
+                    {% endif %}
+                </section>
 
                 <section class="full-cv-workspace" id="full-cv-workspace" aria-labelledby="full-cv-workspace-title">
                     <div class="full-cv-workspace-header">

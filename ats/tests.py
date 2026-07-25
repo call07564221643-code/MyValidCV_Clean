@@ -9,6 +9,7 @@ from django.urls import reverse
 
 from subscriptions.models import CustomerSubscription, SubscriptionPlan
 
+from .bullet_rewriting import apply_bullet_decisions, extract_experience_bullets, propose_safe_bullet
 from .cv_drafting import (
     build_structured_cv_draft,
     cv_text_to_docx,
@@ -16,7 +17,15 @@ from .cv_drafting import (
     parse_cv_sections,
 )
 from .forms import ATSAnalysisForm, MultipleFileField, validate_document
-from .models import ATSResult, CV, EnterpriseBatch, EnterpriseCandidateResult, GeneratedCV, JobRole
+from .models import (
+    ATSResult,
+    CV,
+    CVBulletSuggestion,
+    EnterpriseBatch,
+    EnterpriseCandidateResult,
+    GeneratedCV,
+    JobRole,
+)
 from .scoring import (
     _build_evidence_map,
     _calculate_confidence,
@@ -183,6 +192,60 @@ Business Administration Diploma
         self.assertTrue(is_legacy_generated_cv("Targeted CV Section Draft for HR Coordinator"))
         self.assertFalse(is_legacy_generated_cv(self.source_cv))
 
+
+class BulletRewritingTests(SimpleTestCase):
+    def test_experience_bullets_are_extracted_with_source_evidence(self):
+        cv_text = """Alex Example
+
+Professional Experience
+Operations Officer | Example Ltd | 2022 - Present
+Responsible for managing weekly reporting for senior stakeholders
+Maintained an Excel tracker and reduced unresolved cases by 18%.
+
+Education
+Diploma
+"""
+        suggestions = extract_experience_bullets(
+            cv_text,
+            ["reporting", "stakeholder", "excel"],
+        )
+        self.assertEqual(len(suggestions), 2)
+        self.assertTrue(suggestions[0]["proposed_text"].startswith("Managed"))
+        self.assertIn("reporting", suggestions[0]["evidence_terms"])
+        self.assertFalse(suggestions[0]["has_measure"])
+        self.assertTrue(suggestions[1]["has_measure"])
+
+    def test_safe_proposal_does_not_add_new_facts(self):
+        proposed, changed = propose_safe_bullet(
+            "Responsible for coordinating interview schedules"
+        )
+        self.assertTrue(changed)
+        self.assertEqual(proposed, "Coordinated interview schedules.")
+        self.assertNotIn("improved", proposed.lower())
+
+    def test_only_accepted_or_edited_decisions_are_applied(self):
+        suggestions = [
+            SimpleNamespace(
+                status="accepted",
+                original_text="Managed weekly reports.",
+                proposed_text="Managed weekly operational reports.",
+                edited_text="",
+            ),
+            SimpleNamespace(
+                status="rejected",
+                original_text="Supported meetings.",
+                proposed_text="Coordinated meetings.",
+                edited_text="",
+            ),
+        ]
+        rebuilt, applied = apply_bullet_decisions(
+            "Managed weekly reports.\nSupported meetings.",
+            suggestions,
+        )
+        self.assertEqual(applied, 1)
+        self.assertIn("Managed weekly operational reports.", rebuilt)
+        self.assertIn("Supported meetings.", rebuilt)
+
     def test_document_headings_are_normalised_centrally(self):
         self.assertEqual(
             format_document_heading("alex morgan - hr cv"),
@@ -204,7 +267,21 @@ class EditableCVDraftEndpointTests(TestCase):
             monthly_analysis_limit=20,
         )
         CustomerSubscription.objects.create(user=self.user, plan=plan, status="active")
-        self.cv = CV.objects.create(user=self.user, title="Candidate CV", file="cvs/candidate.txt")
+        self.source_cv_text = (
+            "Candidate CV\n\nProfessional Summary\nOperations professional.\n\n"
+            "Professional Experience\nOperations Officer | Example Ltd | 2022 - Present\n"
+            "Responsible for managing weekly reporting for senior stakeholders\n"
+            "Maintained an Excel tracker and reduced unresolved cases by 18%.\n\n"
+            "Education\nBusiness Diploma | 2020"
+        )
+        self.cv = CV.objects.create(
+            user=self.user,
+            title="Candidate CV",
+            file="cvs/candidate.txt",
+            original_filename="candidate.txt",
+            mime_type="text/plain",
+            file_data=self.source_cv_text.encode(),
+        )
         self.result = ATSResult.objects.create(
             user=self.user,
             cv=self.cv,
@@ -274,6 +351,54 @@ class EditableCVDraftEndpointTests(TestCase):
         response = self.client.get(reverse("download_generated_cv", args=[self.result.id]))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Targeted CV Section Draft")
+
+    def test_owner_can_review_and_apply_bullet_decisions(self):
+        start = self.client.post(reverse("start_bullet_review", args=[self.result.id]))
+        self.assertRedirects(
+            start,
+            f"{reverse('ats_result', args=[self.result.id])}#stage-2-bullet-review",
+            fetch_redirect_response=False,
+        )
+        suggestions = list(self.result.bullet_suggestions.all())
+        self.assertEqual(len(suggestions), 2)
+
+        first = suggestions[0]
+        decision = self.client.post(
+            reverse("decide_bullet_suggestion", args=[self.result.id, first.id]),
+            {"decision": "accepted"},
+        )
+        self.assertEqual(decision.status_code, 302)
+        first.refresh_from_db()
+        self.assertEqual(first.status, "accepted")
+
+        self.generated_cv.content = self.source_cv_text
+        self.generated_cv.save(update_fields=["content"])
+        applied = self.client.post(reverse("apply_bullet_review", args=[self.result.id]))
+        self.assertRedirects(
+            applied,
+            f"{reverse('ats_result', args=[self.result.id])}#full-cv-workspace",
+            fetch_redirect_response=False,
+        )
+        self.generated_cv.refresh_from_db()
+        self.assertIn(first.proposed_text, self.generated_cv.content)
+
+    def test_other_user_cannot_decide_owned_bullet(self):
+        suggestion = CVBulletSuggestion.objects.create(
+            user=self.user,
+            ats_result=self.result,
+            position=0,
+            fingerprint="a" * 64,
+            original_text="Managed weekly reporting for senior stakeholders.",
+            proposed_text="Managed weekly reporting for senior stakeholders.",
+            rationale="Keeps verified wording.",
+        )
+        other = User.objects.create_user("bullet-other", password="password")
+        self.client.force_login(other)
+        response = self.client.post(
+            reverse("decide_bullet_suggestion", args=[self.result.id, suggestion.id]),
+            {"decision": "accepted"},
+        )
+        self.assertEqual(response.status_code, 404)
 
 
 class CoverLetterTests(SimpleTestCase):

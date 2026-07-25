@@ -4,6 +4,7 @@ from .models import (
     ApplicationReminder,
     ATSResult,
     CV,
+    CVBulletSuggestion,
     CVStorage,
     EnterpriseBatch,
     EnterpriseCandidateResult,
@@ -19,6 +20,14 @@ from .models import (
 )
 
 admin.site.register(GeneratedCoverLetter)
+
+
+@admin.register(CVBulletSuggestion)
+class CVBulletSuggestionAdmin(admin.ModelAdmin):
+    list_display = ("ats_result", "position", "status", "user", "updated_at")
+    list_filter = ("status", "has_measure", "updated_at")
+    search_fields = ("original_text", "proposed_text", "edited_text", "user__username")
+    readonly_fields = ("fingerprint", "created_at", "updated_at")
 
 
 @admin.register(CVStorage)
