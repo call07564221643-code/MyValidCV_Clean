@@ -189,7 +189,7 @@
         gap: 0.2rem;
         font-weight: 800;
         font-size: 0.95rem;
-        color: #1f3374;
+        color: var(--mvcv-brand-primary);
     }
 
     .landing-cv-title small {
@@ -230,7 +230,7 @@
         border: 1px solid #dbe5ff;
         border-radius: 10px;
         background: #f6f9ff;
-        color: #1f3374;
+        color: var(--mvcv-brand-primary);
         font-size: 0.76rem;
         font-weight: 750;
     }
@@ -258,7 +258,7 @@
         content: "Job match report";
         display: block;
         margin-bottom: 0.35rem;
-        color: #1f3374;
+        color: var(--mvcv-brand-primary);
         font-size: 0.84rem;
         font-weight: 850;
     }
@@ -344,7 +344,7 @@
         display: inline-flex;
         align-items: center;
         gap: 0.45rem;
-        color: #1f3374;
+        color: var(--mvcv-brand-primary);
         font-size: 0.84rem;
         font-weight: 800;
     }
@@ -406,6 +406,30 @@
         background:
             radial-gradient(circle at 12% 18%, rgba(159, 184, 255, 0.16), transparent 30%),
             linear-gradient(145deg, #111c33 0%, #0b1224 100%);
+    }
+
+    html[data-bs-theme="dark"] .landing-cv-card,
+    html[data-bs-theme="dark"] .landing-match-card,
+    html[data-bs-theme="dark"] .landing-feature-visual {
+        background: #111c33;
+        border-color: #334155;
+    }
+
+    html[data-bs-theme="dark"] .landing-cv-features li {
+        background: #172554;
+        border-color: #334155;
+        color: #dbe7ff;
+    }
+
+    html[data-bs-theme="dark"] .landing-cv-title,
+    html[data-bs-theme="dark"] .landing-match-card::before,
+    html[data-bs-theme="dark"] .landing-relief-proof {
+        color: #dbe7ff;
+    }
+
+    html[data-bs-theme="dark"] .landing-cv-title small,
+    html[data-bs-theme="dark"] .landing-match-card div {
+        color: #cbd5e1;
     }
 
     html[data-bs-theme="dark"] .landing-relief-slide h2,

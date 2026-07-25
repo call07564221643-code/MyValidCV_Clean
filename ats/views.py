@@ -15,7 +15,12 @@ from django.contrib import messages
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from .forms import ATSAnalysisForm, CVUpdateForm, CVUploadForm, EnterpriseBulkAnalysisForm
+from .forms import (
+    ATSAnalysisForm,
+    CVUpdateForm,
+    CVUploadForm,
+    EnterpriseBulkAnalysisForm,
+)
 from .models import (
     ApplicationReminder,
     ATSResult,
@@ -285,6 +290,17 @@ def enterprise_monthly_usage(user):
     return EnterpriseCandidateResult.objects.filter(
         batch__user=user,
         created_at__gte=month_start,
+    ).count()
+
+
+ENTERPRISE_DAILY_LIMIT = 50
+
+
+def enterprise_daily_usage(user):
+    day_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    return EnterpriseCandidateResult.objects.filter(
+        batch__user=user,
+        created_at__gte=day_start,
     ).count()
 
 
@@ -1191,11 +1207,17 @@ def enterprise_bulk_upload(request):
             if not request.user.is_superuser:
                 subscription = active_enterprise_subscription(request.user)
                 monthly_limit = subscription.plan.monthly_bulk_cv_limit if subscription else 0
-                remaining = max(0, monthly_limit - enterprise_monthly_usage(request.user))
-                if len(cv_files) > remaining:
+                monthly_remaining = max(0, monthly_limit - enterprise_monthly_usage(request.user))
+                daily_remaining = max(0, ENTERPRISE_DAILY_LIMIT - enterprise_daily_usage(request.user))
+                available = min(monthly_remaining, daily_remaining)
+                if len(cv_files) > available:
                     form.add_error(
                         "cv_files",
-                        f"Your Enterprise plan has {remaining} of {monthly_limit} monthly CV scans remaining.",
+                        (
+                            f"You can scan {available} more CV(s) now. "
+                            f"Daily allowance remaining: {daily_remaining} of {ENTERPRISE_DAILY_LIMIT}. "
+                            f"Monthly allowance remaining: {monthly_remaining} of {monthly_limit}."
+                        ),
                     )
                     return render(request, "ats/enterprise_bulk.html", {"form": form})
 
@@ -1277,8 +1299,8 @@ def enterprise_report(request, batch_id):
     results = batch.candidate_results.all()
     candidate_count = results.count()
     top_candidate = results.first()
-    shortlisted_count = results.filter(score__gte=80).count()
-    review_count = results.filter(score__gte=60, score__lt=80).count()
+    aligned_count = results.filter(score__gt=50).count()
+    gap_count = results.filter(score__lte=50).count()
     average_score = 0
     if candidate_count:
         average_score = int(sum(result.score for result in results) / candidate_count)
@@ -1290,8 +1312,8 @@ def enterprise_report(request, batch_id):
             "results": results,
             "summary": {
                 "candidate_count": candidate_count,
-                "shortlisted_count": shortlisted_count,
-                "review_count": review_count,
+                "aligned_count": aligned_count,
+                "gap_count": gap_count,
                 "average_score": average_score,
                 "top_candidate": top_candidate,
             },
