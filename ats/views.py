@@ -694,6 +694,55 @@ def build_truth_gate_summary(evidence_map):
     }
 
 
+def build_reliability_guidance(confidence, historic_score=False):
+    confidence = confidence or {}
+    reasons = list(confidence.get("reasons") or [])
+    label = confidence.get("label", "Low")
+    no_role_match = any("role template" in reason.lower() for reason in reasons)
+
+    if label == "High" and not no_role_match:
+        status = "Reliable basis"
+        tone = "positive"
+        message = "We found enough clear information in the CV and job advert to support this check."
+        action = "Continue to the Truth Gate and verify each requirement before using the recommendations."
+    elif label == "Low":
+        status = "Limited check"
+        tone = "neutral"
+        message = "The CV or job advert did not provide enough clear information for a dependable comparison."
+        action = "Add more detail to the CV or job advert, then run the check again."
+    else:
+        status = "Review carefully"
+        tone = "neutral"
+        if no_role_match:
+            message = "We found enough information to assess the CV, but we could not identify the exact job type."
+        else:
+            message = "We completed the check, but some information was too limited to classify confidently."
+        action = "Check the requirements below carefully before using the recommendations."
+
+    plain_details = []
+    detail_translations = {
+        "No curated role template matched this advert.": "The exact job type could not be identified.",
+        "The CV contains limited extractable text.": "The CV contained limited readable text.",
+        "The CV contains only moderate extractable detail.": "The CV contained a moderate amount of readable detail.",
+        "The job advert is relatively short.": "The job advert was short.",
+        "The job advert contains only moderate detail.": "The job advert contained a moderate amount of detail.",
+        "Few distinct job requirements were detected.": "Only a few clear job requirements were found.",
+        "Little requirement-level evidence was located in the CV.": "Less than half of the requirements had visible CV evidence.",
+    }
+    for reason in reasons:
+        plain_details.append(detail_translations.get(reason, reason))
+    if historic_score:
+        plain_details.append("This older report keeps its original match score while using the latest explanation format.")
+
+    return {
+        "status": status,
+        "tone": tone,
+        "message": message,
+        "action": action,
+        "details": plain_details,
+    }
+
+
 def build_interview_plan(evidence_map, job_title):
     tailored = []
     focus_terms = []
@@ -1063,6 +1112,10 @@ def result_detail(request, result_id):
         evidence_item["candidate_action"] = ats_v2["candidate_confirmations"].get(evidence_item.get("term", ""))
         evidence_item["display_term"] = humanize_requirement_term(evidence_item.get("term", ""))
     truth_gate_summary = build_truth_gate_summary(ats_v2.get("evidence_map", []))
+    reliability_guidance = build_reliability_guidance(
+        ats_v2.get("confidence", {}),
+        historic_score=bool(ats_v2.get("historic_score")),
+    )
     interview_plan = build_interview_plan(ats_v2.get("evidence_map", []), result.job_title)
     breakdown = score_breakdown(result.score, matched, missing, ats_v2)
     match_intelligence = build_match_intelligence(result, cv_text)
@@ -1091,6 +1144,7 @@ def result_detail(request, result_id):
             "can_download": can_download_generated_cv(request.user),
             "ats_v2": ats_v2,
             "truth_gate_summary": truth_gate_summary,
+            "reliability_guidance": reliability_guidance,
             "interview_plan": interview_plan,
         },
     )
