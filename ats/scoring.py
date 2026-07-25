@@ -505,23 +505,33 @@ def _calculate_confidence(cv_text, job_text, requirements, evidence_map, detecte
     reasons = []
     if len(cv_text or "") >= 700:
         score += 25
+    elif len(cv_text or "") >= 350:
+        score += 15
+        reasons.append("The CV contains only moderate extractable detail.")
     else:
+        score += 5
         reasons.append("The CV contains limited extractable text.")
     if len(job_text or "") >= 500:
         score += 25
+    elif len(job_text or "") >= 250:
+        score += 15
+        reasons.append("The job advert contains only moderate detail.")
     else:
+        score += 5
         reasons.append("The job advert is relatively short.")
-    if len(requirements) >= 5:
-        score += 20
-    else:
+    requirement_points = min(20, len(requirements) * 4)
+    score += requirement_points
+    if len(requirements) < 5:
         reasons.append("Few distinct job requirements were detected.")
     if detected_role:
         score += 15
     else:
         reasons.append("No curated role template matched this advert.")
-    if any(item["passage"] for item in evidence_map):
-        score += 15
-    else:
+    evidence_items = list(evidence_map or [])
+    evidenced_items = sum(bool(item.get("passage")) for item in evidence_items)
+    evidence_coverage = evidenced_items / len(evidence_items) if evidence_items else 0
+    score += round(evidence_coverage * 15)
+    if evidence_coverage < 0.5:
         reasons.append("Little requirement-level evidence was located in the CV.")
-    label = "High" if score >= 80 else "Medium" if score >= 55 else "Low"
+    label = "High" if score >= 85 and detected_role else "Medium" if score >= 55 else "Low"
     return score, label, reasons or ["The documents contain sufficient detail for this assessment."]

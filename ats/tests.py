@@ -8,6 +8,7 @@ from django.urls import reverse
 from .forms import ATSAnalysisForm, MultipleFileField, validate_document
 from .models import ATSResult, CV
 from .scoring import (
+    _calculate_confidence,
     _detect_mandatory_qualifications,
     calculate_score_details,
     validate_job_description,
@@ -16,6 +17,7 @@ from .views import (
     _validate_public_job_url,
     build_cover_letter,
     build_interview_plan,
+    build_reliability_guidance,
     build_truth_gate_summary,
     calculate_score,
     humanize_requirement_term,
@@ -183,6 +185,11 @@ class ATSV2Tests(TestCase):
         self.assertContains(rendered, 'class="truth-gate-title"')
         self.assertContains(rendered, "font-size: 1.65rem")
         self.assertContains(rendered, "font-size: 1.45rem")
+        self.assertContains(rendered, "How reliable is this check?")
+        self.assertNotContains(rendered, "Assessment confidence:")
+        self.assertContains(rendered, "--semantic-low: #fa3737")
+        self.assertContains(rendered, "--semantic-high: #73d179")
+        self.assertContains(rendered, "--semantic-neutral: #a6a4a4")
 
 
 class TruthGateGuidanceTests(SimpleTestCase):
@@ -216,6 +223,30 @@ class TruthGateGuidanceTests(SimpleTestCase):
         self.assertEqual(plan["role"], "Care Assistant")
         self.assertIn("Care Assistant", plan["standard"][0]["prompt"])
         self.assertIn("currently learning about Safeguarding", plan["tailored"][0]["prompt"])
+
+    def test_missing_role_template_cannot_receive_high_reliability_label(self):
+        evidence_map = [{"term": f"skill {index}", "passage": "Used in a role."} for index in range(5)]
+        score, label, reasons = _calculate_confidence(
+            "A" * 800,
+            "B" * 600,
+            [f"skill {index}" for index in range(5)],
+            evidence_map,
+            "",
+        )
+
+        self.assertEqual(score, 85)
+        self.assertEqual(label, "Medium")
+        self.assertIn("No curated role template matched this advert.", reasons)
+
+    def test_reliability_guidance_uses_plain_language_without_percentage(self):
+        guidance = build_reliability_guidance({
+            "label": "Medium",
+            "reasons": ["No curated role template matched this advert."],
+        })
+
+        self.assertEqual(guidance["status"], "Review carefully")
+        self.assertIn("could not identify the exact job type", guidance["message"])
+        self.assertEqual(guidance["details"], ["The exact job type could not be identified."])
 
 
 class ATSScoringTests(TestCase):

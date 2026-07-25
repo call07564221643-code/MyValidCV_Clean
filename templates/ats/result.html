@@ -15,6 +15,10 @@
         --report-success: #15803d;
         --report-warn: #b45309;
         --report-risk: #b91c1c;
+        --semantic-low: #fa3737;
+        --semantic-high: #73d179;
+        --semantic-neutral: #a6a4a4;
+        --semantic-ink: #0f172a;
     }
 
     .report-shell {
@@ -212,7 +216,7 @@
         border-radius: 50%;
         background:
             radial-gradient(circle at center, var(--report-card) 0 58%, transparent 59%),
-            conic-gradient(#4f46e5 0 var(--score), #e2e8f0 var(--score) 100%);
+            conic-gradient(var(--score-color, #1a73e8) 0 var(--score), #e2e8f0 var(--score) 100%);
         box-shadow: inset 0 0 0 1px var(--report-line), 0 18px 38px rgba(15, 23, 42, 0.1);
         display: grid;
         place-items: center;
@@ -258,6 +262,74 @@
         border-radius: 14px;
         background: #fbfdff;
         padding: 0.72rem;
+    }
+
+    .semantic-high {
+        --score-color: var(--semantic-high);
+        border-color: color-mix(in srgb, var(--semantic-high) 68%, #ffffff);
+    }
+
+    .semantic-low {
+        --score-color: var(--semantic-low);
+        border-color: color-mix(in srgb, var(--semantic-low) 68%, #ffffff);
+    }
+
+    .semantic-neutral {
+        --score-color: var(--semantic-neutral);
+        border-color: color-mix(in srgb, var(--semantic-neutral) 68%, #ffffff);
+    }
+
+    .match-metric.semantic-high { background: color-mix(in srgb, var(--semantic-high) 15%, #ffffff); }
+    .match-metric.semantic-low { background: color-mix(in srgb, var(--semantic-low) 12%, #ffffff); }
+    .match-metric.semantic-neutral { background: color-mix(in srgb, var(--semantic-neutral) 13%, #ffffff); }
+    .match-metric.semantic-high strong,
+    .match-metric.semantic-low strong,
+    .match-metric.semantic-neutral strong {
+        color: var(--semantic-ink);
+    }
+
+    .score-meaning {
+        color: #475569;
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 750;
+        margin-top: 0.3rem;
+    }
+
+    .reliability-card {
+        border-left: 3px solid var(--semantic-neutral);
+        padding-left: 1rem;
+    }
+
+    .reliability-card.positive {
+        border-left-color: var(--semantic-high);
+    }
+
+    .reliability-status {
+        color: var(--report-ink);
+        font-size: 1.1rem;
+        font-weight: 780;
+        margin-bottom: 0.4rem;
+    }
+
+    .reliability-action {
+        color: var(--report-ink);
+        font-size: 0.86rem;
+        font-weight: 700;
+        margin-top: 0.65rem;
+    }
+
+    .reliability-details {
+        border-top: 1px solid var(--report-line);
+        margin-top: 0.8rem;
+        padding-top: 0.65rem;
+    }
+
+    .reliability-details summary {
+        color: var(--report-navy);
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 750;
     }
 
     .match-metric strong {
@@ -1460,6 +1532,14 @@
         border-color: #9fb8ff;
     }
 
+    html[data-bs-theme="dark"] .match-metric.semantic-high { background: color-mix(in srgb, var(--semantic-high) 20%, #0b1224); }
+    html[data-bs-theme="dark"] .match-metric.semantic-low { background: color-mix(in srgb, var(--semantic-low) 20%, #0b1224); }
+    html[data-bs-theme="dark"] .match-metric.semantic-neutral { background: color-mix(in srgb, var(--semantic-neutral) 18%, #0b1224); }
+    html[data-bs-theme="dark"] .match-metric.semantic-high strong,
+    html[data-bs-theme="dark"] .match-metric.semantic-low strong,
+    html[data-bs-theme="dark"] .match-metric.semantic-neutral strong,
+    html[data-bs-theme="dark"] .score-meaning { color: #f8fafc; }
+
     html[data-bs-theme="dark"] .component-track {
         background: #273449;
     }
@@ -1567,6 +1647,14 @@
         html:not([data-bs-theme="light"]) .truth-gate-panel .evidence-actions button:focus-visible {
             border-color: #9fb8ff;
         }
+
+        html:not([data-bs-theme="light"]) .match-metric.semantic-high { background: color-mix(in srgb, var(--semantic-high) 20%, #0b1224); }
+        html:not([data-bs-theme="light"]) .match-metric.semantic-low { background: color-mix(in srgb, var(--semantic-low) 20%, #0b1224); }
+        html:not([data-bs-theme="light"]) .match-metric.semantic-neutral { background: color-mix(in srgb, var(--semantic-neutral) 18%, #0b1224); }
+        html:not([data-bs-theme="light"]) .match-metric.semantic-high strong,
+        html:not([data-bs-theme="light"]) .match-metric.semantic-low strong,
+        html:not([data-bs-theme="light"]) .match-metric.semantic-neutral strong,
+        html:not([data-bs-theme="light"]) .score-meaning { color: #f8fafc; }
 
         html:not([data-bs-theme="light"]) .component-track {
             background: #273449;
@@ -1759,10 +1847,11 @@
         </div>
         <div class="report-card report-card-pad match-infographic" aria-label="ATS match infographic">
             <div class="match-donut-wrap">
-                <div class="match-donut" style="--score: {{ breakdown.total }}%;">
+                <div class="match-donut {% if breakdown.total > 50 %}semantic-high{% else %}semantic-low{% endif %}" style="--score: {{ breakdown.total }}%;">
                     <div>
                         <strong>{{ breakdown.total }}%</strong>
                         <span>{{ application_decision.label }}</span>
+                        <small class="score-meaning">{% if breakdown.total > 50 %}Above minimum{% else %}Needs attention{% endif %}</small>
                     </div>
                 </div>
                 <div class="brief-alert">
@@ -1777,10 +1866,22 @@
                 <h2>{{ match_intelligence.detected_role }}</h2>
                 <p>{{ report_insights.recruiter_view }}</p>
                 <div class="match-metrics">
-                    <div class="match-metric"><strong>{{ breakdown.skills }}%</strong><span>Skills</span></div>
-                    <div class="match-metric"><strong>{{ breakdown.requirements }}%</strong><span>Requirements</span></div>
-                    <div class="match-metric"><strong>{{ breakdown.evidence }}%</strong><span>Evidence</span></div>
-                    <div class="match-metric"><strong>{{ breakdown.format }}%</strong><span>Readability</span></div>
+                    <div class="match-metric {% if breakdown.skills > 50 %}semantic-high{% else %}semantic-low{% endif %}">
+                        <strong>{{ breakdown.skills }}%</strong><span>Skills</span>
+                        <small class="score-meaning">{% if breakdown.skills > 50 %}Above minimum{% else %}Needs attention{% endif %}</small>
+                    </div>
+                    <div class="match-metric {% if breakdown.requirements > 50 %}semantic-high{% else %}semantic-low{% endif %}">
+                        <strong>{{ breakdown.requirements }}%</strong><span>Requirements</span>
+                        <small class="score-meaning">{% if breakdown.requirements > 50 %}Above minimum{% else %}Needs attention{% endif %}</small>
+                    </div>
+                    <div class="match-metric {% if breakdown.evidence > 50 %}semantic-high{% else %}semantic-low{% endif %}">
+                        <strong>{{ breakdown.evidence }}%</strong><span>Evidence</span>
+                        <small class="score-meaning">{% if breakdown.evidence > 50 %}Above minimum{% else %}Needs attention{% endif %}</small>
+                    </div>
+                    <div class="match-metric {% if breakdown.format > 50 %}semantic-high{% else %}semantic-low{% endif %}">
+                        <strong>{{ breakdown.format }}%</strong><span>Readability</span>
+                        <small class="score-meaning">{% if breakdown.format > 50 %}Above minimum{% else %}Needs attention{% endif %}</small>
+                    </div>
                 </div>
                 <div class="row g-3 mt-2">
                     <div class="col-md-6">
@@ -1829,18 +1930,20 @@
                 {% endfor %}
             </div>
             <div class="v2-panel">
-                <h3>Assessment confidence: {{ ats_v2.confidence.label|default:"Low" }}</h3>
-                <p class="report-muted">{{ ats_v2.confidence.score|default:0 }}% confidence in this document assessment.</p>
-                <ul class="compact-list">
-                    {% for reason in ats_v2.confidence.reasons %}
-                        <li>{{ reason }}</li>
-                    {% empty %}
-                        <li>Confidence information is unavailable for this historic result.</li>
-                    {% endfor %}
-                </ul>
-                {% if ats_v2.historic_score %}
-                    <div class="value-note mt-3">This report keeps its original total score while showing the ATS v2 explanation.</div>
-                {% endif %}
+                <div class="reliability-card {{ reliability_guidance.tone }}">
+                    <span class="truth-gate-kicker">How reliable is this check?</span>
+                    <div class="reliability-status">{{ reliability_guidance.status }}</div>
+                    <p class="report-muted mb-0">{{ reliability_guidance.message }}</p>
+                    <p class="reliability-action mb-0">{{ reliability_guidance.action }}</p>
+                    {% if reliability_guidance.details %}
+                        <details class="reliability-details">
+                            <summary>Why am I seeing this?</summary>
+                            <ul class="compact-list mt-2 mb-0">
+                                {% for detail in reliability_guidance.details %}<li>{{ detail }}</li>{% endfor %}
+                            </ul>
+                        </details>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
@@ -1911,28 +2014,28 @@
             {% endif %}
             <div class="truth-summary truth-summary-{{ truth_gate_summary.tone }}" aria-live="polite">
                 <div class="truth-summary-stat">
-                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.completion }}; --ring-color: #1f3374">
+                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.completion }}; --ring-color: {% if truth_gate_summary.completion > 50 %}#73d179{% else %}#a6a4a4{% endif %}">
                         <strong>{{ truth_gate_summary.answered }}</strong>
                     </div>
-                    <span>Answered</span>
+                    <span>Answered · {% if truth_gate_summary.completion > 50 %}On track{% else %}Review incomplete{% endif %}</span>
                 </div>
                 <div class="truth-summary-stat">
-                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.confirmed_percentage }}; --ring-color: #1a73e8">
+                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.confirmed_percentage }}; --ring-color: {% if truth_gate_summary.confirmed_percentage > 50 %}#73d179{% else %}#fa3737{% endif %}">
                         <strong>{{ truth_gate_summary.confirmed }}</strong>
                     </div>
-                    <span>Confirmed</span>
+                    <span>Confirmed · {% if truth_gate_summary.confirmed_percentage > 50 %}Above minimum{% else %}Needs attention{% endif %}</span>
                 </div>
                 <div class="truth-summary-stat">
-                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.training_percentage }}; --ring-color: #174ea6">
+                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.training_percentage }}; --ring-color: #a6a4a4">
                         <strong>{{ truth_gate_summary.training }}</strong>
                     </div>
-                    <span>In training</span>
+                    <span>In training · Information</span>
                 </div>
                 <div class="truth-summary-stat">
-                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.gap_percentage }}; --ring-color: #d93025">
+                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.gap_percentage }}; --ring-color: {% if truth_gate_summary.gap_percentage > 50 %}#fa3737{% else %}#73d179{% endif %}">
                         <strong>{{ truth_gate_summary.not_have }}</strong>
                     </div>
-                    <span>Evidence gaps</span>
+                    <span>Evidence gaps · {% if truth_gate_summary.gap_percentage > 50 %}Needs attention{% else %}Within minimum{% endif %}</span>
                 </div>
                 <div class="truth-next-action">
                     <strong>{% if truth_gate_summary.complete %}Your next action{% else %}Complete your review{% endif %}</strong>
