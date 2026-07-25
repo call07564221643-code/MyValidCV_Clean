@@ -193,7 +193,7 @@ class EditableCVDraftEndpointTests(TestCase):
             fetch_redirect_response=False,
         )
         self.generated_cv.refresh_from_db()
-        self.assertEqual(self.generated_cv.content, revised)
+        self.assertEqual(self.generated_cv.content, revised.strip())
 
         export_response = self.client.get(reverse("download_generated_cv_docx", args=[self.result.id]))
         self.assertEqual(export_response.status_code, 200)
