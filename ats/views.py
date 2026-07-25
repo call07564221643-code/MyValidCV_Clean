@@ -234,7 +234,7 @@ def infer_job_title(form, job_description):
         if 4 <= len(candidate) <= 90 and not candidate.lower().startswith(("http", "www.")):
             return candidate[:150]
 
-    return "Imported Job Role"
+    return "Advertised Role"
 
 
 def infer_company(form, job_description):
@@ -306,11 +306,13 @@ def enterprise_daily_usage(user):
 
 def build_generated_cv(cv, result, matched, missing):
     cv_text = extract_cv_text(cv)
-    matched_text = ", ".join(matched) if matched else "role-relevant strengths already present in your CV"
+    preview = build_cv_draft_preview(result, matched, missing, cv_text)
+    target_role = preview["target_role"]
+    matched_text = ", ".join(preview["skills"]) if preview["skills"] else "role-relevant strengths already present in your CV"
     missing_text = ", ".join(missing) if missing else "No major missing skills detected"
     decision = build_application_decision(result.score)
     if not decision["can_rewrite"]:
-        return f"""Tailored CV Draft for {result.job_title}
+        return f"""CV Evidence Plan for {target_role}
 
 Source CV: {cv.title}
 ATS Match Score: {result.score}%
@@ -327,7 +329,8 @@ Missing Evidence To Address
 Original CV Content Reference
 {cv_text[:2500]}
 """
-    return f"""Tailored CV Draft for {result.job_title}
+    evidence_text = "\n".join(f"- {line}" for line in preview["experience_bullets"])
+    return f"""Targeted CV Section Draft for {target_role}
 
 Source CV: {cv.title}
 ATS Match Score: {result.score}%
@@ -335,20 +338,20 @@ ATS Match Score: {result.score}%
 Application Decision
 {decision["message"]}
 
-Change Legend
-[GREEN] Rewording only: same evidence, clearer ATS/recruiter wording.
-[YELLOW] Window-dressed wording: stronger presentation of existing evidence; do not invent facts.
+Proposed Replacement Summary
+{preview["summary"]}
 
-Professional Summary
-[GREEN] Candidate with experience relevant to {result.job_title}, with visible evidence in {matched_text}. The profile should keep the strongest role-matched evidence in the first third of the CV.
+Verified Skills to Emphasise
+{matched_text}
 
-Key Skills to Emphasise
-[GREEN] {matched_text}
+Supporting Evidence From The Source CV
+{evidence_text}
 
-Recommended CV Changes
-1. [GREEN] Move the most relevant matched skills into the top third of the CV.
-2. [YELLOW] Add measurable examples beside each matched skill using evidence already in the CV or real work history.
-3. [YELLOW] Remove or shorten content that does not support this specific role.
+Review Notes - Do Not Paste These Labels Into The CV
+1. Move the most relevant verified skills into the top third of the CV.
+2. Add measurable outcomes only where the candidate can verify them.
+3. Remove or shorten content that does not support this specific role.
+4. Keep the following items out unless they can be proved: {missing_text}
 
 Original CV Content Reference
 {cv_text[:2500]}
@@ -567,21 +570,31 @@ def extract_cv_evidence_lines(cv_text, terms, limit=4):
 
 
 def build_cv_draft_preview(result, matched, missing, cv_text=""):
-    matched_text = ", ".join(matched[:6]) if matched else "role-relevant evidence"
+    generic_terms = {
+        "various", "skills", "skill", "software", "office", "work", "working",
+        "experience", "role", "responsibilities", "job",
+    }
+    specific_matches = [
+        item for item in matched
+        if item.strip().lower() not in generic_terms and len(item.strip()) > 2
+    ]
+    selected_matches = specific_matches[:4] or matched[:3]
+    matched_text = ", ".join(selected_matches) if selected_matches else "role-relevant evidence"
     missing_text = ", ".join(missing[:5]) if missing else "no major evidence gaps"
     safe_role = result.job_title or "Target Role"
+    taxonomy = (result.metrics or {}).get("taxonomy", {})
+    if safe_role.strip().lower() in {"imported job role", "advertised role"}:
+        safe_role = taxonomy.get("detected_role") or "the advertised role"
     evidence_lines = extract_cv_evidence_lines(cv_text, matched, limit=4)
-    if evidence_lines:
-        summary_evidence = evidence_lines[0]
-    else:
-        summary_evidence = f"Evidence aligned to {matched_text} should be visible in the CV before this draft is used."
     return {
         "candidate_name": result.cv.title,
         "target_role": safe_role,
         "summary": (
-            f"Candidate targeting {safe_role}, with CV evidence connected to {matched_text}. {summary_evidence}"
+            f"Professional targeting {safe_role}, with source-CV evidence in {matched_text}. "
+            "Brings relevant experience that should be supported by specific responsibilities "
+            "and measurable outcomes elsewhere in the CV."
         ),
-        "skills": matched[:8] or ["Add verified role-specific skills from your CV evidence"],
+        "skills": (specific_matches or matched)[:8] or ["Add verified role-specific skills from your CV evidence"],
         "experience_bullets": evidence_lines or [
             "Relevant experience was not clearly detected in the source CV text.",
             "A stronger tailored CV cannot be produced until the CV includes truthful role evidence.",

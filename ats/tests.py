@@ -16,6 +16,7 @@ from .scoring import (
 from .views import (
     _validate_public_job_url,
     build_cover_letter,
+    build_cv_draft_preview,
     build_interview_plan,
     build_reliability_guidance,
     build_truth_gate_summary,
@@ -234,12 +235,35 @@ class ATSV2Tests(TestCase):
         self.assertContains(rendered, "--semantic-neutral: #a6a4a4")
         self.assertContains(rendered, "--mvcv-brand-primary: #9fb8ff")
         self.assertContains(rendered, 'html[data-bs-theme="dark"] .letter-output')
+        self.assertContains(rendered, "text-align: left")
+        self.assertNotContains(rendered, "text-align: justify")
+        self.assertContains(rendered, "Evidence to strengthen first")
+        self.assertNotContains(rendered, "Proposed summary wording")
 
 
 class TruthGateGuidanceTests(SimpleTestCase):
     def test_requirement_labels_are_human_readable(self):
         self.assertEqual(humanize_requirement_term("skillsproficiency"), "Skills proficiency")
         self.assertEqual(humanize_requirement_term("project_management"), "Project management")
+
+    def test_cv_preview_uses_detected_role_and_filters_generic_terms(self):
+        result = SimpleNamespace(
+            job_title="Imported Job Role",
+            metrics={"taxonomy": {"detected_role": "Operations Manager"}},
+            cv=SimpleNamespace(title="Candidate CV"),
+        )
+
+        preview = build_cv_draft_preview(
+            result,
+            ["communication", "office", "software", "administrative", "various"],
+            ["budgeting"],
+            "Managed administrative operations and communicated with business stakeholders.",
+        )
+
+        self.assertEqual(preview["target_role"], "Operations Manager")
+        self.assertIn("communication, administrative", preview["summary"])
+        self.assertNotIn("Imported Job Role", preview["summary"])
+        self.assertNotIn("various", preview["summary"])
 
     def test_completion_summary_reflects_candidate_actions(self):
         summary = build_truth_gate_summary([
