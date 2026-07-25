@@ -6,7 +6,7 @@ from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
 from .forms import ATSAnalysisForm, MultipleFileField, validate_document
-from .models import ATSResult, CV
+from .models import ATSResult, CV, EnterpriseBatch, EnterpriseCandidateResult, JobRole
 from .scoring import (
     _calculate_confidence,
     _detect_mandatory_qualifications,
@@ -20,6 +20,7 @@ from .views import (
     build_reliability_guidance,
     build_truth_gate_summary,
     calculate_score,
+    enterprise_daily_usage,
     humanize_requirement_term,
 )
 
@@ -43,10 +44,10 @@ class UploadAndUrlSecurityTests(SimpleTestCase):
         with self.assertRaisesMessage(Exception, "PDF, DOCX or TXT"):
             field.clean([upload])
 
-    def test_more_than_fifty_files_is_rejected_before_processing(self):
+    def test_more_than_fifteen_files_is_rejected_before_processing(self):
         field = MultipleFileField()
-        uploads = [SimpleUploadedFile(f"cv-{index}.txt", b"cv") for index in range(51)]
-        with self.assertRaisesMessage(Exception, "no more than 50"):
+        uploads = [SimpleUploadedFile(f"cv-{index}.txt", b"cv") for index in range(16)]
+        with self.assertRaisesMessage(Exception, "no more than 15"):
             field.clean(uploads)
 
     def test_pdf_extension_with_binary_content_is_rejected(self):
@@ -58,6 +59,47 @@ class UploadAndUrlSecurityTests(SimpleTestCase):
         upload = SimpleUploadedFile("candidate.txt", b"text\x00binary")
         with self.assertRaisesMessage(Exception, "binary data"):
             validate_document(upload)
+
+
+class EnterpriseWorkspaceTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("enterprise-owner", password="password")
+        self.job_role = JobRole.objects.create(
+            user=self.user,
+            title="Operations Manager",
+            company="Example Ltd",
+            description="Operations management, reporting and stakeholder communication.",
+        )
+        self.batch = EnterpriseBatch.objects.create(
+            user=self.user,
+            job_role=self.job_role,
+            title="Operations shortlist",
+        )
+        EnterpriseCandidateResult.objects.create(
+            batch=self.batch,
+            candidate_name="Alex Candidate",
+            cv_file="enterprise_cvs/alex.txt",
+            score=72,
+            matched_skills="Operations management, reporting",
+            missing_skills="Budget ownership",
+            recommendation="Review the supporting evidence with the hiring panel.",
+            rank=1,
+        )
+
+    def test_enterprise_report_is_concise_responsive_evidence_workspace(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("enterprise_report", args=[self.batch.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Enterprise evidence workspace")
+        self.assertContains(response, "Candidate evidence comparison")
+        self.assertContains(response, "enterprise-mobile-list")
+        self.assertContains(response, "Advisory results—not automated hiring decisions")
+        self.assertContains(response, "Above 50% alignment")
+        self.assertNotContains(response, "Cover-letter draft")
+
+    def test_daily_usage_reuses_existing_candidate_rows(self):
+        self.assertEqual(enterprise_daily_usage(self.user), 1)
 
 
 class CoverLetterTests(SimpleTestCase):
@@ -190,6 +232,8 @@ class ATSV2Tests(TestCase):
         self.assertContains(rendered, "--semantic-low: #fa3737")
         self.assertContains(rendered, "--semantic-high: #73d179")
         self.assertContains(rendered, "--semantic-neutral: #a6a4a4")
+        self.assertContains(rendered, "--mvcv-brand-primary: #9fb8ff")
+        self.assertContains(rendered, 'html[data-bs-theme="dark"] .letter-output')
 
 
 class TruthGateGuidanceTests(SimpleTestCase):

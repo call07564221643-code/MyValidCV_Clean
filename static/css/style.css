@@ -2110,8 +2110,8 @@ h1, h2, h3, h4, h5, h6 {
 .mvcv-assistant-button {
     border: 1px solid rgba(31, 51, 116, 0.18);
     border-radius: 999px;
-    background: #1f3374;
-    color: #ffffff;
+    background: var(--mvcv-brand-primary, #1f3374);
+    color: var(--mvcv-brand-on-primary, #ffffff);
     box-shadow: 0 16px 38px rgba(15, 23, 42, 0.22);
     display: inline-flex;
     align-items: center;
@@ -2122,7 +2122,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .mvcv-assistant-button:hover,
 .mvcv-assistant-button:focus {
-    background: #17275f;
+    background: var(--mvcv-brand-hover, #17275f);
+    color: var(--mvcv-brand-on-primary, #ffffff);
 }
 
 .mvcv-assistant-dot {
@@ -2203,8 +2204,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .mvcv-assistant-message.user {
-    background: #1f3374;
-    color: #ffffff;
+    background: var(--mvcv-brand-primary, #1f3374);
+    color: var(--mvcv-brand-on-primary, #ffffff);
     margin-left: 2.4rem;
 }
 
@@ -2391,10 +2392,10 @@ h1, h2, h3, h4, h5, h6 {
 .mvcv-testimonial-option[hidden] { display: none; }
 .mvcv-feedback-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 0.65rem; }
 .mvcv-feedback-actions button {
-    background: #1f3374;
+    background: var(--mvcv-brand-primary, #1f3374);
     border: 0;
     border-radius: 999px;
-    color: #ffffff;
+    color: var(--mvcv-brand-on-primary, #ffffff);
     font-size: 0.82rem;
     font-weight: 800;
     padding: 0.58rem 0.8rem;

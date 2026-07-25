@@ -12,6 +12,7 @@ from .models import CV
 
 ALLOWED_DOCUMENT_EXTENSIONS = (".pdf", ".docx", ".txt")
 MAX_DOCUMENT_SIZE = 5 * 1024 * 1024
+ENTERPRISE_BATCH_LIMIT = 15
 
 
 def validate_document(uploaded_file):
@@ -62,8 +63,10 @@ class MultipleFileField(forms.FileField):
 
     def clean(self, data, initial=None):
         if isinstance(data, (list, tuple)):
-            if len(data) > 50:
-                raise forms.ValidationError("Upload no more than 50 CVs in one batch.")
+            if len(data) > ENTERPRISE_BATCH_LIMIT:
+                raise forms.ValidationError(
+                    f"Upload no more than {ENTERPRISE_BATCH_LIMIT} CVs in one batch."
+                )
             return [validate_document(super(MultipleFileField, self).clean(item, initial)) for item in data]
         return [validate_document(super().clean(data, initial))]
 
@@ -235,7 +238,10 @@ class EnterpriseBulkAnalysisForm(forms.Form):
         widget=forms.FileInput(attrs={"class": "form-control", "accept": ".pdf,.docx,.txt"})
     )
     cv_files = MultipleFileField(
-        help_text="Upload up to 50 CV files for this enterprise batch."
+        help_text=(
+            f"Upload up to {ENTERPRISE_BATCH_LIMIT} CV files in this batch. "
+            "You can submit another batch while you still have daily and monthly scans available."
+        )
     )
     notes = forms.CharField(
         required=False,
@@ -244,8 +250,10 @@ class EnterpriseBulkAnalysisForm(forms.Form):
 
     def clean_cv_files(self):
         cv_files = self.cleaned_data["cv_files"]
-        if len(cv_files) > 50:
-            raise forms.ValidationError("The Enterprise plan allows up to 50 CVs per monthly batch.")
+        if len(cv_files) > ENTERPRISE_BATCH_LIMIT:
+            raise forms.ValidationError(
+                f"Upload no more than {ENTERPRISE_BATCH_LIMIT} CVs in one batch."
+            )
         return cv_files
 
     def clean_job_file(self):
