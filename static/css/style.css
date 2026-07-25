@@ -2281,6 +2281,55 @@ h1, h2, h3, h4, h5, h6 {
 .mvcv-feedback-summary-icon { color: #d69e2e; font-size: 1.15rem; }
 .mvcv-feedback[open] > summary { border-bottom: 1px solid #e2e8f0; }
 
+.mvcv-feedback-header {
+    align-items: flex-start;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    padding: 1rem 1.1rem 0.85rem;
+}
+
+.mvcv-feedback-header h2 {
+    color: #1f3374;
+    font-size: 1.08rem;
+    font-weight: 800;
+    margin: 0.15rem 0 0.2rem;
+}
+
+.mvcv-feedback-header p {
+    color: #64748b;
+    font-size: 0.84rem;
+    margin: 0;
+}
+
+.mvcv-feedback-kicker {
+    color: #4f46e5;
+    font-size: 0.68rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.mvcv-feedback-recognition {
+    align-items: flex-start;
+    background: linear-gradient(90deg, rgba(79, 70, 229, 0.08), rgba(31, 51, 116, 0.03));
+    color: #334155;
+    display: flex;
+    font-size: 0.78rem;
+    gap: 0.55rem;
+    margin: 0.85rem 1rem 0;
+    padding: 0.7rem 0.8rem;
+}
+
+.mvcv-feedback-recognition > span {
+    color: #4f46e5;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.mvcv-feedback-recognition p { margin: 0; }
+
 .mvcv-feedback-form {
     display: grid;
     gap: 0.9rem;
@@ -2370,8 +2419,7 @@ h1, h2, h3, h4, h5, h6 {
     margin-right: 0.25rem;
 }
 
-.mvcv-feedback-comment textarea,
-.mvcv-testimonial-option select {
+.mvcv-feedback-comment textarea {
     border: 1px solid #dbe3ef;
     border-radius: 12px;
     color: #0f172a;
@@ -2390,6 +2438,36 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .mvcv-testimonial-option[hidden] { display: none; }
+.mvcv-identity-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.mvcv-identity-options legend {
+    flex-basis: 100%;
+    font-size: 0.76rem;
+    margin-bottom: 0.1rem;
+}
+
+.mvcv-identity-options label {
+    border: 1px solid #dbe3ef;
+    border-radius: 999px;
+    cursor: pointer;
+    padding: 0.3rem 0.55rem;
+}
+
+.mvcv-identity-options label:has(input:checked) {
+    background: #eef3ff;
+    border-color: #4f46e5;
+    color: #1f3374;
+}
+
+.mvcv-identity-options input {
+    accent-color: #4f46e5;
+    margin-right: 0.2rem;
+}
+
 .mvcv-feedback-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 0.65rem; }
 .mvcv-feedback-actions button {
     background: var(--mvcv-brand-primary, #1f3374);
@@ -2425,12 +2503,21 @@ html[data-bs-theme="dark"] .mvcv-testimonial-option {
 
 html[data-bs-theme="dark"] .mvcv-feedback legend,
 html[data-bs-theme="dark"] .mvcv-feedback-comment > span,
-html[data-bs-theme="dark"] .mvcv-feedback > summary {
+html[data-bs-theme="dark"] .mvcv-feedback > summary,
+html[data-bs-theme="dark"] .mvcv-feedback-header h2 {
     color: #c7d2fe;
 }
 
-html[data-bs-theme="dark"] .mvcv-feedback-comment textarea,
-html[data-bs-theme="dark"] .mvcv-testimonial-option select {
+html[data-bs-theme="dark"] .mvcv-feedback-header p,
+html[data-bs-theme="dark"] .mvcv-feedback-recognition {
+    color: #cbd5e1;
+}
+
+html[data-bs-theme="dark"] .mvcv-feedback-recognition {
+    background: rgba(99, 102, 241, 0.12);
+}
+
+html[data-bs-theme="dark"] .mvcv-feedback-comment textarea {
     background: #0b1224;
     border-color: #334155;
     color: #f8fafc;

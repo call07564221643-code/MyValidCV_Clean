@@ -226,7 +226,7 @@ function setupFeedbackRatings() {
                 categories,
                 comment: form.querySelector('[name="comment"]')?.value || '',
                 testimonial_consent: Boolean(form.querySelector('[name="testimonial_consent"]')?.checked),
-                public_identity: form.querySelector('[name="public_identity"]')?.value || 'anonymous',
+                public_identity: form.querySelector('[name="public_identity"]:checked')?.value || 'anonymous',
                 page_path: window.location.pathname
             };
             submit.disabled = true;
@@ -248,7 +248,9 @@ function setupFeedbackRatings() {
                 });
                 if (widget) {
                     const summaryText = widget.querySelector('summary');
-                    summaryText.setAttribute('aria-label', `Feedback saved: ${payload.rating} out of 5 stars`);
+                    if (summaryText) {
+                        summaryText.setAttribute('aria-label', `Feedback saved: ${payload.rating} out of 5 stars`);
+                    }
                 }
             } catch (error) {
                 status.textContent = error.message || 'Feedback could not be saved. Please try again.';
