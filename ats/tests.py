@@ -5,8 +5,11 @@ from django.contrib.auth.models import User
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
+from subscriptions.models import CustomerSubscription, SubscriptionPlan
+
+from .cv_drafting import build_structured_cv_draft, cv_text_to_docx, parse_cv_sections
 from .forms import ATSAnalysisForm, MultipleFileField, validate_document
-from .models import ATSResult, CV, EnterpriseBatch, EnterpriseCandidateResult, JobRole
+from .models import ATSResult, CV, EnterpriseBatch, EnterpriseCandidateResult, GeneratedCV, JobRole
 from .scoring import (
     _calculate_confidence,
     _detect_mandatory_qualifications,
@@ -101,6 +104,113 @@ class EnterpriseWorkspaceTests(TestCase):
 
     def test_daily_usage_reuses_existing_candidate_rows(self):
         self.assertEqual(enterprise_daily_usage(self.user), 1)
+
+
+class StructuredCVDraftTests(SimpleTestCase):
+    source_cv = """Alex Example
+alex@example.com
+
+Professional Summary
+Operations professional supporting business teams.
+
+Key Skills
+Communication
+Reporting
+
+Work Experience
+Business Operations Officer
+Prepared weekly reports and communicated operational risks to stakeholders.
+
+Education
+Business Administration Diploma
+"""
+
+    def test_parser_preserves_common_cv_sections(self):
+        sections = parse_cv_sections(self.source_cv)
+        self.assertEqual(
+            [section["key"] for section in sections],
+            ["header", "summary", "skills", "experience", "education"],
+        )
+
+    def test_full_draft_replaces_summary_and_preserves_source_history(self):
+        draft = build_structured_cv_draft(
+            self.source_cv,
+            "Operations Manager",
+            "Operations professional with verified reporting and communication experience.",
+            ["reporting", "communication"],
+            ["budget ownership"],
+        )
+
+        self.assertIn("Operations professional with verified", draft["full_text"])
+        self.assertIn("Business Operations Officer", draft["full_text"])
+        self.assertIn("Business Administration Diploma", draft["full_text"])
+        self.assertNotIn("Operations professional supporting business teams.", draft["full_text"])
+        self.assertTrue(draft["citations"])
+        self.assertIn("weekly reports", draft["citations"][0]["text"])
+
+    def test_docx_export_produces_office_document(self):
+        document = cv_text_to_docx(self.source_cv, "Alex CV")
+        self.assertTrue(document.startswith(b"PK"))
+        self.assertGreater(len(document), 1000)
+
+
+class EditableCVDraftEndpointTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("plus-user", password="password")
+        plan = SubscriptionPlan.objects.create(
+            code="plus",
+            name="Plus",
+            includes_generated_cv=True,
+            monthly_analysis_limit=20,
+        )
+        CustomerSubscription.objects.create(user=self.user, plan=plan, status="active")
+        self.cv = CV.objects.create(user=self.user, title="Candidate CV", file="cvs/candidate.txt")
+        self.result = ATSResult.objects.create(
+            user=self.user,
+            cv=self.cv,
+            job_title="Operations Manager",
+            job_description="Operations Manager role requiring reporting and communication.",
+            score=70,
+        )
+        self.generated_cv = GeneratedCV.objects.create(
+            user=self.user,
+            original_cv=self.cv,
+            ats_result=self.result,
+            title="Candidate CV tailored",
+            content="Candidate CV\n\nProfessional Summary\n" + ("Verified operations experience. " * 8),
+        )
+        self.client.force_login(self.user)
+
+    def test_owner_can_save_and_export_docx(self):
+        revised = "Candidate CV\n\nProfessional Summary\n" + ("Verified reporting experience. " * 8)
+        save_response = self.client.post(
+            reverse("save_generated_cv_draft", args=[self.result.id]),
+            {"cv_draft_content": revised},
+        )
+        self.assertRedirects(
+            save_response,
+            f"{reverse('ats_result', args=[self.result.id])}#full-cv-workspace",
+            fetch_redirect_response=False,
+        )
+        self.generated_cv.refresh_from_db()
+        self.assertEqual(self.generated_cv.content, revised.strip())
+
+        export_response = self.client.get(reverse("download_generated_cv_docx", args=[self.result.id]))
+        self.assertEqual(export_response.status_code, 200)
+        self.assertEqual(
+            export_response["Content-Type"],
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+        self.assertTrue(export_response.content.startswith(b"PK"))
+
+    def test_other_user_cannot_edit_draft(self):
+        other = User.objects.create_user("other-user", password="password")
+        self.client.force_login(other)
+        response = self.client.post(
+            reverse("save_generated_cv_draft", args=[self.result.id]),
+            {"cv_draft_content": "Unauthorised change " * 20},
+        )
+        self.assertEqual(response.status_code, 404)
 
 
 class CoverLetterTests(SimpleTestCase):

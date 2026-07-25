@@ -34,6 +34,7 @@ from .models import (
 )
 from accounts.models import UserProfile
 from .engine import ats_engine
+from .cv_drafting import build_structured_cv_draft, cv_text_to_docx
 from .scoring import calculate_score, calculate_score_details, validate_job_description
 from subscriptions.services import get_active_subscription, get_entitlements
 
@@ -329,33 +330,14 @@ Missing Evidence To Address
 Original CV Content Reference
 {cv_text[:2500]}
 """
-    evidence_text = "\n".join(f"- {line}" for line in preview["experience_bullets"])
-    return f"""Targeted CV Section Draft for {target_role}
-
-Source CV: {cv.title}
-ATS Match Score: {result.score}%
-
-Application Decision
-{decision["message"]}
-
-Proposed Replacement Summary
-{preview["summary"]}
-
-Verified Skills to Emphasise
-{matched_text}
-
-Supporting Evidence From The Source CV
-{evidence_text}
-
-Review Notes - Do Not Paste These Labels Into The CV
-1. Move the most relevant verified skills into the top third of the CV.
-2. Add measurable outcomes only where the candidate can verify them.
-3. Remove or shorten content that does not support this specific role.
-4. Keep the following items out unless they can be proved: {missing_text}
-
-Original CV Content Reference
-{cv_text[:2500]}
-"""
+    structured = build_structured_cv_draft(
+        cv_text,
+        target_role,
+        preview["summary"],
+        preview["skills"],
+        missing,
+    )
+    return structured["full_text"]
 
 
 def clean_cover_letter_title(title):
@@ -1152,6 +1134,17 @@ def result_detail(request, result_id):
     application_decision = build_application_decision(result.score)
     suggested_cv_review = build_suggested_cv_review(result, matched, missing)
     cv_draft_preview = build_cv_draft_preview(result, matched, missing, cv_text)
+    structured_cv_draft = build_structured_cv_draft(
+        cv_text,
+        cv_draft_preview["target_role"],
+        cv_draft_preview["summary"],
+        cv_draft_preview["skills"],
+        missing,
+    )
+    if hasattr(result, "generated_cv") and result.generated_cv.content.strip():
+        structured_cv_draft["editable_content"] = result.generated_cv.content
+    else:
+        structured_cv_draft["editable_content"] = structured_cv_draft["full_text"]
     if hasattr(result, "generated_cover_letter"):
         refreshed_letter = build_cover_letter(request.user, result, matched, cv_text)
         if result.generated_cover_letter.content != refreshed_letter:
@@ -1170,6 +1163,7 @@ def result_detail(request, result_id):
             "application_decision": application_decision,
             "suggested_cv_review": suggested_cv_review,
             "cv_draft_preview": cv_draft_preview,
+            "structured_cv_draft": structured_cv_draft,
             "can_download": can_download_generated_cv(request.user),
             "ats_v2": ats_v2,
             "truth_gate_summary": truth_gate_summary,
@@ -1188,6 +1182,49 @@ def download_generated_cv(request, result_id):
     generated_cv = get_object_or_404(GeneratedCV, ats_result=result, user=request.user)
     response = HttpResponse(generated_cv.content, content_type="text/plain")
     response["Content-Disposition"] = f'attachment; filename="mvcv-tailored-cv-{result.id}.txt"'
+    return response
+
+
+@login_required(login_url="login")
+@require_http_methods(["POST"])
+def save_generated_cv_draft(request, result_id):
+    result = get_object_or_404(ATSResult, id=result_id, user=request.user)
+    if not can_download_generated_cv(request.user):
+        messages.error(request, "Editable CV drafts are available on the Plus plan.")
+        return redirect("ats_result", result_id=result.id)
+    if not build_application_decision(result.score)["can_rewrite"]:
+        messages.error(request, "This draft cannot be edited until the CV meets the evidence threshold.")
+        return redirect(f"{reverse('ats_result', args=[result.id])}#suggested-cv")
+
+    content = request.POST.get("cv_draft_content", "").strip()
+    if not 120 <= len(content) <= 50000:
+        messages.error(request, "The CV draft must contain between 120 and 50,000 characters.")
+        return redirect(f"{reverse('ats_result', args=[result.id])}#full-cv-workspace")
+
+    generated_cv = get_object_or_404(GeneratedCV, ats_result=result, user=request.user)
+    generated_cv.content = content
+    generated_cv.save(update_fields=["content"])
+    messages.success(request, "Your edited CV draft was saved.")
+    return redirect(f"{reverse('ats_result', args=[result.id])}#full-cv-workspace")
+
+
+@login_required(login_url="login")
+def download_generated_cv_docx(request, result_id):
+    result = get_object_or_404(ATSResult, id=result_id, user=request.user)
+    if not can_download_generated_cv(request.user):
+        messages.error(request, "DOCX CV export is available on the Plus plan.")
+        return redirect("ats_result", result_id=result.id)
+    if not build_application_decision(result.score)["can_rewrite"]:
+        messages.error(request, "DOCX export is unavailable until the CV meets the evidence threshold.")
+        return redirect(f"{reverse('ats_result', args=[result.id])}#suggested-cv")
+
+    generated_cv = get_object_or_404(GeneratedCV, ats_result=result, user=request.user)
+    document_bytes = cv_text_to_docx(generated_cv.content, title=generated_cv.title)
+    response = HttpResponse(
+        document_bytes,
+        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+    response["Content-Disposition"] = f'attachment; filename="mvcv-tailored-cv-{result.id}.docx"'
     return response
 
 
