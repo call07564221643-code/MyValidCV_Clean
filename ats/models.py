@@ -322,6 +322,8 @@ class CVBulletSuggestion(models.Model):
     has_measure = models.BooleanField(default=False)
     measurement_prompt = models.CharField(max_length=220, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    applied_text = models.TextField(blank=True)
+    applied_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -339,6 +341,24 @@ class CVBulletSuggestion(models.Model):
 
     def __str__(self):
         return f"{self.ats_result_id} bullet {self.position + 1} ({self.status})"
+
+    @property
+    def selected_text(self):
+        if self.status == "accepted":
+            return self.proposed_text
+        if self.status == "edited":
+            return self.edited_text
+        return self.original_text
+
+    @property
+    def needs_application(self):
+        if self.applied_text:
+            return self.applied_text != self.selected_text
+        return self.status in {"accepted", "edited"}
+
+    @property
+    def application_is_current(self):
+        return bool(self.applied_text) and not self.needs_application
 
 
 class GeneratedCoverLetter(models.Model):

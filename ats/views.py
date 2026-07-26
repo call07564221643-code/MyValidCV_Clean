@@ -1244,6 +1244,8 @@ def result_detail(request, result_id):
         "accepted": sum(item.status == "accepted" for item in bullet_suggestions),
         "edited": sum(item.status == "edited" for item in bullet_suggestions),
         "rejected": sum(item.status == "rejected" for item in bullet_suggestions),
+        "applied": sum(item.application_is_current for item in bullet_suggestions),
+        "ready": sum(item.needs_application for item in bullet_suggestions),
     }
     if hasattr(result, "generated_cover_letter"):
         refreshed_letter = build_cover_letter(request.user, result, matched, cv_text)
@@ -1332,7 +1334,8 @@ def decide_bullet_suggestion(request, result_id, suggestion_id):
     suggestion.status = decision
     suggestion.save(update_fields=update_fields)
     if wants_json:
-        states = list(result.bullet_suggestions.values_list("status", flat=True))
+        suggestions = list(result.bullet_suggestions.all())
+        states = [item.status for item in suggestions]
         return JsonResponse({
             "saved": True,
             "suggestion_id": suggestion.id,
@@ -1342,10 +1345,14 @@ def decide_bullet_suggestion(request, result_id, suggestion_id):
                 suggestion.edited_text if suggestion.status == "edited"
                 else suggestion.proposed_text
             ),
+            "needs_application": suggestion.needs_application,
+            "application_is_current": suggestion.application_is_current,
             "summary": {
                 "total": len(states),
                 "pending": states.count("pending"),
                 "approved": states.count("accepted") + states.count("edited"),
+                "applied": sum(item.application_is_current for item in suggestions),
+                "ready": sum(item.needs_application for item in suggestions),
             },
             "message": f"Bullet {suggestion.position + 1} saved.",
         })
@@ -1367,8 +1374,9 @@ def apply_bullet_review(request, result_id):
         messages.error(request, "Bullet-level CV review is available on the Plus plan.")
         return redirect("ats_result", result_id=result.id)
     generated_cv = get_object_or_404(GeneratedCV, ats_result=result, user=request.user)
-    suggestions = result.bullet_suggestions.filter(status__in=["accepted", "edited"])
-    if not suggestions.exists():
+    suggestions = list(result.bullet_suggestions.all())
+    ready_suggestions = [item for item in suggestions if item.needs_application]
+    if not ready_suggestions:
         if wants_json:
             return JsonResponse(
                 {"error": "Accept or edit at least one bullet before applying changes."},
@@ -1378,7 +1386,11 @@ def apply_bullet_review(request, result_id):
         return redirect(f"{reverse('ats_result', args=[result.id])}#stage-2-bullet-review")
 
     draft = resolve_generated_cv_draft(result, generated_cv)
-    rebuilt_content, applied = apply_bullet_decisions(draft["editable_content"], suggestions)
+    rebuilt_content, applied_suggestions = apply_bullet_decisions(
+        draft["editable_content"],
+        ready_suggestions,
+    )
+    applied = len(applied_suggestions)
     if not applied:
         if wants_json:
             return JsonResponse(
@@ -1389,12 +1401,34 @@ def apply_bullet_review(request, result_id):
         return redirect(f"{reverse('ats_result', args=[result.id])}#stage-2-bullet-review")
     generated_cv.content = rebuilt_content
     generated_cv.save(update_fields=["content"])
+    applied_time = timezone.now()
+    for suggestion in applied_suggestions:
+        if suggestion.status in {"accepted", "edited"}:
+            suggestion.applied_text = suggestion.selected_text
+            suggestion.applied_at = applied_time
+        else:
+            suggestion.applied_text = ""
+            suggestion.applied_at = None
+        suggestion.save(update_fields=["applied_text", "applied_at", "updated_at"])
     message = f"Applied {applied} reviewed bullet change{'s' if applied != 1 else ''} to the CV draft."
     if wants_json:
+        refreshed_suggestions = list(result.bullet_suggestions.all())
+        refreshed_states = [item.status for item in refreshed_suggestions]
         return JsonResponse({
             "saved": True,
             "applied": applied,
+            "applied_ids": [item.id for item in applied_suggestions],
+            "current_applied_ids": [
+                item.id for item in refreshed_suggestions if item.application_is_current
+            ],
             "content": rebuilt_content,
+            "summary": {
+                "total": len(refreshed_suggestions),
+                "pending": refreshed_states.count("pending"),
+                "approved": refreshed_states.count("accepted") + refreshed_states.count("edited"),
+                "applied": sum(item.application_is_current for item in refreshed_suggestions),
+                "ready": sum(item.needs_application for item in refreshed_suggestions),
+            },
             "message": message,
         })
     messages.success(request, message)
@@ -1417,22 +1451,41 @@ def download_generated_cv(request, result_id):
 @login_required(login_url="login")
 @require_http_methods(["POST"])
 def save_generated_cv_draft(request, result_id):
+    wants_json = request.headers.get("x-requested-with") == "XMLHttpRequest"
     result = get_object_or_404(ATSResult, id=result_id, user=request.user)
     if not can_download_generated_cv(request.user):
+        if wants_json:
+            return JsonResponse({"error": "Editable CV drafts are available on the Plus plan."}, status=403)
         messages.error(request, "Editable CV drafts are available on the Plus plan.")
         return redirect("ats_result", result_id=result.id)
     if not build_application_decision(result.score)["can_rewrite"]:
+        if wants_json:
+            return JsonResponse(
+                {"error": "This draft cannot be edited until the CV meets the evidence threshold."},
+                status=403,
+            )
         messages.error(request, "This draft cannot be edited until the CV meets the evidence threshold.")
         return redirect(f"{reverse('ats_result', args=[result.id])}#suggested-cv")
 
     content = request.POST.get("cv_draft_content", "").strip()
     if not 120 <= len(content) <= 50000:
+        if wants_json:
+            return JsonResponse(
+                {"error": "The CV draft must contain between 120 and 50,000 characters."},
+                status=400,
+            )
         messages.error(request, "The CV draft must contain between 120 and 50,000 characters.")
         return redirect(f"{reverse('ats_result', args=[result.id])}#full-cv-workspace")
 
     generated_cv = get_object_or_404(GeneratedCV, ats_result=result, user=request.user)
     generated_cv.content = content
     generated_cv.save(update_fields=["content"])
+    if wants_json:
+        return JsonResponse({
+            "saved": True,
+            "saved_at": timezone.localtime().isoformat(),
+            "message": "Your CV draft was saved.",
+        })
     messages.success(request, "Your edited CV draft was saved.")
     return redirect(f"{reverse('ats_result', args=[result.id])}#full-cv-workspace")
 

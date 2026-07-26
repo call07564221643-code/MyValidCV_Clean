@@ -128,16 +128,27 @@ def extract_experience_bullets(cv_text, matched_terms, limit=12):
 
 
 def apply_bullet_decisions(base_content, suggestions):
-    """Apply only accepted or candidate-edited decisions to a clean CV draft."""
+    """Apply new decisions or revisions against the wording currently in the draft."""
     content = base_content
-    applied = 0
+    applied = []
     for suggestion in suggestions:
-        replacement = ""
+        applied_text = getattr(suggestion, "applied_text", "")
         if suggestion.status == "accepted":
-            replacement = suggestion.proposed_text
+            selected_text = suggestion.proposed_text
         elif suggestion.status == "edited":
-            replacement = suggestion.edited_text
-        if replacement and suggestion.original_text in content:
-            content = content.replace(suggestion.original_text, replacement, 1)
-            applied += 1
+            selected_text = suggestion.edited_text
+        else:
+            selected_text = suggestion.original_text
+        needs_application = (
+            applied_text != selected_text
+            if applied_text
+            else suggestion.status in {"accepted", "edited"}
+        )
+        if not needs_application:
+            continue
+        source = applied_text or suggestion.original_text
+        replacement = selected_text
+        if source in content:
+            content = content.replace(source, replacement, 1)
+            applied.append(suggestion)
     return content, applied
