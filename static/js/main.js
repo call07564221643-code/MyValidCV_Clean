@@ -197,6 +197,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function setupBulletReviews() {
     const progress = document.querySelector('[data-bullet-progress]');
+    const applyForm = document.querySelector('[data-bullet-apply-form]');
+    const applyButton = applyForm?.querySelector('button[type="submit"]');
+    const updateProgress = (summary) => {
+        if (progress && summary) {
+            progress.textContent = `${summary.total} suggestions · ${summary.pending} pending · ${summary.approved} approved · ${summary.applied} applied`;
+        }
+        if (applyButton && summary) {
+            applyButton.disabled = summary.ready === 0;
+            applyButton.textContent = summary.ready
+                ? `Apply ${summary.ready} reviewed change${summary.ready === 1 ? '' : 's'} to CV draft`
+                : (summary.applied ? 'CV draft is up to date' : 'Choose bullets before applying');
+        }
+    };
+
     document.querySelectorAll('[data-bullet-decision-form]').forEach((form) => {
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -223,9 +237,14 @@ function setupBulletReviews() {
                 }
                 const proposed = card?.querySelector('[data-bullet-proposed]');
                 if (proposed && data.display_text) proposed.textContent = data.display_text;
-                if (progress && data.summary) {
-                    progress.textContent = `${data.summary.total} suggestions · ${data.summary.pending} pending · ${data.summary.approved} approved`;
+                const applicationState = card?.querySelector('[data-bullet-application-state]');
+                if (applicationState) {
+                    applicationState.className = `bullet-application-state ${data.application_is_current ? 'applied' : (data.needs_application ? 'ready' : '')}`;
+                    applicationState.textContent = data.application_is_current
+                        ? 'Applied to CV'
+                        : (data.needs_application ? 'Update ready' : 'Not applied');
                 }
+                updateProgress(data.summary);
                 const editor = form.closest('details');
                 if (editor) editor.open = false;
                 Utils.showToast(data.message, 'success', 1800);
@@ -240,7 +259,6 @@ function setupBulletReviews() {
         });
     });
 
-    const applyForm = document.querySelector('[data-bullet-apply-form]');
     if (applyForm) {
         applyForm.addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -262,11 +280,24 @@ function setupBulletReviews() {
 
                 const editor = document.getElementById('cvDraftEditor');
                 if (editor && typeof data.content === 'string') editor.value = data.content;
+                (data.applied_ids || []).forEach((suggestionId) => {
+                    const card = document.querySelector(`[data-bullet-card][data-suggestion-id="${suggestionId}"]`);
+                    const applicationState = card?.querySelector('[data-bullet-application-state]');
+                    if (applicationState) {
+                        const isCurrent = (data.current_applied_ids || []).includes(suggestionId);
+                        applicationState.className = `bullet-application-state${isCurrent ? ' applied' : ''}`;
+                        applicationState.textContent = isCurrent ? 'Applied to CV' : 'Not applied';
+                    }
+                });
+                updateProgress(data.summary);
                 if (status) {
                     status.classList.remove('report-muted');
                     status.textContent = `${data.message} The CV editor below is now up to date.`;
                 }
-                if (button) button.textContent = 'Applied to CV draft';
+                document.querySelector('[data-cv-completion-path]')?.classList.toggle(
+                    'd-none',
+                    !data.summary?.applied
+                );
                 Utils.showToast(data.message, 'success', 2200);
             } catch (error) {
                 if (button) {
@@ -276,6 +307,45 @@ function setupBulletReviews() {
                 if (status) status.textContent = error.message || 'The approved bullets could not be applied.';
                 Utils.showToast(error.message || 'The approved bullets could not be applied.', 'danger', 3000);
             }
+        });
+    }
+
+    const draftForm = document.querySelector('[data-cv-draft-form]');
+    if (draftForm) {
+        draftForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const button = draftForm.querySelector('button[type="submit"]');
+            const status = draftForm.querySelector('[data-cv-save-status]');
+            const originalLabel = button?.textContent || '';
+            if (button) {
+                button.disabled = true;
+                button.textContent = 'Saving…';
+            }
+            try {
+                const response = await fetch(draftForm.action, {
+                    method: 'POST',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    body: new FormData(draftForm)
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'The CV draft could not be saved.');
+                if (status) {
+                    status.classList.remove('report-muted');
+                    status.textContent = 'Saved just now. TXT and DOCX downloads are up to date.';
+                }
+                Utils.showToast(data.message, 'success', 1800);
+            } catch (error) {
+                if (status) status.textContent = error.message || 'The CV draft could not be saved.';
+                Utils.showToast(error.message || 'The CV draft could not be saved.', 'danger', 3000);
+            } finally {
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = originalLabel;
+                }
+            }
+        });
+        document.querySelector('[data-save-cv-shortcut]')?.addEventListener('click', () => {
+            draftForm.requestSubmit();
         });
     }
 }

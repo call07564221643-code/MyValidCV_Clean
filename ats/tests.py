@@ -242,7 +242,7 @@ Diploma
             "Managed weekly reports.\nSupported meetings.",
             suggestions,
         )
-        self.assertEqual(applied, 1)
+        self.assertEqual(len(applied), 1)
         self.assertIn("Managed weekly operational reports.", rebuilt)
         self.assertIn("Supported meetings.", rebuilt)
 
@@ -303,12 +303,11 @@ class EditableCVDraftEndpointTests(TestCase):
         save_response = self.client.post(
             reverse("save_generated_cv_draft", args=[self.result.id]),
             {"cv_draft_content": revised},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
-        self.assertRedirects(
-            save_response,
-            f"{reverse('ats_result', args=[self.result.id])}#full-cv-workspace",
-            fetch_redirect_response=False,
-        )
+        self.assertEqual(save_response.status_code, 200)
+        self.assertTrue(save_response.json()["saved"])
+        self.assertIn("saved_at", save_response.json())
         self.generated_cv.refresh_from_db()
         self.assertEqual(self.generated_cv.content, revised.strip())
         self.assertEqual(
@@ -386,6 +385,34 @@ class EditableCVDraftEndpointTests(TestCase):
         self.assertIn(first.proposed_text, applied.json()["content"])
         self.generated_cv.refresh_from_db()
         self.assertIn(first.proposed_text, self.generated_cv.content)
+        first.refresh_from_db()
+        self.assertEqual(first.applied_text, first.proposed_text)
+        self.assertIsNotNone(first.applied_at)
+        self.assertTrue(first.application_is_current)
+
+        revised_text = "Managed accurate weekly reporting for senior stakeholders."
+        revision = self.client.post(
+            reverse("decide_bullet_suggestion", args=[self.result.id, first.id]),
+            {"decision": "edited", "edited_text": revised_text},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(revision.status_code, 200)
+        self.assertTrue(revision.json()["needs_application"])
+        reapplied = self.client.post(
+            reverse("apply_bullet_review", args=[self.result.id]),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(reapplied.status_code, 200)
+        self.assertEqual(reapplied.json()["applied"], 1)
+        self.assertIn(revised_text, reapplied.json()["content"])
+        self.assertNotIn(first.proposed_text, reapplied.json()["content"])
+        first.refresh_from_db()
+        self.assertEqual(first.applied_text, revised_text)
+        self.assertTrue(first.application_is_current)
+
+        refreshed = self.client.get(reverse("ats_result", args=[self.result.id]))
+        self.assertContains(refreshed, "CV draft is up to date")
+        self.assertContains(refreshed, "Applied to CV")
 
     def test_other_user_cannot_decide_owned_bullet(self):
         suggestion = CVBulletSuggestion.objects.create(

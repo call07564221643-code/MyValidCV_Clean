@@ -1188,6 +1188,22 @@
         text-transform: uppercase;
     }
 
+    .bullet-state-group {
+        align-items: flex-end;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .bullet-application-state {
+        color: var(--report-muted);
+        font-size: 0.7rem;
+        font-weight: 700;
+    }
+
+    .bullet-application-state.applied { color: #237a3b; }
+    .bullet-application-state.ready { color: var(--report-blue); }
+
     .bullet-state.accepted,
     .bullet-state.edited { background: rgba(115, 209, 121, 0.16); color: #237a3b; }
     .bullet-state.rejected { background: rgba(250, 55, 55, 0.12); color: #b42318; }
@@ -1216,6 +1232,50 @@
         font-size: 0.82rem;
         line-height: 1.5;
         margin: 0;
+    }
+
+    .cv-completion-path {
+        background: color-mix(in srgb, var(--report-blue) 7%, var(--report-card));
+        border: 1px solid color-mix(in srgb, var(--report-blue) 24%, var(--report-line));
+        border-radius: 14px;
+        margin-top: 1rem;
+        padding: 0.9rem;
+    }
+
+    .cv-completion-path > strong {
+        color: var(--report-ink);
+        display: block;
+        margin-bottom: 0.65rem;
+    }
+
+    .cv-completion-path ol {
+        display: grid;
+        gap: 0.55rem;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        list-style-position: inside;
+        margin: 0;
+        padding: 0;
+    }
+
+    .cv-completion-path li {
+        color: var(--report-muted);
+        font-size: 0.78rem;
+    }
+
+    .cv-completion-path a,
+    .cv-completion-path button {
+        background: transparent;
+        border: 0;
+        color: var(--report-blue);
+        font: inherit;
+        font-weight: 760;
+        padding: 0;
+        text-decoration: none;
+    }
+
+    .cv-completion-path a:hover,
+    .cv-completion-path button:hover {
+        text-decoration: underline;
     }
 
     .bullet-review-actions {
@@ -2044,6 +2104,10 @@
             grid-template-columns: 1fr;
         }
 
+        .cv-completion-path ol {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
         .intelligence-grid {
             grid-template-columns: 1fr;
         }
@@ -2070,6 +2134,10 @@
     }
 
     @media (max-width: 575px) {
+        .cv-completion-path ol {
+            grid-template-columns: 1fr;
+        }
+
         .report-shell {
             padding-top: 1.2rem;
         }
@@ -2567,7 +2635,8 @@
                             <span class="bullet-review-progress" data-bullet-progress>
                                 {{ bullet_review_summary.total }} suggestions ·
                                 {{ bullet_review_summary.pending }} pending ·
-                                {{ bullet_review_summary.accepted|add:bullet_review_summary.edited }} approved
+                                {{ bullet_review_summary.accepted|add:bullet_review_summary.edited }} approved ·
+                                {{ bullet_review_summary.applied }} applied
                             </span>
                         {% endif %}
                     </div>
@@ -2575,10 +2644,15 @@
                     {% if can_download %}
                         {% if bullet_suggestions %}
                             {% for suggestion in bullet_suggestions %}
-                                <article class="bullet-suggestion" id="bullet-{{ suggestion.id }}" data-bullet-card>
+                                <article class="bullet-suggestion" id="bullet-{{ suggestion.id }}" data-bullet-card data-suggestion-id="{{ suggestion.id }}">
                                     <div class="bullet-suggestion-top">
                                         <strong>Experience bullet {{ forloop.counter }}</strong>
-                                        <span class="bullet-state {{ suggestion.status }}" data-bullet-state>{{ suggestion.get_status_display }}</span>
+                                        <div class="bullet-state-group">
+                                            <span class="bullet-state {{ suggestion.status }}" data-bullet-state>{{ suggestion.get_status_display }}</span>
+                                            <span class="bullet-application-state{% if suggestion.application_is_current %} applied{% elif suggestion.needs_application %} ready{% endif %}" data-bullet-application-state>
+                                                {% if suggestion.application_is_current %}Applied to CV{% elif suggestion.needs_application %}Update ready{% else %}Not applied{% endif %}
+                                            </span>
+                                        </div>
                                     </div>
                                     <div class="bullet-comparison">
                                         <div>
@@ -2622,8 +2696,12 @@
                             {% endfor %}
                             <form class="mt-3" method="post" action="{% url 'apply_bullet_review' result.id %}" data-bullet-apply-form>
                                 {% csrf_token %}
-                                <button class="btn btn-primary" type="submit">Apply approved bullets to CV draft</button>
-                                <p class="report-muted small mt-2 mb-0" data-bullet-apply-status aria-live="polite">Pending and rejected bullets remain unchanged. Review the rebuilt full CV before downloading it.</p>
+                                <button class="btn btn-primary" type="submit"{% if not bullet_review_summary.ready %} disabled{% endif %}>
+                                    {% if bullet_review_summary.ready %}Apply {{ bullet_review_summary.ready }} reviewed change{{ bullet_review_summary.ready|pluralize }} to CV draft{% elif bullet_review_summary.applied %}CV draft is up to date{% else %}Choose bullets before applying{% endif %}
+                                </button>
+                                <p class="report-muted small mt-2 mb-0" data-bullet-apply-status aria-live="polite">
+                                    {% if bullet_review_summary.applied %}{{ bullet_review_summary.applied }} reviewed change{{ bullet_review_summary.applied|pluralize }} currently applied. {% endif %}Pending and rejected bullets remain unchanged.
+                                </p>
                             </form>
                         {% else %}
                             <form method="post" action="{% url 'start_bullet_review' result.id %}">
@@ -2690,17 +2768,26 @@
                     {% endif %}
 
                     {% if result.generated_cv and can_download %}
-                        <form method="post" action="{% url 'save_generated_cv_draft' result.id %}">
+                        <form method="post" action="{% url 'save_generated_cv_draft' result.id %}" data-cv-draft-form>
                             {% csrf_token %}
                             <label class="fw-bold mb-2" for="cvDraftEditor">Edit your clean CV draft</label>
                             <textarea class="cv-draft-editor" id="cvDraftEditor" name="cv_draft_content" maxlength="50000" aria-describedby="cvDraftHelp">{{ structured_cv_draft.editable_content }}</textarea>
-                            <p class="report-muted small mt-2" id="cvDraftHelp">Saving changes updates both TXT and DOCX downloads. Keep names, dates, employers, qualifications and results accurate.</p>
+                            <p class="report-muted small mt-2" id="cvDraftHelp" data-cv-save-status aria-live="polite">Saving changes updates both TXT and DOCX downloads. Keep names, dates, employers, qualifications and results accurate.</p>
                             <button class="btn btn-primary" type="submit">Save CV draft</button>
                         </form>
                     {% else %}
                         <div class="cv-draft-readonly" aria-label="Full CV draft preview">{{ structured_cv_draft.full_text }}</div>
                         <p class="report-muted small mt-2 mb-0">This preview is read-only. Plus users can edit, save and export the evidence-grounded draft.</p>
                     {% endif %}
+                    <nav class="cv-completion-path{% if not bullet_review_summary.applied %} d-none{% endif %}" data-cv-completion-path aria-label="Complete your application documents">
+                        <strong>Your CV changes are ready</strong>
+                        <ol>
+                            <li><a href="#full-cv-workspace">Review the CV</a></li>
+                            <li><button type="button" data-save-cv-shortcut>Save the draft</button></li>
+                            <li><a href="{% url 'download_generated_cv_docx' result.id %}">Download DOCX</a></li>
+                            <li><a href="#cover-letter">Continue to cover letter</a></li>
+                        </ol>
+                    </nav>
                 </section>
                 {% else %}
                     <div class="v2-grid mb-3">
