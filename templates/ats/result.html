@@ -2620,10 +2620,10 @@
                                     </div>
                                 </article>
                             {% endfor %}
-                            <form class="mt-3" method="post" action="{% url 'apply_bullet_review' result.id %}">
+                            <form class="mt-3" method="post" action="{% url 'apply_bullet_review' result.id %}" data-bullet-apply-form>
                                 {% csrf_token %}
                                 <button class="btn btn-primary" type="submit">Apply approved bullets to CV draft</button>
-                                <p class="report-muted small mt-2 mb-0">Pending and rejected bullets remain unchanged. Review the rebuilt full CV before downloading it.</p>
+                                <p class="report-muted small mt-2 mb-0" data-bullet-apply-status aria-live="polite">Pending and rejected bullets remain unchanged. Review the rebuilt full CV before downloading it.</p>
                             </form>
                         {% else %}
                             <form method="post" action="{% url 'start_bullet_review' result.id %}">

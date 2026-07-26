@@ -1356,24 +1356,48 @@ def decide_bullet_suggestion(request, result_id, suggestion_id):
 @login_required(login_url="login")
 @require_http_methods(["POST"])
 def apply_bullet_review(request, result_id):
+    wants_json = request.headers.get("x-requested-with") == "XMLHttpRequest"
     result = get_object_or_404(ATSResult, id=result_id, user=request.user)
     if not can_download_generated_cv(request.user):
+        if wants_json:
+            return JsonResponse(
+                {"error": "Bullet-level CV review is available on the Plus plan."},
+                status=403,
+            )
         messages.error(request, "Bullet-level CV review is available on the Plus plan.")
         return redirect("ats_result", result_id=result.id)
     generated_cv = get_object_or_404(GeneratedCV, ats_result=result, user=request.user)
     suggestions = result.bullet_suggestions.filter(status__in=["accepted", "edited"])
     if not suggestions.exists():
+        if wants_json:
+            return JsonResponse(
+                {"error": "Accept or edit at least one bullet before applying changes."},
+                status=400,
+            )
         messages.info(request, "Accept or edit at least one bullet before applying changes.")
         return redirect(f"{reverse('ats_result', args=[result.id])}#stage-2-bullet-review")
 
     draft = resolve_generated_cv_draft(result, generated_cv)
     rebuilt_content, applied = apply_bullet_decisions(draft["editable_content"], suggestions)
     if not applied:
+        if wants_json:
+            return JsonResponse(
+                {"error": "The approved wording is already applied or its source wording is no longer in the CV draft."},
+                status=400,
+            )
         messages.error(request, "The selected source wording was not found in the current CV draft.")
         return redirect(f"{reverse('ats_result', args=[result.id])}#stage-2-bullet-review")
     generated_cv.content = rebuilt_content
     generated_cv.save(update_fields=["content"])
-    messages.success(request, f"Applied {applied} reviewed bullet change{'s' if applied != 1 else ''} to the CV draft.")
+    message = f"Applied {applied} reviewed bullet change{'s' if applied != 1 else ''} to the CV draft."
+    if wants_json:
+        return JsonResponse({
+            "saved": True,
+            "applied": applied,
+            "content": rebuilt_content,
+            "message": message,
+        })
+    messages.success(request, message)
     return redirect(f"{reverse('ats_result', args=[result.id])}#full-cv-workspace")
 
 
