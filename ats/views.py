@@ -7,7 +7,7 @@ import socket
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
@@ -1297,7 +1297,10 @@ def start_bullet_review(request, result_id):
 @require_http_methods(["POST"])
 def decide_bullet_suggestion(request, result_id, suggestion_id):
     result = get_object_or_404(ATSResult, id=result_id, user=request.user)
+    wants_json = request.headers.get("x-requested-with") == "XMLHttpRequest"
     if not can_download_generated_cv(request.user):
+        if wants_json:
+            return JsonResponse({"error": "Bullet-level CV review is available on the Plus plan."}, status=403)
         messages.error(request, "Bullet-level CV review is available on the Plus plan.")
         return redirect("ats_result", result_id=result.id)
     suggestion = get_object_or_404(
@@ -1308,6 +1311,8 @@ def decide_bullet_suggestion(request, result_id, suggestion_id):
     )
     decision = request.POST.get("decision", "")
     if decision not in {"accepted", "edited", "rejected", "pending"}:
+        if wants_json:
+            return JsonResponse({"error": "Choose a valid bullet-review decision."}, status=400)
         messages.error(request, "Choose a valid bullet-review decision.")
         return redirect(f"{reverse('ats_result', args=[result.id])}#bullet-{suggestion.id}")
 
@@ -1315,12 +1320,35 @@ def decide_bullet_suggestion(request, result_id, suggestion_id):
     if decision == "edited":
         edited_text = re.sub(r"\s+", " ", request.POST.get("edited_text", "")).strip()
         if not 20 <= len(edited_text) <= 600:
+            if wants_json:
+                return JsonResponse(
+                    {"error": "Edited bullet wording must contain between 20 and 600 characters."},
+                    status=400,
+                )
             messages.error(request, "Edited bullet wording must contain between 20 and 600 characters.")
             return redirect(f"{reverse('ats_result', args=[result.id])}#bullet-{suggestion.id}")
         suggestion.edited_text = edited_text
         update_fields.append("edited_text")
     suggestion.status = decision
     suggestion.save(update_fields=update_fields)
+    if wants_json:
+        states = list(result.bullet_suggestions.values_list("status", flat=True))
+        return JsonResponse({
+            "saved": True,
+            "suggestion_id": suggestion.id,
+            "status": suggestion.status,
+            "status_label": suggestion.get_status_display(),
+            "display_text": (
+                suggestion.edited_text if suggestion.status == "edited"
+                else suggestion.proposed_text
+            ),
+            "summary": {
+                "total": len(states),
+                "pending": states.count("pending"),
+                "approved": states.count("accepted") + states.count("edited"),
+            },
+            "message": f"Bullet {suggestion.position + 1} saved.",
+        })
     messages.success(request, f"Bullet {suggestion.position + 1} marked {suggestion.get_status_display().lower()}.")
     return redirect(f"{reverse('ats_result', args=[result.id])}#bullet-{suggestion.id}")
 

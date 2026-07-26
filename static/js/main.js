@@ -190,7 +190,56 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Setup reusable experience ratings
     setupFeedbackRatings();
+
+    // Save Stage 2 bullet decisions without reloading the report
+    setupBulletReviews();
 });
+
+function setupBulletReviews() {
+    const progress = document.querySelector('[data-bullet-progress]');
+    document.querySelectorAll('[data-bullet-decision-form]').forEach((form) => {
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const card = form.closest('[data-bullet-card]');
+            const button = form.querySelector('button[type="submit"]');
+            const originalLabel = button?.textContent || '';
+            if (button) {
+                button.disabled = true;
+                button.textContent = 'Saving…';
+            }
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    body: new FormData(form)
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'The decision could not be saved.');
+
+                const state = card?.querySelector('[data-bullet-state]');
+                if (state) {
+                    state.className = `bullet-state ${data.status}`;
+                    state.textContent = data.status_label;
+                }
+                const proposed = card?.querySelector('[data-bullet-proposed]');
+                if (proposed && data.display_text) proposed.textContent = data.display_text;
+                if (progress && data.summary) {
+                    progress.textContent = `${data.summary.total} suggestions · ${data.summary.pending} pending · ${data.summary.approved} approved`;
+                }
+                const editor = form.closest('details');
+                if (editor) editor.open = false;
+                Utils.showToast(data.message, 'success', 1800);
+            } catch (error) {
+                Utils.showToast(error.message || 'The decision could not be saved.', 'danger', 3000);
+            } finally {
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = originalLabel;
+                }
+            }
+        });
+    });
+}
 
 function setupFeedbackRatings() {
     document.querySelectorAll('[data-feedback-form]').forEach((form) => {

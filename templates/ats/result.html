@@ -2564,7 +2564,7 @@
                             <p class="report-muted mb-0">Review one evidence-safe wording decision at a time. Nothing enters the CV until you accept or edit it and apply the review.</p>
                         </div>
                         {% if bullet_review_summary.total %}
-                            <span class="bullet-review-progress">
+                            <span class="bullet-review-progress" data-bullet-progress>
                                 {{ bullet_review_summary.total }} suggestions ·
                                 {{ bullet_review_summary.pending }} pending ·
                                 {{ bullet_review_summary.accepted|add:bullet_review_summary.edited }} approved
@@ -2575,10 +2575,10 @@
                     {% if can_download %}
                         {% if bullet_suggestions %}
                             {% for suggestion in bullet_suggestions %}
-                                <article class="bullet-suggestion" id="bullet-{{ suggestion.id }}">
+                                <article class="bullet-suggestion" id="bullet-{{ suggestion.id }}" data-bullet-card>
                                     <div class="bullet-suggestion-top">
                                         <strong>Experience bullet {{ forloop.counter }}</strong>
-                                        <span class="bullet-state {{ suggestion.status }}">{{ suggestion.get_status_display }}</span>
+                                        <span class="bullet-state {{ suggestion.status }}" data-bullet-state>{{ suggestion.get_status_display }}</span>
                                     </div>
                                     <div class="bullet-comparison">
                                         <div>
@@ -2587,7 +2587,7 @@
                                         </div>
                                         <div>
                                             <strong>Proposed wording</strong>
-                                            <p>{% if suggestion.status == "edited" %}{{ suggestion.edited_text }}{% else %}{{ suggestion.proposed_text }}{% endif %}</p>
+                                            <p data-bullet-proposed>{% if suggestion.status == "edited" %}{{ suggestion.edited_text }}{% else %}{{ suggestion.proposed_text }}{% endif %}</p>
                                         </div>
                                     </div>
                                     <p class="report-muted small mt-2 mb-1">{{ suggestion.rationale }}</p>
@@ -2600,17 +2600,17 @@
                                         <div class="value-note mt-2">{{ suggestion.measurement_prompt }}</div>
                                     {% endif %}
                                     <div class="bullet-review-actions">
-                                        <form method="post" action="{% url 'decide_bullet_suggestion' result.id suggestion.id %}">
+                                        <form method="post" action="{% url 'decide_bullet_suggestion' result.id suggestion.id %}" data-bullet-decision-form>
                                             {% csrf_token %}<input type="hidden" name="decision" value="accepted">
                                             <button class="btn btn-primary btn-sm" type="submit">Accept</button>
                                         </form>
-                                        <form method="post" action="{% url 'decide_bullet_suggestion' result.id suggestion.id %}">
+                                        <form method="post" action="{% url 'decide_bullet_suggestion' result.id suggestion.id %}" data-bullet-decision-form>
                                             {% csrf_token %}<input type="hidden" name="decision" value="rejected">
                                             <button class="btn btn-outline-secondary btn-sm" type="submit">Reject</button>
                                         </form>
                                         <details class="bullet-edit">
                                             <summary>Edit before accepting</summary>
-                                            <form method="post" action="{% url 'decide_bullet_suggestion' result.id suggestion.id %}">
+                                            <form method="post" action="{% url 'decide_bullet_suggestion' result.id suggestion.id %}" data-bullet-decision-form>
                                                 {% csrf_token %}
                                                 <input type="hidden" name="decision" value="edited">
                                                 <textarea name="edited_text" maxlength="600">{{ suggestion.edited_text|default:suggestion.proposed_text }}</textarea>

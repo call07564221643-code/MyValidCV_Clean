@@ -366,8 +366,11 @@ class EditableCVDraftEndpointTests(TestCase):
         decision = self.client.post(
             reverse("decide_bullet_suggestion", args=[self.result.id, first.id]),
             {"decision": "accepted"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
-        self.assertEqual(decision.status_code, 302)
+        self.assertEqual(decision.status_code, 200)
+        self.assertEqual(decision.json()["status"], "accepted")
+        self.assertEqual(decision.json()["summary"]["approved"], 1)
         first.refresh_from_db()
         self.assertEqual(first.status, "accepted")
 
