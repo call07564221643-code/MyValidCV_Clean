@@ -263,6 +263,11 @@ STORAGES = {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
+if env_bool('TEST_USE_SQLITE', False):
+    # Tests resolve source assets directly and must not depend on a previously
+    # generated production manifest in STATIC_ROOT.
+    STORAGES['staticfiles']['BACKEND'] = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    MIDDLEWARE.remove('whitenoise.middleware.WhiteNoiseMiddleware')
 
 # Media files (Uploads)
 MEDIA_URL = '/media/'

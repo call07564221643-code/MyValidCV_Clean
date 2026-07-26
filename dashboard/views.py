@@ -9,7 +9,7 @@ from django.utils import timezone
 from accounts.models import UserProfile
 from ats.models import ApplicationReminder, ATSResult, CV, EnterpriseBatch, EnterpriseCandidateResult, GeneratedCV, JobRole
 from payments.models import Invoice, PaymentTransaction, Refund
-from subscriptions.models import CustomerSubscription, DiscountCode, SubscriptionPlan
+from subscriptions.models import CustomerSubscription, DiscountCode
 from subscriptions.services import get_entitlements
 from core.models import ExperienceFeedback
 

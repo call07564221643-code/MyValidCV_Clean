@@ -311,7 +311,6 @@ def build_generated_cv(cv, result, matched, missing):
     cv_text = extract_cv_text(cv)
     preview = build_cv_draft_preview(result, matched, missing, cv_text)
     target_role = preview["target_role"]
-    matched_text = ", ".join(preview["skills"]) if preview["skills"] else "role-relevant strengths already present in your CV"
     missing_text = ", ".join(missing) if missing else "No major missing skills detected"
     decision = build_application_decision(result.score)
     if not decision["can_rewrite"]:

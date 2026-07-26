@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.models import User
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
-from django.db.models import Avg, Count, Q, Sum
+from django.db.models import Avg, Q, Sum
 from django.shortcuts import render
 from django.utils import timezone
 
@@ -97,7 +97,6 @@ def website_health(request):
     transactions_last_30_days = PaymentTransaction.objects.filter(created_at__gte=last_30_days).count()
     paid_count = paid_transactions.count()
     paid_count_30_days = paid_transactions.filter(created_at__gte=last_30_days).count()
-    failed_payments = PaymentTransaction.objects.filter(status="failed").count()
     payment_success_rate = _percent(paid_count, transactions_total)
     revenue_total = _money(paid_transactions.aggregate(total=Sum("amount"))["total"])
     revenue_30_days = _money(paid_transactions.filter(created_at__gte=last_30_days).aggregate(total=Sum("amount"))["total"])
@@ -175,7 +174,6 @@ def website_health(request):
     }
     plan_economics = []
     fixed_cost_total = finance_assumption.fixed_monthly_cost_total()
-    generated_30_days = GeneratedCV.objects.filter(created_at__gte=last_30_days).count()
     for plan_code, label in plan_labels.items():
         plan_users = UserProfile.objects.filter(plan=plan_code).count()
         active_plan_users = UserProfile.objects.filter(plan=plan_code, user__is_active=True).count()
