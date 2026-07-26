@@ -16,7 +16,8 @@ from .cv_drafting import (
     is_legacy_generated_cv,
     parse_cv_sections,
 )
-from .forms import ATSAnalysisForm, MultipleFileField, validate_document
+from .engine import ats_engine
+from .forms import MultipleFileField, validate_document
 from .models import (
     ATSResult,
     CV,
@@ -51,6 +52,15 @@ from .views import (
 
 
 class UploadAndUrlSecurityTests(SimpleTestCase):
+    def test_latin1_text_upload_is_decoded_from_original_bytes(self):
+        upload = SimpleUploadedFile(
+            "candidate.txt",
+            "Profile\nCaf\xe9 manager".encode("latin-1"),
+            content_type="text/plain",
+        )
+
+        self.assertIn("Café", ats_engine.extract_text_from_upload(upload))
+
     def test_private_job_url_is_rejected(self):
         with self.assertRaises(ValueError):
             _validate_public_job_url("http://127.0.0.1/internal")

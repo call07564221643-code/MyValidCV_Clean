@@ -112,7 +112,6 @@ def calculate_score_details(cv_text, job_description, job_title=""):
 
     known_terms = _unique_keep_order(BASE_SKILLS + taxonomy["skills"])
     jd_skills = _extract_known_terms(job_lower, known_terms)
-    cv_skills = _extract_known_terms(cv_lower, known_terms)
     matched_skills = [skill for skill in jd_skills if _term_in_text(skill, cv_lower)]
     missing_skills = [skill for skill in jd_skills if skill not in matched_skills]
 

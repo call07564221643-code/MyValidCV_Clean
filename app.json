@@ -73,6 +73,19 @@
     },
     "EMAIL_HOST_PASSWORD": {
       "required": false
+    },
+    "OLLAMA_BASE_URL": {
+      "description": "Optional public HTTPS Ollama-compatible endpoint for open-ended Maya replies.",
+      "required": false
+    },
+    "OLLAMA_MODEL": {
+      "description": "Model exposed by the configured Ollama-compatible endpoint.",
+      "value": "llama3.1",
+      "required": false
+    },
+    "OLLAMA_API_KEY": {
+      "description": "Optional bearer token for a hosted Ollama-compatible endpoint.",
+      "required": false
     }
   },
   "formation": {

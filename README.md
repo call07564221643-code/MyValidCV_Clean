@@ -26,10 +26,12 @@ advisory, preserve equal ranks for tied scores and always require human review.
 ## Maya service adviser
 
 Maya is grounded at request time from the maintained MyValidCV service knowledge
-in `core/maya_knowledge.py`. Relevant topics are supplied to Ollama alongside
-safe, minimal account context such as the signed-in user's active service level
-and analysis allowance. Maya can explain ATS v2, Truth Gate evidence, plans,
-documents, Enterprise screening, payments, privacy and service limitations.
+in `core/maya_knowledge.py`. When a hosted Ollama-compatible endpoint is
+configured, relevant topics are supplied alongside safe, minimal account context
+such as the signed-in user's active service level and analysis allowance.
+Without that endpoint, Maya uses the grounded conversational fallback. Maya can
+explain ATS v2, Truth Gate evidence, plans, documents, Enterprise screening,
+payments, privacy and service limitations.
 
 Chat messages are not used to train the model or permanently retained by this
 feature. Only a bounded recent conversation is sent for continuity. Maya must
@@ -51,7 +53,7 @@ the public landing page.
 | --- | ---: | --- |
 | Free | 5 analyses | One retained CV, online ATS result, job text/URL/file and deadline alert |
 | Plus (GBP 4.99/month) | 20 analyses | Job URL/file input, tailored CV, cover letter, deadline alert |
-| Enterprise (GBP 49/month) | 50 bulk CV scans | Bulk ranking and reports; no generated CV or cover letter |
+| Enterprise (GBP 49/month) | 50 bulk CV scans | Up to 15 files per upload; bulk ranking and reports; no generated CV or cover letter |
 
 The database plan catalogue is authoritative. `subscriptions.services` resolves
 entitlements from a current `CustomerSubscription`; `UserProfile.plan` alone
@@ -119,6 +121,9 @@ EMAIL_HOST
 EMAIL_HOST_USER
 EMAIL_HOST_PASSWORD
 DEFAULT_FROM_EMAIL
+OLLAMA_BASE_URL
+OLLAMA_MODEL
+OLLAMA_API_KEY
 ```
 
 Stripe webhook URL:
