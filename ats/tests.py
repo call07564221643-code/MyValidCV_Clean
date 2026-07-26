@@ -376,12 +376,14 @@ class EditableCVDraftEndpointTests(TestCase):
 
         self.generated_cv.content = self.source_cv_text
         self.generated_cv.save(update_fields=["content"])
-        applied = self.client.post(reverse("apply_bullet_review", args=[self.result.id]))
-        self.assertRedirects(
-            applied,
-            f"{reverse('ats_result', args=[self.result.id])}#full-cv-workspace",
-            fetch_redirect_response=False,
+        applied = self.client.post(
+            reverse("apply_bullet_review", args=[self.result.id]),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
+        self.assertEqual(applied.status_code, 200)
+        self.assertTrue(applied.json()["saved"])
+        self.assertEqual(applied.json()["applied"], 1)
+        self.assertIn(first.proposed_text, applied.json()["content"])
         self.generated_cv.refresh_from_db()
         self.assertIn(first.proposed_text, self.generated_cv.content)
 

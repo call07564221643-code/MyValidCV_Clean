@@ -239,6 +239,45 @@ function setupBulletReviews() {
             }
         });
     });
+
+    const applyForm = document.querySelector('[data-bullet-apply-form]');
+    if (applyForm) {
+        applyForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const button = applyForm.querySelector('button[type="submit"]');
+            const status = applyForm.querySelector('[data-bullet-apply-status]');
+            const originalLabel = button?.textContent || '';
+            if (button) {
+                button.disabled = true;
+                button.textContent = 'Applying…';
+            }
+            try {
+                const response = await fetch(applyForm.action, {
+                    method: 'POST',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    body: new FormData(applyForm)
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'The approved bullets could not be applied.');
+
+                const editor = document.getElementById('cvDraftEditor');
+                if (editor && typeof data.content === 'string') editor.value = data.content;
+                if (status) {
+                    status.classList.remove('report-muted');
+                    status.textContent = `${data.message} The CV editor below is now up to date.`;
+                }
+                if (button) button.textContent = 'Applied to CV draft';
+                Utils.showToast(data.message, 'success', 2200);
+            } catch (error) {
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = originalLabel;
+                }
+                if (status) status.textContent = error.message || 'The approved bullets could not be applied.';
+                Utils.showToast(error.message || 'The approved bullets could not be applied.', 'danger', 3000);
+            }
+        });
+    }
 }
 
 function setupFeedbackRatings() {
