@@ -512,6 +512,13 @@ function setupSiteAssistant() {
     const respond = async (question) => {
         addMessage(question, 'user');
         let answer = '';
+        const typing = document.createElement('div');
+        typing.className = 'mvcv-assistant-message bot';
+        typing.textContent = 'Maya is thinking…';
+        typing.setAttribute('aria-live', 'polite');
+        body.appendChild(typing);
+        body.scrollTop = body.scrollHeight;
+        input.disabled = true;
         try {
             const response = await fetch('/assistant/', {
                 method: 'POST',
@@ -527,6 +534,10 @@ function setupSiteAssistant() {
             }
         } catch (error) {
             answer = '';
+        } finally {
+            typing.remove();
+            input.disabled = false;
+            input.focus();
         }
         window.setTimeout(() => addMessage(answer || getAssistantAnswer(question), 'bot'), 180);
     };
@@ -556,41 +567,7 @@ function setupSiteAssistant() {
 }
 
 function getAssistantAnswer(question) {
-    const q = question.toLowerCase();
-
-    if (q.includes('discount') || q.includes('offer') || q.includes('coupon')) {
-        return 'When MyValidCV has an active discount, it will be shown on the Plans page or shared by support. I can explain the plan value, but I cannot promise an unannounced discount. If a code is available, use it before checkout.';
-    }
-
-    if (q.includes('refund') || q.includes('cancel') || q.includes('terms') || q.includes('privacy') || q.includes('condition')) {
-        return 'Payments are processed securely through the checkout provider. Refunds and cancellations depend on the plan terms, usage, and timing. Please review the Terms, Privacy, and Use of Data links in the footer, and contact support@myvalidcv.com for account-specific refund help.';
-    }
-
-    if (q.includes('payment') || q.includes('pay') || q.includes('stripe') || q.includes('card') || q.includes('receipt')) {
-        return 'Choose a plan, click Pay Now, and complete secure checkout. After payment, MyValidCV shows a confirmation/receipt page and updates your plan. Card details are handled by the payment provider, not stored directly by MyValidCV.';
-    }
-
-    if (q.includes('report') || q.includes('score') || q.includes('ats') || q.includes('result')) {
-        return 'ATS v2 explains your CV-to-role evidence match across skills, requirements, evidence and readability. The Truth Gate distinguishes verified evidence, keyword-only mentions and claims needing confirmation or proof. It improves your documents; it does not predict hiring success.';
-    }
-
-    if (q.includes('enterprise') || q.includes('bulk') || q.includes('team') || q.includes('hire')) {
-        return 'Enterprise is for teams that need bulk CV comparison against a role. It helps rank candidates, show match percentages, and identify missing evidence. It is useful for recruitment screening, but final hiring decisions should still include human review.';
-    }
-
-    if (q.includes('plan') || q.includes('price') || q.includes('plus') || q.includes('free')) {
-        return 'Free includes 5 analyses. Plus includes 20 analyses and generated CV and cover-letter drafts. Enterprise supports up to 50 advisory bulk CV comparisons with human review. Check the Plans page for the current price.';
-    }
-
-    if (q.includes('how') || q.includes('work') || q.includes('start') || q.includes('upload') || q.includes('validate')) {
-        return 'The simple journey is: upload your CV, paste a job advert or URL, click Validate, then review the report. MyValidCV shows matched evidence, missing requirements, recruiter risks, and a recommended CV/cover-letter direction.';
-    }
-
-    if (q.includes('cv') || q.includes('cover') || q.includes('rewrite') || q.includes('draft')) {
-        return 'MyValidCV helps you improve the CV for a specific job. Green wording is safe rewording from your CV, yellow is stronger presentation of existing evidence, and red means the claim is not evidenced enough yet. The cover letter should summarise your strongest matched evidence.';
-    }
-
-    return 'MyValidCV promises a fast, simple way to know whether your CV is ready for a specific job: upload CV, add job advert, validate, improve, apply. Ask me about reports, plans, payments, refunds, discounts, or how to get started.';
+    return 'I’m having trouble connecting right now. Please try again in a moment, or ask support@myvalidcv.com if your question is urgent.';
 }
 
 // ============================================================================

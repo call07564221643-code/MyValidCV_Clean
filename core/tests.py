@@ -8,7 +8,7 @@ from django.urls import reverse
 from ats.models import ATSResult, CV
 from .maya_knowledge import knowledge_context, select_knowledge
 from .models import ExperienceFeedback
-from .views import _safe_history
+from .views import _safe_history, fallback_assistant_answer
 
 
 @override_settings(SECURE_SSL_REDIRECT=False)
@@ -92,6 +92,38 @@ class AssistantReplyTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("1,200", response.json()["answer"])
 
+    @override_settings(OLLAMA_BASE_URL="")
+    def test_fallback_greets_naturally(self):
+        response = self.client.post(
+            reverse("assistant_reply"),
+            data=json.dumps({"question": "Hi Maya"}),
+            content_type="application/json",
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("what are you working on", response.json()["answer"].lower())
+        self.assertNotIn("myvalidcv helps you quickly", response.json()["answer"].lower())
+
+    @override_settings(OLLAMA_BASE_URL="")
+    def test_short_follow_up_uses_recent_conversation(self):
+        response = self.client.post(
+            reverse("assistant_reply"),
+            data=json.dumps({
+                "question": "What about Plus?",
+                "history": [
+                    {"role": "user", "content": "Which plan should I choose?"},
+                    {"role": "assistant", "content": "Are you applying for yourself?"},
+                ],
+            }),
+            content_type="application/json",
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("20 analyses", response.json()["answer"])
+        self.assertIn("applying for yourself", response.json()["answer"].lower())
+
 
 class MayaKnowledgeTests(TestCase):
     def test_truth_gate_question_selects_ats_v2_knowledge(self):
@@ -115,6 +147,11 @@ class MayaKnowledgeTests(TestCase):
         safe = _safe_history(history)
         self.assertLessEqual(len(safe), 6)
         self.assertNotIn("system", {item["role"] for item in safe})
+
+    def test_fallback_acknowledges_thanks_without_repeating_sales_copy(self):
+        answer = fallback_assistant_answer("Thanks, that helps")
+        self.assertIn("you’re welcome", answer.lower())
+        self.assertNotIn("free includes", answer.lower())
 
 
 class ExperienceFeedbackTests(TestCase):
