@@ -115,3 +115,20 @@ Track these weekly:
 
 Prefer small, complete improvements over large unfinished redesigns. MyValidCV
 wins by being calm, fast and clear, not by having many features.
+
+## Final Agile Closure Rules
+
+Use the final project closure phase to confirm quality, not to add new scope.
+
+- Protect the core journey: Register -> Upload CV -> Add Job -> Validate -> Review
+  results.
+- Treat payment, account trust, and access control as release-critical work.
+- Keep the backlog narrow and evidence-based.
+- Complete only the user stories that materially improve trust, conversion, or
+  release confidence.
+- Any work not needed for release readiness is moved to a post-release backlog.
+- Every story must have acceptance criteria and a validation path before it is
+  accepted as done.
+
+This keeps the team aligned with the lean operating model and prevents the final
+phase from turning into feature bloat.
