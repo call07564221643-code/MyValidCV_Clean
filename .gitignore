@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv*/
+.env
+db.sqlite3
+staticfiles/
+media/
+test.sqlite3
+.pytest_cache/
+*.log
+desktop.ini
+structure.txt
+project_structure.txt
+tatus

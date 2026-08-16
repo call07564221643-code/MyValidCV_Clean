@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Owner Access Required - MyValidCV{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h3">Owner access required</h1>
+                <p class="text-muted mb-4">This area is only available to the MyValidCV website owner or a superuser account.</p>
+                <a href="{% url 'dashboard' %}" class="btn btn-primary">Back to dashboard</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

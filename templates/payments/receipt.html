@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Receipt - MyValidCV{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-lg-5">
+                    <span class="badge bg-success mb-3">Payment confirmed</span>
+                    <h1 class="h3 fw-bold mb-2">Receipt for {{ transaction.plan.name }}</h1>
+                    <p class="text-muted">Your subscription is active and your payment has been recorded.</p>
+
+                    <div class="border rounded-3 p-3 my-4">
+                        <div class="d-flex justify-content-between py-2 border-bottom">
+                            <span>Receipt number</span>
+                            <strong>{{ transaction.invoice.invoice_number }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-2 border-bottom">
+                            <span>Payment reference</span>
+                            <strong>{{ transaction.checkout_reference }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-2 border-bottom">
+                            <span>Amount paid</span>
+                            <strong>{{ transaction.currency }} {{ transaction.amount }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-2 border-bottom">
+                            <span>Paid on</span>
+                            <strong>{{ transaction.invoice.paid_at|date:"d M Y, H:i" }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-2">
+                            <span>Next payment date</span>
+                            <strong>
+                                {% if transaction.invoice.next_payment_date %}
+                                    {{ transaction.invoice.next_payment_date|date:"d M Y" }}
+                                {% else %}
+                                    No future payment scheduled
+                                {% endif %}
+                            </strong>
+                        </div>
+                    </div>
+
+                    <div class="alert {% if transaction.invoice.receipt_email_status == 'sent' %}alert-success{% elif transaction.invoice.receipt_email_status == 'no_email' %}alert-warning{% else %}alert-info{% endif %}">
+                        {% if transaction.invoice.receipt_email_status == 'sent' %}
+                            Receipt email sent to {{ transaction.invoice.receipt_email }}.
+                        {% elif transaction.invoice.receipt_email_status == 'no_email' %}
+                            Receipt email was not sent because this account has no email address.
+                        {% elif transaction.invoice.receipt_email_status == 'failed' %}
+                            Payment is confirmed, but receipt email could not be sent. Admin can resend it later.
+                        {% else %}
+                            Receipt email status: {{ transaction.invoice.receipt_email_status }}.
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{% url 'dashboard' %}" class="btn btn-primary">Go to Dashboard</a>
+                        <a href="{% url 'pricing' %}" class="btn btn-outline-secondary">View Plans</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

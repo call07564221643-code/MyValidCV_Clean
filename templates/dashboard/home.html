@@ -1,0 +1,757 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - MyValidCV{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --dash-navy: #1f3374;
+        --dash-navy-dark: #17275f;
+        --dash-soft: #eef3ff;
+        --dash-bg: #f8fafc;
+        --dash-card: #ffffff;
+        --dash-ink: #0f172a;
+        --dash-muted: #64748b;
+        --dash-line: #e2e8f0;
+        --dash-success: #15803d;
+        --dash-warn: #b45309;
+        --dash-risk: #b91c1c;
+    }
+
+    .dash-shell {
+        background: linear-gradient(180deg, #ffffff 0%, var(--dash-bg) 100%);
+        min-height: calc(100vh - 84px);
+        padding: 2.25rem 0 3rem;
+    }
+
+    .dash-shell.dash-enterprise {
+        --dash-navy: #0f766e;
+        --dash-navy-dark: #115e59;
+        --dash-soft: #e6fffb;
+        --dash-bg: #f0fdfa;
+        --dash-line: #b9e8e2;
+        background:
+            radial-gradient(circle at 88% 4%, rgba(15, 118, 110, 0.13), transparent 28%),
+            linear-gradient(180deg, #ffffff 0%, var(--dash-bg) 100%);
+    }
+
+    .dash-enterprise-mark {
+        display: inline-grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        margin-right: 0.4rem;
+        border-radius: 8px;
+        background: #0f766e;
+        color: #ffffff;
+        font-size: 0.72rem;
+        vertical-align: middle;
+    }
+
+    .dash-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1rem;
+        align-items: end;
+        margin-bottom: 1.25rem;
+    }
+
+    .dash-kicker {
+        color: var(--dash-navy);
+        font-size: 0.78rem;
+        font-weight: 760;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 0.45rem;
+    }
+
+    .dash-hero h1 {
+        color: var(--dash-ink);
+        font-size: clamp(2rem, 4vw, 3.1rem);
+        font-weight: 680;
+        letter-spacing: -0.045em;
+        margin: 0;
+    }
+
+    .dash-hero p,
+    .dash-muted {
+        color: var(--dash-muted);
+    }
+
+    .dash-actions {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    .dash-usage-counter {
+        align-items: center;
+        color: #9fb8ff;
+        display: inline-flex;
+        gap: 0.7rem;
+        line-height: 1;
+        padding: 0 0.2rem;
+    }
+
+    .dash-count {
+        display: grid;
+        gap: 0.16rem;
+        min-width: 34px;
+        place-items: center;
+    }
+
+    .dash-count strong {
+        color: #9fb8ff;
+        display: block;
+        font-size: 1.08rem;
+        font-weight: 760;
+        letter-spacing: -0.03em;
+    }
+
+    .dash-count span {
+        color: #9fb8ff;
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 720;
+    }
+
+    .dash-card,
+    .dash-panel,
+    .dash-table-wrap {
+        background: var(--dash-card);
+        border: 1px solid var(--dash-line);
+        border-radius: 18px;
+        box-shadow: 0 18px 46px rgba(15, 23, 42, 0.07);
+    }
+
+    .dash-card {
+        height: 100%;
+        padding: 1rem;
+    }
+
+    .dash-card span {
+        display: block;
+        color: var(--dash-muted);
+        font-size: 0.82rem;
+        font-weight: 650;
+        margin-bottom: 0.4rem;
+    }
+
+    .dash-card strong {
+        color: var(--dash-ink);
+        display: block;
+        font-size: 1.55rem;
+        line-height: 1;
+    }
+
+    .dash-progress {
+        height: 8px;
+        border-radius: 999px;
+        background: #e8eefb;
+        overflow: hidden;
+        margin-top: 0.75rem;
+    }
+
+    .dash-progress div {
+        height: 100%;
+        border-radius: inherit;
+        background: var(--dash-navy);
+    }
+
+    .dash-usage-alert {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin: 1rem 0 0;
+        border-radius: 14px;
+    }
+
+    .dash-service-panel {
+        margin-top: 1rem;
+    }
+
+    .dash-service-list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+        list-style: none;
+        margin: 0.9rem 0 0;
+        padding: 0;
+    }
+
+    .dash-service-list li {
+        padding: 0.75rem;
+        border: 1px solid var(--dash-line);
+        border-radius: 12px;
+        background: var(--dash-soft);
+        color: var(--dash-ink);
+        font-size: 0.88rem;
+        font-weight: 650;
+    }
+
+    .dash-service-list li::before {
+        content: "✓";
+        margin-right: 0.45rem;
+        color: var(--dash-navy);
+        font-weight: 900;
+    }
+
+    .dash-account-strip {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        column-gap: 0.8rem;
+        row-gap: 0.45rem;
+        margin: 0 0 1.25rem;
+        padding: 0.15rem 0;
+    }
+
+    .dash-strip-item {
+        align-items: center;
+        color: #9fb8ff;
+        display: inline-flex;
+        gap: 0.38rem;
+        font-size: 0.9rem;
+        font-weight: 720;
+        white-space: nowrap;
+    }
+
+    .dash-strip-item:not(:last-of-type)::after {
+        background: rgba(159, 184, 255, 0.7);
+        content: "";
+        display: inline-block;
+        height: 1rem;
+        margin-left: 0.42rem;
+        width: 1px;
+    }
+
+    .dash-strip-item strong {
+        color: #9fb8ff;
+        font-size: 0.9rem;
+        font-weight: 650;
+    }
+
+    .dash-next {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr);
+        gap: 1rem;
+        align-items: stretch;
+        margin: 1.25rem 0;
+    }
+
+    .dash-panel {
+        padding: 1.15rem;
+    }
+
+    .dash-panel h2 {
+        color: var(--dash-ink);
+        font-size: 1.1rem;
+        font-weight: 720;
+        margin: 0 0 0.4rem;
+    }
+
+    .dash-panel p {
+        color: var(--dash-muted);
+        margin-bottom: 1rem;
+    }
+
+    .dash-trust {
+        display: grid;
+        gap: 0.55rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .dash-trust li {
+        display: flex;
+        gap: 0.55rem;
+        color: var(--dash-ink);
+        font-size: 0.92rem;
+    }
+
+    .dash-trust li::before {
+        content: "";
+        flex: 0 0 8px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--dash-navy);
+        margin-top: 0.48rem;
+    }
+
+    .dash-section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin: 1.5rem 0 0.75rem;
+    }
+
+    .dash-section-head h2 {
+        font-size: 1.1rem;
+        font-weight: 740;
+        margin: 0;
+    }
+
+    .dash-list {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .dash-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.85rem;
+        align-items: center;
+        border: 1px solid var(--dash-line);
+        border-radius: 14px;
+        padding: 0.85rem;
+        background: #ffffff;
+    }
+
+    .dash-item strong,
+    .dash-item span,
+    .dash-item small {
+        display: block;
+    }
+
+    .dash-item strong {
+        color: var(--dash-ink);
+    }
+
+    .dash-item small {
+        color: var(--dash-muted);
+    }
+
+    .dash-readiness {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0.35rem 0.6rem;
+        font-size: 0.78rem;
+        font-weight: 760;
+        white-space: nowrap;
+    }
+
+    .dash-ready {
+        background: #dcfce7;
+        color: var(--dash-success);
+    }
+
+    .dash-work {
+        background: #fef3c7;
+        color: var(--dash-warn);
+    }
+
+    .dash-risk {
+        background: #fee2e2;
+        color: var(--dash-risk);
+    }
+
+    .dash-empty {
+        border: 1px dashed #cbd5e1;
+        border-radius: 14px;
+        background: #fbfdff;
+        padding: 1rem;
+        color: var(--dash-muted);
+    }
+
+    .dash-table-wrap {
+        overflow: hidden;
+    }
+
+    .dash-table-wrap table {
+        margin-bottom: 0;
+    }
+
+    .dash-table-wrap th {
+        color: var(--dash-muted);
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    html[data-bs-theme="dark"] {
+        --dash-navy: #9fb8ff;
+        --dash-navy-dark: #7f9df5;
+        --dash-soft: #20335f;
+        --dash-bg: #0f172a;
+        --dash-card: #111c33;
+        --dash-ink: #f8fafc;
+        --dash-muted: #cbd5e1;
+        --dash-line: #273449;
+        --dash-success: #bbf7d0;
+        --dash-warn: #fde68a;
+        --dash-risk: #fecaca;
+    }
+
+    html[data-bs-theme="dark"] .dash-shell {
+        background: linear-gradient(180deg, #0b1224 0%, var(--dash-bg) 100%);
+    }
+
+    html[data-bs-theme="dark"] .dash-item,
+    html[data-bs-theme="dark"] .dash-empty {
+        background: #0b1224;
+    }
+
+    html[data-bs-theme="dark"] .dash-ready,
+    html[data-bs-theme="dark"] .dash-work,
+    html[data-bs-theme="dark"] .dash-risk {
+        background: #20335f;
+    }
+
+    html[data-bs-theme="dark"] .dash-strip-item {
+        color: #9fb8ff;
+    }
+
+    html[data-bs-theme="dark"] .dash-shell .btn-outline-primary {
+        border-color: #9fb8ff;
+        color: #dbe7ff;
+    }
+
+    html[data-bs-theme="dark"] .dash-shell .btn-outline-primary:hover,
+    html[data-bs-theme="dark"] .dash-shell .btn-outline-primary:focus {
+        background: #9fb8ff;
+        border-color: #9fb8ff;
+        color: #0f172a;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        html:not([data-bs-theme="light"]) {
+            --dash-navy: #9fb8ff;
+            --dash-navy-dark: #7f9df5;
+            --dash-soft: #20335f;
+            --dash-bg: #0f172a;
+            --dash-card: #111c33;
+            --dash-ink: #f8fafc;
+            --dash-muted: #cbd5e1;
+            --dash-line: #273449;
+            --dash-success: #bbf7d0;
+            --dash-warn: #fde68a;
+            --dash-risk: #fecaca;
+        }
+
+        html:not([data-bs-theme="light"]) .dash-shell {
+            background: linear-gradient(180deg, #0b1224 0%, var(--dash-bg) 100%);
+        }
+
+        html:not([data-bs-theme="light"]) .dash-item,
+        html:not([data-bs-theme="light"]) .dash-empty {
+            background: #0b1224;
+        }
+
+        html:not([data-bs-theme="light"]) .dash-ready,
+        html:not([data-bs-theme="light"]) .dash-work,
+        html:not([data-bs-theme="light"]) .dash-risk {
+            background: #20335f;
+        }
+
+        html:not([data-bs-theme="light"]) .dash-strip-item {
+            color: #9fb8ff;
+        }
+
+        html:not([data-bs-theme="light"]) .dash-shell .btn-outline-primary {
+            border-color: #9fb8ff;
+            color: #dbe7ff;
+        }
+
+        html:not([data-bs-theme="light"]) .dash-shell .btn-outline-primary:hover,
+        html:not([data-bs-theme="light"]) .dash-shell .btn-outline-primary:focus {
+            background: #9fb8ff;
+            border-color: #9fb8ff;
+            color: #0f172a;
+        }
+    }
+
+    @media (max-width: 991px) {
+        .dash-hero,
+        .dash-next {
+            grid-template-columns: 1fr;
+        }
+
+        .dash-actions {
+            justify-content: flex-start;
+        }
+
+        .dash-service-list {
+            grid-template-columns: 1fr;
+        }
+
+        .dash-account-strip {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+    }
+
+    @media (max-width: 575px) {
+        .dash-shell {
+            padding-top: 1.2rem;
+        }
+
+        .dash-item {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="dash-shell {% if is_enterprise %}dash-enterprise{% endif %}">
+    <div class="container">
+        <div class="dash-hero">
+            <div>
+                <div class="dash-kicker">{% if is_enterprise %}<span class="dash-enterprise-mark" aria-hidden="true">E</span>{% endif %}{{ dashboard_scope|title }} dashboard</div>
+                {% if is_enterprise %}
+                    <h1>Enterprise candidate intelligence.</h1>
+                    <p class="mb-0">Screen candidate CVs, monitor monthly usage, and open ranked hiring reports from one workspace.</p>
+                {% else %}
+                    <h1>Know if your CV is ready.</h1>
+                    <p class="mb-0">Pick up where you left off: validate a job, improve the CV, and apply with more confidence.</p>
+                {% endif %}
+            </div>
+            <div class="dash-actions">
+                <a href="{% url 'ats_analyse' %}" class="btn btn-primary">Validate CV</a>
+                <a href="{% url 'upload_cv' %}" class="btn btn-outline-primary">Manage CVs</a>
+                {% if is_enterprise %}
+                    <a href="{% url 'enterprise_bulk' %}" class="btn btn-outline-primary">Bulk analysis</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="dash-account-strip" aria-label="Account usage and services">
+            <span class="dash-strip-item">Status <strong class="text-capitalize">{{ subscription_status }}</strong></span>
+            <span class="dash-strip-item">Started <strong>{{ subscription_started|date:"d M Y" }}</strong></span>
+            <span class="dash-strip-item">Renewal <strong>{{ next_renewal|date:"d M Y" }}</strong></span>
+            <div class="dash-usage-counter" aria-label="Monthly validation allowance">
+                <div class="dash-count"><strong>{{ remaining_usage }}</strong><span>Remain</span></div>
+                <div class="dash-count"><strong>{{ limit }}</strong><span>Allowance</span></div>
+            </div>
+        </div>
+
+        <div class="dash-next">
+            <div class="dash-panel">
+                <h2>
+                    {% if recent_results %}
+                        Next best action
+                    {% else %}
+                        Start your first readiness check
+                    {% endif %}
+                </h2>
+                {% if recent_results %}
+                    {% with latest=recent_results.0 %}
+                        <p>Your latest report is for <strong>{{ latest.job_title }}</strong>. Review the recruiter view, then validate another job if you are applying to multiple roles.</p>
+                        <div class="dash-actions justify-content-start">
+                            <a href="{% url 'ats_result' latest.id %}" class="btn btn-primary">Open latest report</a>
+                            <a href="{% url 'ats_analyse' %}?cv={{ latest.cv.id }}" class="btn btn-outline-primary">Validate another job</a>
+                        </div>
+                    {% endwith %}
+                {% else %}
+                    <p>Upload a CV, paste a job description or URL, then get a recruiter-focused report instantly.</p>
+                    <div class="dash-actions justify-content-start">
+                        <a href="{% url 'ats_analyse' %}" class="btn btn-primary">Validate my CV</a>
+                        <a href="{% url 'upload_cv' %}" class="btn btn-outline-primary">Upload CV first</a>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="dash-panel">
+                <h2>Trust checks</h2>
+                <ul class="dash-trust">
+                    <li>Your CV is used for analysis and saved to your account.</li>
+                    <li>MyValidCV should never suggest invented experience.</li>
+                    <li>Reports focus on what recruiters and ATS systems may notice.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <div class="dash-panel h-100">
+                    <div class="dash-section-head mt-0">
+                        <h2>Saved CVs</h2>
+                        <a href="{% url 'upload_cv' %}" class="btn btn-sm btn-outline-primary">Upload</a>
+                    </div>
+                    {% if uploaded_cvs %}
+                        <div class="dash-list">
+                            {% for cv in uploaded_cvs %}
+                                <div class="dash-item">
+                                    <div>
+                                        <strong>{{ cv.title }}</strong>
+                                        <small>Uploaded {{ cv.uploaded_at|date:"M d, Y" }}</small>
+                                        {% if not cv.is_valid_cv %}
+                                            <small class="text-danger">Needs a stronger CV format before analysis.</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <a href="{% url 'ats_analyse' %}?cv={{ cv.id }}" class="btn btn-sm btn-outline-primary">Use</a>
+                                        <a href="{% url 'update_cv' cv.public_id %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                        <a href="{% url 'delete_cv' cv.public_id %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="dash-empty">
+                            <strong>No CV uploaded yet.</strong>
+                            <p class="mb-2">Upload one CV first, then reuse it for each job validation.</p>
+                            <a href="{% url 'upload_cv' %}" class="btn btn-sm btn-primary">Upload your CV</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="dash-panel h-100">
+                    <div class="dash-section-head mt-0">
+                        <h2>Recent readiness reports</h2>
+                        <a href="{% url 'ats_analyse' %}" class="btn btn-sm btn-outline-primary">New validation</a>
+                    </div>
+                    {% if recent_results %}
+                        <div class="dash-list">
+                            {% for result in recent_results %}
+                                <div class="dash-item">
+                                    <div>
+                                        <strong>{{ result.job_title }}</strong>
+                                        <small>{{ result.cv.title }} · {{ result.created_at|date:"M d, Y" }}</small>
+                                        <small>
+                                            {% if result.score >= 80 %}
+                                                Strong match. Review final evidence before applying.
+                                            {% elif result.score >= 60 %}
+                                                Needs work. Fix the biggest gaps before applying.
+                                            {% else %}
+                                                High risk. Recruiters may not see enough role fit yet.
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="dash-readiness {% if result.score >= 80 %}dash-ready{% elif result.score >= 60 %}dash-work{% else %}dash-risk{% endif %}">
+                                            {% if result.score >= 80 %}Ready{% elif result.score >= 60 %}Needs work{% else %}High risk{% endif %}
+                                        </span>
+                                        <div class="mt-2"><a href="{% url 'ats_result' result.id %}" class="btn btn-sm btn-outline-primary">Open</a></div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="dash-empty">
+                            <strong>No validation reports yet.</strong>
+                            <p class="mb-2">Run your first check to see what recruiters may notice and what to improve.</p>
+                            <a href="{% url 'ats_analyse' %}" class="btn btn-sm btn-primary">Run validation</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-1">
+            <div class="col-lg-6">
+                <div class="dash-panel h-100">
+                    <div class="dash-section-head mt-0">
+                        <h2>Job roles</h2>
+                    </div>
+                    {% if saved_jobs %}
+                        <div class="dash-list">
+                            {% for job in saved_jobs %}
+                                <div class="dash-item">
+                                    <div>
+                                        <strong>{{ job.title }}</strong>
+                                        <small>{{ job.get_source_type_display }}{% if job.company %} · {{ job.company }}{% endif %}{% if job.deadline %} · Deadline {{ job.deadline|date:"M d, Y" }}{% endif %}</small>
+                                    </div>
+                                    <span class="badge text-bg-light border">{{ job.result_count }} report(s)</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="dash-empty">Job roles appear here automatically after each validation.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="dash-panel h-100">
+                    <div class="dash-section-head mt-0">
+                        <h2>Suggested CV drafts</h2>
+                    </div>
+                    {% if generated_cvs %}
+                        <div class="dash-list">
+                            {% for draft in generated_cvs %}
+                                <div class="dash-item">
+                                    <div>
+                                        <strong>{{ draft.title }}</strong>
+                                        <small>{{ draft.content|truncatechars:110 }}</small>
+                                    </div>
+                                    <a href="{% url 'ats_result' draft.ats_result.id %}#suggestedCv" class="btn btn-sm btn-outline-primary">View</a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="dash-empty">Suggested CV drafts are created after validation. Free users can preview; paid users can download.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-1">
+            <div class="col-lg-6">
+                <div class="dash-panel h-100">
+                    <div class="dash-section-head mt-0">
+                        <h2>Application reminders</h2>
+                    </div>
+                    {% if reminders %}
+                        <div class="dash-list">
+                            {% for reminder in reminders %}
+                                <div class="dash-item">
+                                    <div>
+                                        <strong>{{ reminder.job_role.title }}</strong>
+                                        <small>{{ reminder.note|default:"Apply before the deadline." }}</small>
+                                    </div>
+                                    <span class="dash-readiness dash-work">{{ reminder.reminder_date|date:"M d" }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="dash-empty">No reminders yet. Add an optional deadline alert only when you need one.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if is_enterprise %}
+                <div class="col-lg-6">
+                    <div class="dash-panel h-100">
+                        <div class="dash-section-head mt-0">
+                            <h2>Enterprise reports</h2>
+                            <a href="{% url 'enterprise_bulk' %}" class="btn btn-sm btn-outline-primary">New bulk analysis</a>
+                        </div>
+                        {% if enterprise_batches %}
+                            <div class="dash-list">
+                                {% for batch in enterprise_batches %}
+                                    <div class="dash-item">
+                                        <div>
+                                            <strong>{{ batch.title }}</strong>
+                                            <small>{{ batch.job_role.title }} · {{ batch.candidate_count }} CVs · {{ batch.created_at|date:"M d, Y" }}</small>
+                                        </div>
+                                        <a href="{% url 'enterprise_report' batch.id %}" class="btn btn-sm btn-outline-primary">Open</a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="dash-empty">Upload up to your plan limit of CVs against one job role to create a shortlist report.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-lg-6">
+                    <div class="dash-panel h-100">
+                        <h2>Upgrade only when you need it</h2>
+                        <p>Free users can validate five jobs each month. Plus includes 20 checks, tailored CV rewrites, and cover letters; Enterprise includes bulk screening for 50 CVs without generated application documents.</p>
+                        <a href="{% url 'pricing' %}" class="btn btn-outline-primary">Compare plans</a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

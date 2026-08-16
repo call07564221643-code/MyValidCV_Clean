@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MyValidCV - AI Career Intelligence{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Compare your CV with a job description, check ATS compatibility, and improve your application with MyValidCV.{% endblock %}">
+    <meta name="robots" content="index, follow">
+    <meta property="og:site_name" content="MyValidCV">
+    <meta property="og:title" content="{% block og_title %}MyValidCV - AI CV and ATS Checker{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Validate your CV against a job role and get clear, practical application feedback.{% endblock %}">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+
+    {% load static %}
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script>
+        (function () {
+            try {
+                document.documentElement.setAttribute('data-bs-theme', localStorage.getItem('theme') || 'light');
+            } catch (error) {
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+        }());
+    </script>
+    <style>
+        :root {
+            color-scheme: light;
+            --mvcv-nav-bg: rgba(255, 255, 255, 0.92);
+            --mvcv-nav-text: #18223a;
+            --mvcv-nav-active-bg: rgba(31, 51, 116, 0.10);
+            --mvcv-nav-active-text: #1f3374;
+            --mvcv-body-bg: #f8fafc;
+            --mvcv-body-text: #0f172a;
+            --mvcv-card-bg: #ffffff;
+            --mvcv-card-border: #e2e8f0;
+            --mvcv-muted: #475569;
+            --mvcv-brand-primary: #1f3374;
+            --mvcv-brand-secondary: #5269a3;
+            --mvcv-brand-hover: #17275f;
+            --mvcv-brand-on-primary: #ffffff;
+            --mvcv-link: #174ea6;
+            --mvcv-focus: #5b7cfa;
+            --mvcv-input-bg: #ffffff;
+            --mvcv-disabled-bg: #e2e8f0;
+            --mvcv-disabled-text: #64748b;
+        }
+
+        .navbar {
+            background: var(--mvcv-nav-bg) !important;
+            backdrop-filter: blur(14px);
+        }
+
+        .navbar .nav-link {
+            border-radius: 999px;
+            font-weight: 500;
+            padding-inline: 0.85rem !important;
+            position: relative;
+            color: var(--mvcv-nav-text) !important;
+        }
+
+        .navbar .account-nav .nav-link,
+        .navbar .account-nav .btn {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .navbar .nav-link:hover,
+        .navbar .nav-link:focus {
+            color: var(--mvcv-nav-active-text) !important;
+        }
+
+        .navbar .nav-link.active {
+            background: transparent;
+            color: var(--mvcv-nav-active-text) !important;
+        }
+
+        .navbar .nav-link.active::after {
+            background: var(--mvcv-nav-active-text);
+            border-radius: 999px;
+            bottom: 0.1rem;
+            content: "";
+            height: 2px;
+            left: 0.85rem;
+            position: absolute;
+            right: 0.85rem;
+        }
+
+        .mvcv-brand-inline {
+            color: var(--mvcv-brand-primary) !important;
+            font-weight: 620;
+            letter-spacing: -0.035em;
+            font-size: 1.44rem;
+        }
+
+        .mvcv-brand-inline span span {
+            color: var(--mvcv-brand-secondary);
+        }
+
+        .btn-primary {
+            background: var(--mvcv-brand-primary);
+            border-color: var(--mvcv-brand-primary);
+            color: var(--mvcv-brand-on-primary);
+        }
+
+        .btn-primary:hover,
+        .btn-primary:focus,
+        .btn-primary:active,
+        .btn-primary.show {
+            background: var(--mvcv-brand-hover) !important;
+            border-color: var(--mvcv-brand-hover) !important;
+            color: var(--mvcv-brand-on-primary) !important;
+        }
+
+        .btn-outline-primary {
+            border-color: var(--mvcv-brand-primary);
+            color: var(--mvcv-brand-primary);
+        }
+
+        .btn-outline-primary:hover,
+        .btn-outline-primary:focus,
+        .btn-outline-primary:active {
+            background: var(--mvcv-brand-primary) !important;
+            border-color: var(--mvcv-brand-primary) !important;
+            color: var(--mvcv-brand-on-primary) !important;
+        }
+
+        .btn-primary:focus-visible,
+        .btn-outline-primary:focus-visible,
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible {
+            outline: 3px solid var(--mvcv-focus);
+            outline-offset: 3px;
+            box-shadow: none;
+        }
+
+        .btn-primary:disabled,
+        .btn-primary.disabled,
+        .btn-outline-primary:disabled,
+        .btn-outline-primary.disabled {
+            background: var(--mvcv-disabled-bg);
+            border-color: var(--mvcv-card-border);
+            color: var(--mvcv-disabled-text);
+            opacity: 1;
+        }
+
+        :where(a:not(.btn):not(.nav-link):not(.navbar-brand)) {
+            color: var(--mvcv-link);
+        }
+
+        .text-primary {
+            color: var(--mvcv-link) !important;
+        }
+
+        .site-footer {
+            margin-top: auto;
+            border-top: 1px solid var(--mvcv-card-border);
+            background: var(--mvcv-card-bg);
+            color: var(--mvcv-muted);
+        }
+
+        .site-footer-inner {
+            display: grid;
+            grid-template-columns: minmax(220px, 1.3fr) repeat(2, minmax(140px, 0.7fr));
+            gap: 2rem;
+            padding-block: 2rem 1.25rem;
+        }
+
+        .site-footer p,
+        .site-footer address {
+            margin: 0;
+            font-size: 0.84rem;
+            line-height: 1.65;
+        }
+
+        .site-footer h2 {
+            color: var(--mvcv-body-text);
+            font-size: 0.9rem;
+            font-weight: 750;
+            margin-bottom: 0.65rem;
+        }
+
+        .site-footer-brand {
+            color: var(--mvcv-brand-primary);
+            font-size: 1.2rem;
+            font-weight: 720;
+            letter-spacing: -0.035em;
+        }
+
+        .site-footer-brand span {
+            color: var(--mvcv-brand-secondary);
+        }
+
+        .site-footer-nav {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .site-footer-nav a {
+            color: inherit;
+            font-size: 0.8rem;
+            font-weight: 650;
+            text-decoration: none;
+        }
+
+        .site-footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-top: 1px solid var(--mvcv-card-border);
+        }
+
+        .site-footer-nav a:hover,
+        .site-footer-nav a:focus {
+            color: var(--mvcv-brand-primary);
+            text-decoration: underline;
+        }
+
+        @media (max-width: 576px) {
+            .site-footer-inner {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+
+            .site-footer-bottom {
+                flex-direction: column;
+            }
+        }
+
+        .mvcv-theme-toggle {
+            align-items: center;
+            border-color: var(--mvcv-card-border);
+            color: var(--mvcv-nav-text);
+            display: inline-flex;
+            height: 2rem;
+            justify-content: center;
+            min-width: 2rem;
+            padding: 0;
+            width: 2rem;
+        }
+
+        .mvcv-theme-toggle:hover,
+        .mvcv-theme-toggle:focus {
+            background: var(--mvcv-nav-active-bg);
+            color: var(--mvcv-nav-active-text);
+        }
+
+        html[data-bs-theme="dark"] {
+            color-scheme: dark;
+            --mvcv-nav-bg: rgba(15, 23, 42, 0.94);
+            --mvcv-nav-text: #e2e8f0;
+            --mvcv-nav-active-bg: rgba(159, 184, 255, 0.18);
+            --mvcv-nav-active-text: #dbe7ff;
+            --mvcv-body-bg: #0f172a;
+            --mvcv-body-text: #f8fafc;
+            --mvcv-card-bg: #111c33;
+            --mvcv-card-border: #273449;
+            --mvcv-muted: #cbd5e1;
+            --mvcv-brand-primary: #9fb8ff;
+            --mvcv-brand-secondary: #bfd0ff;
+            --mvcv-brand-hover: #bfd0ff;
+            --mvcv-brand-on-primary: #111827;
+            --mvcv-link: #9fb8ff;
+            --mvcv-focus: #bfd0ff;
+            --mvcv-input-bg: #0b1224;
+            --mvcv-disabled-bg: #273449;
+            --mvcv-disabled-text: #94a3b8;
+        }
+
+        html[data-bs-theme="dark"] body {
+            background: var(--mvcv-body-bg);
+            color: var(--mvcv-body-text);
+        }
+
+        html[data-bs-theme="dark"] .navbar {
+            background: var(--mvcv-nav-bg) !important;
+            border-bottom-color: var(--mvcv-card-border) !important;
+        }
+
+        html[data-bs-theme="dark"] .navbar .nav-link {
+            color: var(--mvcv-nav-text) !important;
+        }
+
+        html[data-bs-theme="dark"] .navbar .nav-link:hover,
+        html[data-bs-theme="dark"] .navbar .nav-link:focus {
+            color: var(--mvcv-nav-active-text) !important;
+        }
+
+        html[data-bs-theme="dark"] .navbar .nav-link.active {
+            background: transparent;
+            color: var(--mvcv-nav-active-text) !important;
+        }
+
+        html[data-bs-theme="dark"] .mvcv-brand-inline {
+            color: #dbe7ff !important;
+        }
+
+        html[data-bs-theme="dark"] .mvcv-brand-inline span span {
+            color: #9fb8ff;
+        }
+
+        html[data-bs-theme="dark"] .bg-light,
+        html[data-bs-theme="dark"] footer.bg-light {
+            background: var(--mvcv-card-bg) !important;
+            color: var(--mvcv-muted) !important;
+        }
+
+        html[data-bs-theme="dark"] .border-top,
+        html[data-bs-theme="dark"] .border-bottom {
+            border-color: var(--mvcv-card-border) !important;
+        }
+
+        html[data-bs-theme="dark"] .card,
+        html[data-bs-theme="dark"] .modal-content,
+        html[data-bs-theme="dark"] .dropdown-menu,
+        html[data-bs-theme="dark"] .list-group-item {
+            background-color: var(--mvcv-card-bg);
+            color: var(--mvcv-body-text);
+            border-color: var(--mvcv-card-border);
+        }
+
+        html[data-bs-theme="dark"] .form-control,
+        html[data-bs-theme="dark"] .form-select {
+            background-color: var(--mvcv-input-bg);
+            color: var(--mvcv-body-text);
+            border-color: var(--mvcv-card-border);
+        }
+
+        html[data-bs-theme="dark"] .form-control::placeholder {
+            color: #94a3b8;
+        }
+
+        html[data-bs-theme="dark"] .text-muted {
+            color: var(--mvcv-muted) !important;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            html:not([data-bs-theme="light"]) {
+                color-scheme: dark;
+                --mvcv-nav-bg: rgba(15, 23, 42, 0.94);
+                --mvcv-nav-text: #e2e8f0;
+                --mvcv-nav-active-bg: rgba(159, 184, 255, 0.18);
+                --mvcv-nav-active-text: #dbe7ff;
+                --mvcv-body-bg: #0f172a;
+                --mvcv-body-text: #f8fafc;
+                --mvcv-card-bg: #111c33;
+                --mvcv-card-border: #273449;
+                --mvcv-muted: #cbd5e1;
+                --mvcv-brand-primary: #9fb8ff;
+                --mvcv-brand-secondary: #bfd0ff;
+                --mvcv-brand-hover: #bfd0ff;
+                --mvcv-brand-on-primary: #111827;
+                --mvcv-link: #9fb8ff;
+                --mvcv-focus: #bfd0ff;
+                --mvcv-input-bg: #0b1224;
+                --mvcv-disabled-bg: #273449;
+                --mvcv-disabled-text: #94a3b8;
+            }
+
+            html:not([data-bs-theme="light"]) body {
+                background: var(--mvcv-body-bg);
+                color: var(--mvcv-body-text);
+            }
+
+            html:not([data-bs-theme="light"]) .navbar {
+                background: var(--mvcv-nav-bg) !important;
+                border-bottom-color: var(--mvcv-card-border) !important;
+            }
+
+            html:not([data-bs-theme="light"]) .navbar .nav-link {
+                color: var(--mvcv-nav-text) !important;
+            }
+
+            html:not([data-bs-theme="light"]) .navbar .nav-link:hover,
+            html:not([data-bs-theme="light"]) .navbar .nav-link:focus {
+                color: var(--mvcv-nav-active-text) !important;
+            }
+
+            html:not([data-bs-theme="light"]) .navbar .nav-link.active {
+                background: transparent;
+                color: var(--mvcv-nav-active-text) !important;
+            }
+
+            html:not([data-bs-theme="light"]) .mvcv-brand-inline {
+                color: #dbe7ff !important;
+            }
+
+            html:not([data-bs-theme="light"]) .mvcv-brand-inline span span {
+                color: #9fb8ff;
+            }
+
+            html:not([data-bs-theme="light"]) .bg-light,
+            html:not([data-bs-theme="light"]) footer.bg-light {
+                background: var(--mvcv-card-bg) !important;
+                color: var(--mvcv-muted) !important;
+            }
+
+            html:not([data-bs-theme="light"]) .border-top,
+            html:not([data-bs-theme="light"]) .border-bottom {
+                border-color: var(--mvcv-card-border) !important;
+            }
+
+            html:not([data-bs-theme="light"]) .card,
+            html:not([data-bs-theme="light"]) .modal-content,
+            html:not([data-bs-theme="light"]) .dropdown-menu,
+            html:not([data-bs-theme="light"]) .list-group-item {
+                background-color: var(--mvcv-card-bg);
+                color: var(--mvcv-body-text);
+                border-color: var(--mvcv-card-border);
+            }
+
+            html:not([data-bs-theme="light"]) .form-control,
+            html:not([data-bs-theme="light"]) .form-select {
+                background-color: var(--mvcv-input-bg);
+                color: var(--mvcv-body-text);
+                border-color: var(--mvcv-card-border);
+            }
+
+            html:not([data-bs-theme="light"]) .form-control::placeholder {
+                color: #94a3b8;
+            }
+
+            html:not([data-bs-theme="light"]) .text-muted {
+                color: var(--mvcv-muted) !important;
+            }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% block app_shell %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
+        <div class="container">
+            <a class="navbar-brand mvcv-brand-inline" href="{% url 'home' %}" aria-label="MyValidCV home">
+                <span>MyValid<span>CV</span></span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-lg-center {% if user.is_authenticated %}account-nav{% endif %}">
+                    {% if user.is_authenticated %}
+                        {% if user.is_superuser %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'owner_console' %}active{% endif %}" href="{% url 'owner_console' %}">Owner Console</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'owner_reports' %}active{% endif %}" href="{% url 'owner_reports' %}">Owner Reports</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'owner_feedback' %}active{% endif %}" href="{% url 'owner_feedback' %}">Feedback</a>
+                            </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Reports</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'account_settings' %}active{% endif %}" href="{% url 'account_settings' %}">Account</a>
+                        </li>
+                        <li class="nav-item ms-lg-2">
+                            <button class="btn btn-outline-secondary btn-sm mvcv-theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">
+                                <span id="themeToggleIcon" aria-hidden="true">&#9790;</span>
+                            </button>
+                        </li>
+                        <li class="nav-item ms-lg-2">
+                            <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">Logout</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Validate CV</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'pricing' %}active{% endif %}" href="{% url 'pricing' %}">Plans</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" href="{% url 'login' %}">Login</a>
+                        </li>
+                        <li class="nav-item ms-lg-2">
+                            <button class="btn btn-outline-secondary btn-sm mvcv-theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">
+                                <span id="themeToggleIcon" aria-hidden="true">&#9790;</span>
+                            </button>
+                        </li>
+                        <li class="nav-item ms-lg-2">
+                            <a class="btn btn-primary btn-sm" href="{% url 'register' %}">Sign up</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include "includes/footer.html" %}
+
+    <aside class="mvcv-assistant" aria-label="MyValidCV assistant" data-assistant>
+        <button class="mvcv-assistant-button" type="button" aria-expanded="false" data-assistant-toggle>
+            <span class="mvcv-assistant-dot"></span>
+            Ask Maya
+        </button>
+        <section class="mvcv-assistant-panel" data-assistant-panel>
+            <header class="mvcv-assistant-header">
+                <div>
+                    <strong>Maya</strong>
+                    <span>MyValidCV customer service</span>
+                </div>
+                <button type="button" aria-label="Close assistant" data-assistant-close>&times;</button>
+            </header>
+            <div class="mvcv-assistant-body" data-assistant-body>
+                <div class="mvcv-assistant-message bot">
+                    Hi! I’m Maya. What are you working on today—your CV, an ATS report, or choosing the right plan?
+                </div>
+                <div class="mvcv-assistant-prompts" aria-label="Suggested questions">
+                    <button type="button" data-assistant-prompt="How does MyValidCV work?">How it works</button>
+                    <button type="button" data-assistant-prompt="What does the ATS report show?">Report meaning</button>
+                    <button type="button" data-assistant-prompt="What does the Truth Gate mean?">Truth Gate</button>
+                    <button type="button" data-assistant-prompt="Which plan should I choose?">Choose plan</button>
+                    <button type="button" data-assistant-prompt="How do payments and refunds work?">Payments/refunds</button>
+                    <button type="button" data-assistant-prompt="Are there discounts?">Discounts</button>
+                </div>
+                {% include "includes/feedback_rating.html" with feedback_feature="maya" feedback_compact=True %}
+            </div>
+            <form class="mvcv-assistant-form" data-assistant-form>
+                {% csrf_token %}
+                <input type="text" data-assistant-input placeholder="Ask about CV validation, plans, reports..." aria-label="Ask Maya">
+                <button type="submit">Send</button>
+            </form>
+        </section>
+    </aside>
+    {% endblock %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="{% static 'js/main.js' %}" defer></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

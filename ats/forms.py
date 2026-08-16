@@ -1,0 +1,274 @@
+"""Input validation layer for CV, job advert and Enterprise uploads.
+
+Forms validate shape/file inputs. Views remain responsible for authentication,
+object ownership, plan entitlement, quotas and final database writes.
+"""
+
+from django import forms
+import zipfile
+
+from .models import CV
+
+
+ALLOWED_DOCUMENT_EXTENSIONS = (".pdf", ".docx", ".txt")
+MAX_DOCUMENT_SIZE = 5 * 1024 * 1024
+ENTERPRISE_BATCH_LIMIT = 15
+
+
+def validate_document(uploaded_file):
+    filename = uploaded_file.name.lower()
+    if not filename.endswith(ALLOWED_DOCUMENT_EXTENSIONS):
+        raise forms.ValidationError("Upload a PDF, DOCX or TXT document.")
+    if uploaded_file.size > MAX_DOCUMENT_SIZE:
+        raise forms.ValidationError("Each document must be 5 MB or smaller.")
+    uploaded_file.seek(0)
+    header = uploaded_file.read(8)
+    uploaded_file.seek(0)
+    if filename.endswith(".pdf") and not header.startswith(b"%PDF-"):
+        raise forms.ValidationError("This file has a PDF name but does not contain a valid PDF signature.")
+    if filename.endswith(".docx"):
+        if not header.startswith(b"PK"):
+            raise forms.ValidationError("This file has a DOCX name but is not a valid Office document.")
+        try:
+            with zipfile.ZipFile(uploaded_file) as archive:
+                if "word/document.xml" not in archive.namelist():
+                    raise forms.ValidationError("The DOCX file does not contain a readable Word document.")
+        except (zipfile.BadZipFile, OSError):
+            raise forms.ValidationError("The uploaded DOCX file is damaged or invalid.")
+        finally:
+            uploaded_file.seek(0)
+    if filename.endswith(".txt"):
+        sample = uploaded_file.read(min(uploaded_file.size, 4096))
+        uploaded_file.seek(0)
+        if b"\x00" in sample:
+            raise forms.ValidationError("The TXT upload contains binary data and cannot be read safely.")
+        try:
+            sample.decode("utf-8")
+        except UnicodeDecodeError:
+            try:
+                sample.decode("latin-1")
+            except UnicodeDecodeError:
+                raise forms.ValidationError("The TXT upload uses an unsupported text encoding.")
+    return uploaded_file
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput(attrs={"class": "form-control", "accept": ".pdf,.docx,.txt", "multiple": True}))
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        if isinstance(data, (list, tuple)):
+            if len(data) > ENTERPRISE_BATCH_LIMIT:
+                raise forms.ValidationError(
+                    f"Upload no more than {ENTERPRISE_BATCH_LIMIT} CVs in one batch."
+                )
+            return [validate_document(super(MultipleFileField, self).clean(item, initial)) for item in data]
+        return [validate_document(super().clean(data, initial))]
+
+
+class CVUploadForm(forms.ModelForm):
+    class Meta:
+        model = CV
+        fields = ["title", "file"]
+
+        widgets = {
+            "title": forms.TextInput(attrs={"class": "form-control", "placeholder": "e.g. Software Developer CV"}),
+            "file": forms.FileInput(attrs={"class": "form-control", "accept": ".pdf,.docx,.txt"}),
+        }
+
+    def clean_file(self):
+        return validate_document(self.cleaned_data["file"])
+
+
+class CVUpdateForm(forms.ModelForm):
+    """Allow an owner to rename a saved CV without replacing its document."""
+
+    class Meta:
+        model = CV
+        fields = ["title"]
+        widgets = {
+            "title": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "e.g. Software Developer CV",
+                "autocomplete": "off",
+            }),
+        }
+
+    def clean_title(self):
+        title = self.cleaned_data["title"].strip()
+        if not title:
+            raise forms.ValidationError("Enter a name for this CV.")
+        return title
+
+
+class ATSAnalysisForm(forms.Form):
+    SOURCE_CHOICES = [
+        ("text", "Paste job description"),
+        ("url", "Job advert URL"),
+        ("file", "Upload job advert file"),
+    ]
+
+    cv = forms.ModelChoiceField(
+        queryset=CV.objects.none(),
+        required=False,
+        empty_label="Select one of your uploaded CVs",
+        widget=forms.Select(attrs={"class": "form-select"})
+    )
+    cv_file = forms.FileField(
+        required=False,
+        widget=forms.FileInput(attrs={"class": "form-control", "accept": ".pdf,.docx,.txt"})
+    )
+    cv_title = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Optional CV name"})
+    )
+    job_title = forms.CharField(
+        max_length=150,
+        required=False,
+        help_text="Required only when pasting job text manually. URL/file uploads can be inferred.",
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "e.g. Admin, Django Developer"})
+    )
+    company = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Optional company name"})
+    )
+    source_type = forms.ChoiceField(
+        choices=SOURCE_CHOICES,
+        initial="text",
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    job_description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 8, "placeholder": "Paste the full job description here"})
+    )
+    job_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={"class": "form-control", "placeholder": "https://example.com/job"})
+    )
+    job_file = forms.FileField(
+        required=False,
+        widget=forms.FileInput(attrs={"class": "form-control", "accept": ".pdf,.docx,.txt"})
+    )
+    deadline = forms.DateField(
+        required=False,
+        input_formats=["%d/%m/%Y", "%Y-%m-%d"],
+        widget=forms.DateInput(format="%d/%m/%Y", attrs={"class": "form-control", "placeholder": "dd/mm/yyyy"})
+    )
+    email_reminder = forms.BooleanField(
+        required=False,
+        label="Email me before the application deadline",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["cv"].queryset = CV.objects.filter(user=user)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        source_type = cleaned_data.get("source_type")
+        if cleaned_data.get("job_file"):
+            source_type = "file"
+        elif cleaned_data.get("job_url"):
+            source_type = "url"
+        else:
+            source_type = "text"
+        cleaned_data["source_type"] = source_type
+
+        if not cleaned_data.get("cv") and not cleaned_data.get("cv_file"):
+            self.add_error("cv_file", "Attach a CV or select one of your saved CVs.")
+        if source_type == "text" and not cleaned_data.get("job_description"):
+            self.add_error("job_description", "Paste a job description or choose another source type.")
+        if source_type == "url" and not cleaned_data.get("job_url"):
+            self.add_error("job_url", "Enter the job advert URL.")
+        if source_type == "file" and not cleaned_data.get("job_file"):
+            self.add_error("job_file", "Upload a job advert file.")
+        return cleaned_data
+
+    def clean_cv_file(self):
+        upload = self.cleaned_data.get("cv_file")
+        return validate_document(upload) if upload else upload
+
+    def clean_job_file(self):
+        upload = self.cleaned_data.get("job_file")
+        return validate_document(upload) if upload else upload
+
+
+class EnterpriseBulkAnalysisForm(forms.Form):
+    SOURCE_CHOICES = ATSAnalysisForm.SOURCE_CHOICES
+
+    batch_title = forms.CharField(
+        max_length=180,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "e.g. July Python Developer Shortlist"})
+    )
+    job_title = forms.CharField(
+        max_length=150,
+        required=False,
+        help_text="Required only when pasting job text manually. URL/file uploads can be inferred.",
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "e.g. Senior Python Developer"})
+    )
+    company = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Optional company or client"})
+    )
+    source_type = forms.ChoiceField(
+        choices=SOURCE_CHOICES,
+        initial="text",
+        widget=forms.RadioSelect(attrs={"class": "form-check-input"})
+    )
+    job_description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 8, "placeholder": "Paste the full job role here"})
+    )
+    job_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={"class": "form-control", "placeholder": "https://example.com/job"})
+    )
+    job_file = forms.FileField(
+        required=False,
+        widget=forms.FileInput(attrs={"class": "form-control", "accept": ".pdf,.docx,.txt"})
+    )
+    cv_files = MultipleFileField(
+        help_text=(
+            f"Upload up to {ENTERPRISE_BATCH_LIMIT} CV files in this batch. "
+            "You can submit another batch while you still have daily and monthly scans available."
+        )
+    )
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3, "placeholder": "Optional recruiter notes"})
+    )
+
+    def clean_cv_files(self):
+        cv_files = self.cleaned_data["cv_files"]
+        if len(cv_files) > ENTERPRISE_BATCH_LIMIT:
+            raise forms.ValidationError(
+                f"Upload no more than {ENTERPRISE_BATCH_LIMIT} CVs in one batch."
+            )
+        return cv_files
+
+    def clean_job_file(self):
+        upload = self.cleaned_data.get("job_file")
+        return validate_document(upload) if upload else upload
+
+    def clean(self):
+        cleaned_data = super().clean()
+        source_type = cleaned_data.get("source_type")
+        if source_type == "text" and not cleaned_data.get("job_title"):
+            self.add_error("job_title", "Enter the job title when pasting the role manually.")
+        if source_type == "text" and not cleaned_data.get("job_description"):
+            self.add_error("job_description", "Paste a job role or choose another source type.")
+        if source_type == "url" and not cleaned_data.get("job_url"):
+            self.add_error("job_url", "Enter the job advert URL.")
+        if source_type == "file" and not cleaned_data.get("job_file"):
+            self.add_error("job_file", "Upload the job role file.")
+        return cleaned_data

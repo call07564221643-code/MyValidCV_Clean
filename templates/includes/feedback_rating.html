@@ -1,0 +1,75 @@
+{% if feedback_compact %}
+<details class="mvcv-feedback compact" data-feedback-widget>
+    <summary><span class="mvcv-feedback-summary-icon" aria-hidden="true">★</span>Rate your Maya experience</summary>
+{% else %}
+<section class="mvcv-feedback mvcv-feedback-visible" data-feedback-widget aria-labelledby="feedback-title-{{ feedback_context_id|default:'global' }}">
+    <header class="mvcv-feedback-header">
+        <div>
+            <h2 id="feedback-title-{{ feedback_context_id|default:'global' }}">Rate your experience</h2>
+            <p>Selected feedback may receive a private thank-you code.</p>
+        </div>
+    </header>
+{% endif %}
+    <form class="mvcv-feedback-form"
+          data-feedback-form
+          data-feature="{{ feedback_feature }}"
+          data-context-id="{{ feedback_context_id|default:'' }}">
+        {% csrf_token %}
+        <div class="mvcv-feedback-quick">
+            <fieldset>
+                <legend class="visually-hidden">How helpful was this experience?</legend>
+                <div class="mvcv-star-rating" aria-label="Choose one to five stars">
+                    <input id="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-5" type="radio" name="rating" value="5" required>
+                    <label for="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-5" title="5 stars"><span aria-hidden="true">★</span><span class="visually-hidden">5 stars</span></label>
+                    <input id="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-4" type="radio" name="rating" value="4">
+                    <label for="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-4" title="4 stars"><span aria-hidden="true">★</span><span class="visually-hidden">4 stars</span></label>
+                    <input id="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-3" type="radio" name="rating" value="3">
+                    <label for="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-3" title="3 stars"><span aria-hidden="true">★</span><span class="visually-hidden">3 stars</span></label>
+                    <input id="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-2" type="radio" name="rating" value="2">
+                    <label for="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-2" title="2 stars"><span aria-hidden="true">★</span><span class="visually-hidden">2 stars</span></label>
+                    <input id="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-1" type="radio" name="rating" value="1">
+                    <label for="rating-{{ feedback_feature }}-{{ feedback_context_id|default:'global' }}-1" title="1 star"><span aria-hidden="true">★</span><span class="visually-hidden">1 star</span></label>
+                </div>
+            </fieldset>
+            <div class="mvcv-feedback-actions">
+                <button type="submit">Send rating</button>
+                <span role="status" aria-live="polite" data-feedback-status></span>
+            </div>
+        </div>
+
+        <details class="mvcv-feedback-more">
+            <summary>+ Comment <span>Optional</span></summary>
+            <div class="mvcv-feedback-more-body">
+                <fieldset class="mvcv-feedback-categories">
+                    <legend>What stood out?</legend>
+                    <label><input type="checkbox" name="categories" value="clear"> Clear and useful</label>
+                    <label><input type="checkbox" name="categories" value="easy"> Easy to use</label>
+                    <label><input type="checkbox" name="categories" value="accurate"> Accurate result</label>
+                    <label><input type="checkbox" name="categories" value="helpful"> Helpful recommendations</label>
+                    <label><input type="checkbox" name="categories" value="needs_improvement"> Needs improvement</label>
+                </fieldset>
+
+                <label class="mvcv-feedback-comment">
+                    <span>Anything else?</span>
+                    <textarea name="comment" maxlength="1200" rows="2" placeholder="What worked, or what should improve? Do not include sensitive CV or payment information."></textarea>
+                </label>
+
+                <div class="mvcv-testimonial-option" data-testimonial-option hidden>
+                    <label><input type="checkbox" name="testimonial_consent"> You may review this comment for use as a public testimonial.</label>
+                    {% if user.is_authenticated %}
+                        <fieldset class="mvcv-identity-options">
+                            <legend>Display as</legend>
+                            <label><input type="radio" name="public_identity" value="anonymous" checked> Verified user</label>
+                            <label><input type="radio" name="public_identity" value="first_name"> First name</label>
+                            <label><input type="radio" name="public_identity" value="initials"> Initials</label>
+                        </fieldset>
+                    {% endif %}
+                </div>
+            </div>
+        </details>
+    </form>
+{% if feedback_compact %}
+</details>
+{% else %}
+</section>
+{% endif %}

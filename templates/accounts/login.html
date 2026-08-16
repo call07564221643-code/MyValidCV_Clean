@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login - MyValidCV{% endblock %}
+{% block meta_description %}Log in with your username or email to check CV compatibility, review ATS results, and manage your applications.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/mvcv-wireframe.css' %}">
+<style>
+    /* Authentication pages intentionally use a focused, logo-free form layout. */
+    body > .navbar {
+        display: none;
+    }
+
+    .auth-shell {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 1rem;
+        background:
+            radial-gradient(circle at 78% 18%, rgba(91, 77, 245, 0.08), transparent 28%),
+            linear-gradient(180deg, #ffffff 0%, var(--wf-bg) 100%);
+    }
+
+    .auth-frame {
+        width: min(520px, 100%);
+        display: block;
+        border: 1px solid var(--wf-border);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: var(--wf-shadow);
+        overflow: hidden;
+    }
+
+
+    .auth-panel {
+        display: flex;
+        align-items: center;
+        padding: 1.35rem;
+    }
+
+    .auth-card {
+        width: 100%;
+        font-weight: 400;
+    }
+
+    .auth-card h2 {
+        margin: 0 0 0.45rem;
+        font-size: 1.55rem;
+        letter-spacing: -0.035em;
+        font-weight: 400;
+    }
+
+    .auth-card > p {
+        color: var(--wf-muted);
+        margin-bottom: 1.3rem;
+        font-size: 0.9rem;
+    }
+
+    .oauth-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.7rem;
+        margin: 0 0 1.2rem;
+    }
+
+    .oauth-button {
+        min-height: 44px;
+        border: 1px solid var(--wf-border);
+        border-radius: 9px;
+        background: #ffffff;
+        color: var(--wf-text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.7rem;
+        text-decoration: none;
+        font-size: 0.84rem;
+        font-weight: 400;
+    }
+
+    .oauth-button:hover {
+        background: var(--wf-surface-soft);
+        color: var(--wf-text);
+    }
+
+    .oauth-logo {
+        width: 20px;
+        height: 20px;
+        display: inline-grid;
+        place-items: center;
+        flex: 0 0 auto;
+    }
+
+    .oauth-logo svg {
+        width: 20px;
+        height: 20px;
+        display: block;
+    }
+
+    .oauth-linkedin {
+        color: #0a66c2;
+        font-weight: 900;
+        font-size: 1rem;
+    }
+
+    .auth-divider {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        color: var(--wf-muted);
+        font-size: 0.78rem;
+        margin: 1.2rem 0 1rem;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+        content: "";
+        height: 1px;
+        flex: 1;
+        background: var(--wf-border);
+    }
+
+    .auth-form label {
+        color: var(--wf-text);
+        font-size: 0.78rem;
+        font-weight: 400;
+        margin-bottom: 0.35rem;
+    }
+
+    .auth-form input[type="text"],
+    .auth-form input[type="email"],
+    .auth-form input[type="password"] {
+        width: 100%;
+        min-height: 42px;
+        border: 1px solid var(--wf-border) !important;
+        border-radius: 8px !important;
+        background: #ffffff;
+        color: var(--wf-text);
+        padding: 0.65rem 0.8rem !important;
+        font-size: 0.86rem;
+    }
+
+    .auth-form input:focus {
+        border-color: var(--wf-primary) !important;
+        box-shadow: 0 0 0 0.2rem rgba(91, 77, 245, 0.14) !important;
+        outline: 0;
+    }
+
+    .auth-submit {
+        width: 100%;
+        margin-top: 0.4rem;
+        font-weight: 400;
+    }
+
+    .auth-switch {
+        margin: 1rem 0 0;
+        text-align: center;
+        color: var(--wf-muted);
+        font-size: 0.8rem;
+    }
+
+    .auth-switch a {
+        color: var(--wf-primary);
+        font-weight: 400;
+        text-decoration: none;
+    }
+
+    @media (max-width: 560px) {
+        .auth-shell {
+            padding: 0.65rem;
+        }
+
+        .auth-panel {
+            padding: 1.2rem;
+        }
+
+        .oauth-button {
+            padding-inline: 0.5rem;
+            font-size: 0.76rem;
+        }
+
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="auth-shell">
+    <div class="auth-frame">
+        <div class="auth-panel">
+            <div class="auth-card">
+                <h2>{% block auth_heading %}Log in{% endblock %}</h2>
+                <p>{% block auth_intro %}Use your username or email, or continue with Google or LinkedIn.{% endblock %}</p>
+
+                <form method="post" class="auth-form" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                    {% for field in form %}
+                        <div class="mb-3">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="invalid-feedback d-block">{{ field.errors.0 }}</div>
+                            {% endif %}
+                            {% if field.help_text %}
+                                <small class="form-text text-muted d-block mt-1">{{ field.help_text|safe }}</small>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="wf-btn wf-btn-primary auth-submit">{% block auth_submit %}Log in{% endblock %}</button>
+                </form>
+
+                {% block password_help %}
+                    <p class="auth-switch"><a href="{% url 'password_reset' %}">Forgot your password?</a></p>
+                {% endblock %}
+
+                <div class="auth-divider"><span>or continue with</span></div>
+
+                <div class="oauth-grid">
+                    <a class="oauth-button" href="{% url 'social_login_start' 'google' %}?next={{ next|urlencode }}">
+                        <span class="oauth-logo" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M22.6 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h5.9c-.3 1.4-1 2.5-2.1 3.3v2.7h3.4c2-1.8 3.4-4.5 3.4-8z"/>
+                                <path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.4-2.7c-.9.6-2.2 1-3.9 1-3 0-5.6-2-6.5-4.8H2v2.8C3.8 20.4 7.6 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.5 13.8c-.2-.6-.4-1.2-.4-1.8s.1-1.2.4-1.8V7.4H2C1.4 8.8 1 10.4 1 12s.4 3.2 1 4.6l3.5-2.8z"/>
+                                <path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.1-3.1C17.5 2.1 15 1 12 1 7.6 1 3.8 3.6 2 7.4l3.5 2.8C6.4 7.4 9 5.4 12 5.4z"/>
+                            </svg>
+                        </span>
+                        {% block google_label %}Sign in with Google{% endblock %}
+                    </a>
+                    <a class="oauth-button" href="{% url 'social_login_start' 'linkedin' %}?next={{ next|urlencode }}">
+                        <span class="oauth-logo oauth-linkedin" aria-hidden="true">in</span>
+                        {% block linkedin_label %}Sign in with LinkedIn{% endblock %}
+                    </a>
+                </div>
+
+                <p class="auth-switch">{% block auth_switch %}Don't have an account?
+                    <a href="{% url 'register' %}?next={{ next|urlencode }}">Sign up</a>{% endblock %}</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

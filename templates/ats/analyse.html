@@ -1,0 +1,487 @@
+{% extends "base.html" %}
+
+{% block title %}Validate Your CV - MyValidCV{% endblock %}
+{% block meta_description %}Compare your CV with a job description, vacancy URL, or uploaded job advert and receive an ATS compatibility report.{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --validate-navy: #1f3374;
+        --validate-blue: #9fb8ff;
+        --validate-blue-soft: #eef3ff;
+        --validate-ink: #172033;
+        --validate-muted: #64748b;
+        --validate-line: #dbe5f4;
+        --validate-card: #ffffff;
+        --validate-bg: #f7f9fd;
+    }
+
+    .validate-engine {
+        min-height: calc(100vh - 78px);
+        padding: 3rem 1rem 4rem;
+        background:
+            radial-gradient(circle at 88% 8%, rgba(159, 184, 255, 0.22), transparent 26rem),
+            linear-gradient(180deg, #ffffff 0%, var(--validate-bg) 100%);
+    }
+
+    .validate-wrap {
+        width: min(920px, 100%);
+        margin: 0 auto;
+    }
+
+    .validate-heading {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 1.25rem;
+        margin-bottom: 1.4rem;
+    }
+
+    .validate-kicker {
+        color: var(--validate-navy);
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
+    .validate-heading h1 {
+        margin: 0.35rem 0 0.5rem;
+        color: var(--validate-ink);
+        font-size: clamp(2rem, 5vw, 3.15rem);
+        font-weight: 780;
+        letter-spacing: -0.05em;
+    }
+
+    .validate-heading h1 span { color: var(--validate-blue); }
+
+    .validate-heading p {
+        max-width: 650px;
+        margin: 0;
+        color: var(--validate-muted);
+        line-height: 1.65;
+    }
+
+    .validate-usage {
+        flex: 0 0 auto;
+        padding: 0.65rem 0.85rem;
+        border: 1px solid var(--validate-line);
+        border-radius: 999px;
+        background: var(--validate-card);
+        color: var(--validate-navy);
+        font-size: 0.8rem;
+        font-weight: 750;
+        white-space: nowrap;
+    }
+
+    .validate-card {
+        border: 1px solid var(--validate-line);
+        border-radius: 22px;
+        background: var(--validate-card);
+        box-shadow: 0 22px 55px rgba(31, 51, 116, 0.09);
+        overflow: hidden;
+    }
+
+    .validate-section {
+        padding: 1.45rem;
+        border-bottom: 1px solid var(--validate-line);
+    }
+
+    .validate-section:last-child { border-bottom: 0; }
+
+    .validate-section-head {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .validate-step {
+        width: 31px;
+        height: 31px;
+        display: inline-grid;
+        place-items: center;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        background: var(--validate-blue);
+        color: #ffffff;
+        font-size: 0.82rem;
+        font-weight: 850;
+    }
+
+    .validate-section-head strong {
+        display: block;
+        color: var(--validate-ink);
+        font-size: 1rem;
+    }
+
+    .validate-section-head small {
+        display: block;
+        color: var(--validate-muted);
+        margin-top: 0.12rem;
+    }
+
+    .validate-cv-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        gap: 1rem;
+        align-items: end;
+    }
+
+    .validate-or {
+        align-self: center;
+        color: var(--validate-muted);
+        font-size: 0.76rem;
+        font-weight: 750;
+        text-transform: uppercase;
+    }
+
+    .validate-label {
+        display: block;
+        margin-bottom: 0.45rem;
+        color: var(--validate-ink);
+        font-size: 0.8rem;
+        font-weight: 750;
+    }
+
+    .validate-card .form-control,
+    .validate-card .form-select {
+        min-height: 46px;
+        border-color: var(--validate-line);
+        border-radius: 11px;
+        background-color: #ffffff;
+        color: var(--validate-ink);
+    }
+
+    .validate-card textarea.form-control {
+        min-height: 210px;
+        resize: vertical;
+    }
+
+    #id_cv_title { display: none; }
+
+    .validate-card .form-control:focus,
+    .validate-card .form-select:focus {
+        border-color: var(--validate-blue);
+        box-shadow: 0 0 0 0.22rem rgba(159, 184, 255, 0.25);
+    }
+
+    .validate-source-tabs {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin-bottom: 1rem;
+    }
+
+    .validate-source-tab {
+        min-height: 46px;
+        border: 1px solid var(--validate-line);
+        border-radius: 11px;
+        background: #ffffff;
+        color: var(--validate-muted);
+        font-weight: 750;
+    }
+
+    .validate-source-tab:hover,
+    .validate-source-tab.active {
+        border-color: var(--validate-blue);
+        background: var(--validate-blue-soft);
+        color: var(--validate-navy);
+    }
+
+    .validate-source-panel[hidden] { display: none !important; }
+
+    .validate-help {
+        display: block;
+        margin-top: 0.45rem;
+        color: var(--validate-muted);
+        font-size: 0.76rem;
+        line-height: 1.5;
+    }
+
+    .validate-options {
+        border: 0;
+        border-bottom: 1px solid var(--validate-line);
+    }
+
+    .validate-options summary {
+        padding: 1rem 1.45rem;
+        color: var(--validate-navy);
+        cursor: pointer;
+        font-size: 0.84rem;
+        font-weight: 750;
+    }
+
+    .validate-options-body {
+        padding: 0 1.45rem 1.35rem;
+    }
+
+    .validate-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.25rem 1.45rem;
+    }
+
+    .validate-outcome-note {
+        color: var(--validate-muted);
+        font-size: 0.78rem;
+        line-height: 1.45;
+    }
+
+    .validate-submit {
+        min-width: 190px;
+        min-height: 48px;
+        border: 1px solid var(--validate-navy);
+        border-radius: 11px;
+        background: var(--validate-navy);
+        color: #ffffff;
+        font-weight: 800;
+    }
+
+    .validate-submit:hover { background: #17275f; }
+
+    .validate-results-strip {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .validate-result-promise {
+        padding: 0.9rem;
+        border: 1px solid var(--validate-line);
+        border-radius: 13px;
+        background: rgba(255, 255, 255, 0.75);
+    }
+
+    .validate-result-promise strong {
+        display: block;
+        color: var(--validate-ink);
+        font-size: 0.82rem;
+    }
+
+    .validate-result-promise span {
+        display: block;
+        margin-top: 0.25rem;
+        color: var(--validate-muted);
+        font-size: 0.74rem;
+        line-height: 1.45;
+    }
+
+    html[data-bs-theme="dark"] {
+        --validate-navy: #b9caff;
+        --validate-blue: #9fb8ff;
+        --validate-blue-soft: #1d2d52;
+        --validate-ink: #f8fafc;
+        --validate-muted: #cbd5e1;
+        --validate-line: #2b3952;
+        --validate-card: #111c33;
+        --validate-bg: #0f172a;
+    }
+
+    html[data-bs-theme="dark"] .validate-engine { background: linear-gradient(180deg, #0b1224 0%, var(--validate-bg) 100%); }
+    html[data-bs-theme="dark"] .validate-card .form-control,
+    html[data-bs-theme="dark"] .validate-card .form-select,
+    html[data-bs-theme="dark"] .validate-source-tab { background-color: #0b1224; color: var(--validate-ink); }
+    html[data-bs-theme="dark"] .validate-submit { background: #9fb8ff; border-color: #9fb8ff; color: #111827; }
+    html[data-bs-theme="dark"] .validate-result-promise { background: rgba(17, 28, 51, 0.76); }
+
+    @media (prefers-color-scheme: dark) {
+        html:not([data-bs-theme="light"]) {
+            --validate-navy: #b9caff;
+            --validate-blue: #9fb8ff;
+            --validate-blue-soft: #1d2d52;
+            --validate-ink: #f8fafc;
+            --validate-muted: #cbd5e1;
+            --validate-line: #2b3952;
+            --validate-card: #111c33;
+            --validate-bg: #0f172a;
+        }
+
+        html:not([data-bs-theme="light"]) .validate-engine { background: linear-gradient(180deg, #0b1224 0%, var(--validate-bg) 100%); }
+        html:not([data-bs-theme="light"]) .validate-card .form-control,
+        html:not([data-bs-theme="light"]) .validate-card .form-select,
+        html:not([data-bs-theme="light"]) .validate-source-tab { background-color: #0b1224; color: var(--validate-ink); }
+        html:not([data-bs-theme="light"]) .validate-submit { background: #9fb8ff; border-color: #9fb8ff; color: #111827; }
+        html:not([data-bs-theme="light"]) .validate-result-promise { background: rgba(17, 28, 51, 0.76); }
+    }
+
+    @media (max-width: 720px) {
+        .validate-engine { padding-top: 1.5rem; }
+        .validate-heading { align-items: flex-start; flex-direction: column; }
+        .validate-cv-grid { grid-template-columns: 1fr; }
+        .validate-or { text-align: center; }
+        .validate-source-tabs,
+        .validate-results-strip { grid-template-columns: 1fr; }
+        .validate-actions { align-items: stretch; flex-direction: column; }
+        .validate-submit { width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="validate-engine">
+    <div class="validate-wrap">
+        <header class="validate-heading">
+            <div>
+                <div class="validate-kicker">ATS validation engine</div>
+                <h1>Validate your <span>CV</span></h1>
+                <p>Choose a saved CV or upload one, then add the job advert as text, a URL, or a file. Your compatibility report opens immediately after validation.</p>
+            </div>
+            <div class="validate-usage">{{ profile.plan|title }} &middot; {{ profile.analyses_this_month }}/{{ profile.get_analysis_limit }} used</div>
+        </header>
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors.0 }}</div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" class="validate-card" id="validationForm">
+            {% csrf_token %}
+
+            <section class="validate-section">
+                <div class="validate-section-head">
+                    <span class="validate-step">1</span>
+                    <div><strong>Select your CV</strong><small>Use the CV already saved to your account or upload it again.</small></div>
+                </div>
+                <div class="validate-cv-grid">
+                    <div>
+                        <label class="validate-label" for="{{ form.cv.id_for_label }}">Saved CV</label>
+                        {{ form.cv }}
+                    </div>
+                    <span class="validate-or">or</span>
+                    <div>
+                        <label class="validate-label" for="{{ form.cv_file.id_for_label }}">Upload CV</label>
+                        {{ form.cv_file }}
+                        {{ form.cv_title }}
+                    </div>
+                </div>
+                {% if form.cv_file.errors %}<div class="invalid-feedback d-block">{{ form.cv_file.errors.0 }}</div>{% endif %}
+                <small class="validate-help">PDF, DOCX or TXT. Uploaded CVs are saved securely to your account and retained for no longer than 30 days.</small>
+            </section>
+
+            <section class="validate-section">
+                <div class="validate-section-head">
+                    <span class="validate-step">2</span>
+                    <div><strong>Add the job advert</strong><small>Choose one source only.</small></div>
+                </div>
+
+                <div class="validate-source-tabs" role="tablist" aria-label="Job advert source">
+                    <button class="validate-source-tab active" type="button" data-source="text">Paste job text</button>
+                    <button class="validate-source-tab" type="button" data-source="url">Job advert URL</button>
+                    <button class="validate-source-tab" type="button" data-source="file">Upload advert</button>
+                </div>
+
+                <div class="validate-source-panel" data-panel="text">
+                    <label class="validate-label" for="{{ form.job_description.id_for_label }}">Job description</label>
+                    {{ form.job_description }}
+                    {% if form.job_description.errors %}<div class="invalid-feedback d-block">{{ form.job_description.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="validate-source-panel" data-panel="url" hidden>
+                    <label class="validate-label" for="{{ form.job_url.id_for_label }}">Job advert URL</label>
+                    {{ form.job_url }}
+                    {% if form.job_url.errors %}<div class="invalid-feedback d-block">{{ form.job_url.errors.0 }}</div>{% endif %}
+                    <small class="validate-help">If the vacancy website blocks automated reading, paste the full description instead.</small>
+                </div>
+                <div class="validate-source-panel" data-panel="file" hidden>
+                    <label class="validate-label" for="{{ form.job_file.id_for_label }}">Job advert file</label>
+                    {{ form.job_file }}
+                    {% if form.job_file.errors %}<div class="invalid-feedback d-block">{{ form.job_file.errors.0 }}</div>{% endif %}
+                    <small class="validate-help">PDF, DOCX or TXT.</small>
+                </div>
+            </section>
+
+            <details class="validate-options" {% if form.deadline.value or form.email_reminder.value %}open{% endif %}>
+                <summary>Optional job details and deadline reminder</summary>
+                <div class="validate-options-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="validate-label" for="{{ form.job_title.id_for_label }}">Job title</label>
+                            {{ form.job_title }}
+                            {% if form.job_title.errors %}<div class="invalid-feedback d-block">{{ form.job_title.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="validate-label" for="{{ form.company.id_for_label }}">Company</label>
+                            {{ form.company }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="validate-label" for="{{ form.deadline.id_for_label }}">Application deadline</label>
+                            {{ form.deadline }}
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                {{ form.email_reminder }}
+                                <label class="form-check-label" for="{{ form.email_reminder.id_for_label }}">{{ form.email_reminder.label }}</label>
+                            </div>
+                            <small class="validate-help">We also detect common deadline wording in the advert and schedule the reminder two days before.</small>
+                        </div>
+                    </div>
+                </div>
+            </details>
+
+            <div class="validate-actions">
+                <div class="validate-outcome-note">
+                    Free accounts see the complete online ATS report.<br>
+                    Plus accounts also receive a tailored CV draft and cover letter.
+                </div>
+                <button type="submit" class="validate-submit">Validate CV</button>
+            </div>
+        </form>
+
+        <div class="validate-results-strip" aria-label="Validation output">
+            <div class="validate-result-promise"><strong>Compatibility result</strong><span>Match score and ATS signals against this specific role.</span></div>
+            <div class="validate-result-promise"><strong>Evidence and gaps</strong><span>What matches, what is missing, and what should be changed truthfully.</span></div>
+            <div class="validate-result-promise"><strong>Application drafts</strong><span>Tailored CV and cover-letter drafts are included with Plus.</span></div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function () {
+        const tabs = Array.from(document.querySelectorAll('.validate-source-tab'));
+        const panels = Array.from(document.querySelectorAll('.validate-source-panel'));
+        const textField = document.getElementById('id_job_description');
+        const urlField = document.getElementById('id_job_url');
+        const fileField = document.getElementById('id_job_file');
+
+        function showSource(source) {
+            tabs.forEach(function (tab) {
+                const selected = tab.dataset.source === source;
+                tab.classList.toggle('active', selected);
+                tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+            });
+            panels.forEach(function (panel) {
+                panel.hidden = panel.dataset.panel !== source;
+            });
+        }
+
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                const source = tab.dataset.source;
+                if (source !== 'text' && textField) textField.value = '';
+                if (source !== 'url' && urlField) urlField.value = '';
+                if (source !== 'file' && fileField) fileField.value = '';
+                showSource(source);
+            });
+        });
+
+        if (urlField && urlField.value) showSource('url');
+        else if (fileField && fileField.files && fileField.files.length) showSource('file');
+        else showSource('text');
+
+        const cvSelect = document.getElementById('id_cv');
+        const cvFile = document.getElementById('id_cv_file');
+        if (cvSelect && cvFile) {
+            cvSelect.addEventListener('change', function () {
+                if (cvSelect.value) cvFile.value = '';
+            });
+            cvFile.addEventListener('change', function () {
+                if (cvFile.files.length) cvSelect.value = '';
+            });
+        }
+    })();
+</script>
+{% endblock %}

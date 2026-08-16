@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Secure Checkout - MyValidCV{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-lg-5">
+                    <span class="badge bg-primary mb-2">Secure checkout</span>
+                    <h1 class="h3 fw-bold">Pay for {{ transaction.plan.name }}</h1>
+                    <p class="text-muted">
+                        Enter your card details below. Demo checkout accepts test card
+                        <strong>4242 4242 4242 4242</strong>.
+                    </p>
+
+                    <div class="border rounded-3 p-3 mb-4 bg-light">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Plan</span>
+                            <strong>{{ transaction.plan.name }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Total</span>
+                            <strong>{{ transaction.currency }} {{ transaction.amount }}</strong>
+                        </div>
+                    </div>
+
+                    <form method="post" action="{% url 'stripe_mock_checkout' transaction.checkout_reference %}">
+                        {% csrf_token %}
+                        <label class="form-label">Cardholder name</label>
+                        <input class="form-control mb-3" name="cardholder_name" autocomplete="cc-name" value="{{ form_data.cardholder_name }}" required>
+
+                        <label class="form-label">Card number</label>
+                        <input class="form-control mb-3" name="card_number" inputmode="numeric" autocomplete="cc-number" value="{{ form_data.card_number }}" required>
+
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label">Expiry</label>
+                                <input class="form-control" name="expiry" placeholder="MM/YY" autocomplete="cc-exp" value="{{ form_data.expiry }}" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Security code</label>
+                                <input class="form-control" name="cvc" inputmode="numeric" autocomplete="cc-csc" value="{{ form_data.cvc }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mt-1">
+                            <div class="col-md-6">
+                                <label class="form-label">Billing postcode / ZIP</label>
+                                <input class="form-control" name="billing_postcode" autocomplete="postal-code" value="{{ form_data.billing_postcode }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Receipt email</label>
+                                <input class="form-control" type="email" name="billing_email" autocomplete="email" value="{{ form_data.billing_email }}" required>
+                            </div>
+                        </div>
+
+                        <p class="text-muted small mt-3 mb-0">
+                            Demo mode does not store your full card number. Live card processing should use a certified hosted checkout.
+                        </p>
+                        <button class="btn btn-primary w-100 mt-4" type="submit">Pay Now</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+
+{% block title %}Enterprise Evidence Report - MyValidCV{% endblock %}
+
+{% block extra_css %}
+<style>
+    .enterprise-shell {
+        --enterprise-surface: #ffffff;
+        --enterprise-soft: #eef3ff;
+        --enterprise-line: #dbe3ef;
+        --enterprise-ink: #0f172a;
+        --enterprise-muted: #64748b;
+        --enterprise-brand: var(--mvcv-brand-primary);
+        --enterprise-good: #73d179;
+        --enterprise-risk: #fa3737;
+        background: linear-gradient(180deg, #f8fafc 0%, #eef3ff 100%);
+        color: var(--enterprise-ink);
+        min-height: 70vh;
+        padding: clamp(1.5rem, 4vw, 3.5rem) 0;
+    }
+
+    .enterprise-hero,
+    .enterprise-report-card,
+    .enterprise-metric,
+    .enterprise-mobile-card {
+        background: var(--enterprise-surface);
+        border: 1px solid var(--enterprise-line);
+        border-radius: 18px;
+    }
+
+    .enterprise-hero {
+        display: flex;
+        justify-content: space-between;
+        gap: 1.5rem;
+        padding: clamp(1.25rem, 3vw, 2rem);
+    }
+
+    .enterprise-eyebrow {
+        color: var(--enterprise-brand);
+        font-size: 0.76rem;
+        font-weight: 850;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
+    .enterprise-hero h1 {
+        color: var(--enterprise-ink);
+        font-size: clamp(1.75rem, 4vw, 2.6rem);
+        font-weight: 760;
+        letter-spacing: -0.035em;
+        margin: 0.35rem 0;
+    }
+
+    .enterprise-muted {
+        color: var(--enterprise-muted);
+    }
+
+    .enterprise-actions {
+        align-items: flex-start;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+    }
+
+    .enterprise-metrics {
+        display: grid;
+        gap: 0.85rem;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin: 1rem 0;
+    }
+
+    .enterprise-metric {
+        padding: 1rem;
+    }
+
+    .enterprise-metric span {
+        color: var(--enterprise-muted);
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .enterprise-metric strong {
+        color: var(--enterprise-ink);
+        display: block;
+        font-size: 1.7rem;
+        line-height: 1.1;
+        margin-top: 0.35rem;
+    }
+
+    .enterprise-metric.good strong { color: #2f7d48; }
+    .enterprise-metric.risk strong { color: #bd2525; }
+
+    .enterprise-review-note {
+        background: var(--enterprise-soft);
+        border-left: 4px solid var(--enterprise-brand);
+        border-radius: 0 14px 14px 0;
+        color: var(--enterprise-ink);
+        margin-bottom: 1rem;
+        padding: 0.9rem 1rem;
+    }
+
+    .enterprise-report-card {
+        overflow: hidden;
+    }
+
+    .enterprise-report-heading {
+        align-items: center;
+        border-bottom: 1px solid var(--enterprise-line);
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1rem 1.15rem;
+    }
+
+    .enterprise-report-heading h2 {
+        color: var(--enterprise-ink);
+        font-size: 1.05rem;
+        font-weight: 780;
+        margin: 0;
+    }
+
+    .enterprise-table {
+        color: var(--enterprise-ink);
+        margin: 0;
+        min-width: 940px;
+    }
+
+    .enterprise-table > :not(caption) > * > * {
+        background: transparent;
+        border-bottom-color: var(--enterprise-line);
+        color: inherit;
+        padding: 0.9rem 0.75rem;
+        vertical-align: top;
+    }
+
+    .enterprise-table thead {
+        background: var(--enterprise-soft);
+        color: var(--enterprise-muted);
+        font-size: 0.74rem;
+        letter-spacing: 0.035em;
+        text-transform: uppercase;
+    }
+
+    .enterprise-rank {
+        align-items: center;
+        background: var(--enterprise-brand);
+        border-radius: 50%;
+        color: var(--mvcv-brand-on-primary);
+        display: inline-flex;
+        font-size: 0.78rem;
+        font-weight: 800;
+        height: 2rem;
+        justify-content: center;
+        width: 2rem;
+    }
+
+    .enterprise-score {
+        border: 2px solid currentColor;
+        border-radius: 999px;
+        display: inline-flex;
+        font-size: 0.82rem;
+        font-weight: 850;
+        padding: 0.3rem 0.55rem;
+    }
+
+    .enterprise-score.good { color: #2f7d48; }
+    .enterprise-score.risk { color: #bd2525; }
+
+    .enterprise-decision {
+        display: block;
+        font-size: 0.76rem;
+        font-weight: 780;
+        margin-top: 0.4rem;
+    }
+
+    .enterprise-evidence {
+        color: var(--enterprise-muted);
+        font-size: 0.82rem;
+        line-height: 1.5;
+        max-width: 220px;
+    }
+
+    .enterprise-evidence details summary {
+        color: var(--enterprise-brand);
+        cursor: pointer;
+        font-weight: 750;
+        margin-top: 0.35rem;
+    }
+
+    .enterprise-mobile-list {
+        display: none;
+        gap: 0.85rem;
+        padding: 1rem;
+    }
+
+    .enterprise-mobile-card {
+        padding: 1rem;
+    }
+
+    .enterprise-mobile-top,
+    .enterprise-mobile-meta {
+        align-items: center;
+        display: flex;
+        gap: 0.7rem;
+        justify-content: space-between;
+    }
+
+    .enterprise-mobile-card h3 {
+        color: var(--enterprise-ink);
+        font-size: 1rem;
+        font-weight: 780;
+        margin: 0;
+    }
+
+    .enterprise-mobile-grid {
+        display: grid;
+        gap: 0.75rem;
+        margin-top: 0.9rem;
+    }
+
+    .enterprise-mobile-grid section {
+        background: var(--enterprise-soft);
+        border-radius: 12px;
+        padding: 0.75rem;
+    }
+
+    .enterprise-mobile-grid strong {
+        color: var(--enterprise-ink);
+        display: block;
+        font-size: 0.78rem;
+        margin-bottom: 0.25rem;
+    }
+
+    html[data-bs-theme="dark"] .enterprise-shell {
+        --enterprise-surface: #111c33;
+        --enterprise-soft: #172554;
+        --enterprise-line: #334155;
+        --enterprise-ink: #f8fafc;
+        --enterprise-muted: #cbd5e1;
+        background: linear-gradient(180deg, #0b1224 0%, #0f172a 100%);
+    }
+
+    html[data-bs-theme="dark"] .enterprise-metric.good strong,
+    html[data-bs-theme="dark"] .enterprise-score.good { color: #73d179; }
+    html[data-bs-theme="dark"] .enterprise-metric.risk strong,
+    html[data-bs-theme="dark"] .enterprise-score.risk { color: #fa7373; }
+
+    @media (prefers-color-scheme: dark) {
+        html:not([data-bs-theme="light"]) .enterprise-shell {
+            --enterprise-surface: #111c33;
+            --enterprise-soft: #172554;
+            --enterprise-line: #334155;
+            --enterprise-ink: #f8fafc;
+            --enterprise-muted: #cbd5e1;
+            background: linear-gradient(180deg, #0b1224 0%, #0f172a 100%);
+        }
+
+        html:not([data-bs-theme="light"]) .enterprise-metric.good strong,
+        html:not([data-bs-theme="light"]) .enterprise-score.good { color: #73d179; }
+        html:not([data-bs-theme="light"]) .enterprise-metric.risk strong,
+        html:not([data-bs-theme="light"]) .enterprise-score.risk { color: #fa7373; }
+    }
+
+    @media (max-width: 767px) {
+        .enterprise-hero { flex-direction: column; }
+        .enterprise-actions .btn { flex: 1 1 9rem; }
+        .enterprise-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .enterprise-desktop-table { display: none; }
+        .enterprise-mobile-list { display: grid; }
+    }
+
+    @media (max-width: 420px) {
+        .enterprise-metrics { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="enterprise-shell">
+    <div class="container">
+        <header class="enterprise-hero">
+            <div>
+                <span class="enterprise-eyebrow">Enterprise evidence workspace</span>
+                <h1>{{ batch.title }}</h1>
+                <p class="enterprise-muted mb-0">
+                    {{ batch.job_role.title }}{% if batch.job_role.company %} · {{ batch.job_role.company }}{% endif %}
+                    · {{ summary.candidate_count }} CV{{ summary.candidate_count|pluralize }} analysed
+                </p>
+            </div>
+            <div class="enterprise-actions">
+                <a href="{% url 'enterprise_report_csv' batch.id %}" class="btn btn-outline-primary">Export evidence CSV</a>
+                <a href="{% url 'enterprise_bulk' %}" class="btn btn-primary">Analyse another batch</a>
+            </div>
+        </header>
+
+        <section class="enterprise-metrics" aria-label="Batch summary">
+            <article class="enterprise-metric">
+                <span>Candidates reviewed</span>
+                <strong>{{ summary.candidate_count }}</strong>
+            </article>
+            <article class="enterprise-metric good">
+                <span>Above 50% alignment</span>
+                <strong>{{ summary.aligned_count }}</strong>
+            </article>
+            <article class="enterprise-metric risk">
+                <span>50% or below</span>
+                <strong>{{ summary.gap_count }}</strong>
+            </article>
+            <article class="enterprise-metric">
+                <span>Average alignment</span>
+                <strong>{{ summary.average_score }}%</strong>
+            </article>
+        </section>
+
+        {% if summary.top_candidate %}
+            <aside class="enterprise-review-note">
+                <strong>Human review comes first.</strong>
+                The highest document-alignment result is {{ summary.top_candidate.candidate_name }} at {{ summary.top_candidate.score }}%.
+                Compare the supporting CV evidence before progressing or declining any candidate.
+            </aside>
+        {% endif %}
+
+        <section class="enterprise-report-card" aria-labelledby="candidate-comparison-title">
+            <div class="enterprise-report-heading">
+                <h2 id="candidate-comparison-title">Candidate evidence comparison</h2>
+                <span class="enterprise-muted small">Advisory results—not automated hiring decisions</span>
+            </div>
+
+            {% if results %}
+                <div class="table-responsive enterprise-desktop-table">
+                    <table class="table enterprise-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Candidate</th>
+                                <th>Alignment</th>
+                                <th>Confirmed strengths</th>
+                                <th>Evidence gaps</th>
+                                <th>Human-review action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in results %}
+                                <tr>
+                                    <td><span class="enterprise-rank">{{ result.rank }}</span></td>
+                                    <td>
+                                        <strong>{{ result.candidate_name }}</strong><br>
+                                        <a href="{{ result.cv_file.url }}" target="_blank" rel="noopener">Open source CV</a>
+                                    </td>
+                                    <td>
+                                        <span class="enterprise-score {% if result.score > 50 %}good{% else %}risk{% endif %}">{{ result.score }}%</span>
+                                        <span class="enterprise-decision">
+                                            {% if result.score >= 80 %}Strong evidence review
+                                            {% elif result.score > 50 %}Further evidence review
+                                            {% else %}Significant evidence gaps{% endif %}
+                                        </span>
+                                    </td>
+                                    <td class="enterprise-evidence">
+                                        {{ result.matched_skills|default:"No confirmed matches listed"|truncatechars:110 }}
+                                        {% if result.matched_skills|length > 110 %}
+                                            <details><summary>View all</summary>{{ result.matched_skills }}</details>
+                                        {% endif %}
+                                    </td>
+                                    <td class="enterprise-evidence">
+                                        {{ result.missing_skills|default:"No major gaps listed"|truncatechars:110 }}
+                                        {% if result.missing_skills|length > 110 %}
+                                            <details><summary>View all</summary>{{ result.missing_skills }}</details>
+                                        {% endif %}
+                                    </td>
+                                    <td class="enterprise-evidence">{{ result.recommendation }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="enterprise-mobile-list">
+                    {% for result in results %}
+                        <article class="enterprise-mobile-card">
+                            <div class="enterprise-mobile-top">
+                                <div class="enterprise-mobile-meta">
+                                    <span class="enterprise-rank">{{ result.rank }}</span>
+                                    <h3>{{ result.candidate_name }}</h3>
+                                </div>
+                                <span class="enterprise-score {% if result.score > 50 %}good{% else %}risk{% endif %}">{{ result.score }}%</span>
+                            </div>
+                            <div class="enterprise-mobile-grid">
+                                <section><strong>Confirmed strengths</strong><span>{{ result.matched_skills|default:"No confirmed matches listed" }}</span></section>
+                                <section><strong>Evidence gaps</strong><span>{{ result.missing_skills|default:"No major gaps listed" }}</span></section>
+                                <section><strong>Human-review action</strong><span>{{ result.recommendation }}</span></section>
+                            </div>
+                            <a class="btn btn-outline-primary btn-sm mt-3" href="{{ result.cv_file.url }}" target="_blank" rel="noopener">Open source CV</a>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="enterprise-muted m-0 p-4">No candidate results were created for this batch.</p>
+            {% endif %}
+        </section>
+    </div>
+</main>
+{% endblock %}
