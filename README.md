@@ -4,6 +4,24 @@ MyValidCV is a Django micro-SaaS for CV-to-job ATS analysis, paid individual
 document generation, Enterprise bulk screening, recurring Stripe subscriptions,
 social login and 30-day CV retention.
 
+## Product overview
+
+![MyValidCV product overview](static/images/cv-validation-steps.jpg)
+
+### Wireframe preview
+
+See the visual handover wireframe in [docs/WIREFRAME.md](docs/WIREFRAME.md).
+
+### Product screenshots
+
+![MyValidCV workflow overview](static/images/cv-validation-steps.jpg)
+
+![MyValidCV Google PageSpeed Insights desktop loading speed result](static/images/MVCV-%20Desk%20Top%20Speed%20test%20%26%20performance.png)
+
+![MyValidCV Google PageSpeed Insights mobile loading speed result](static/images/MVCV-%20Mobil%20Speed%20test%20%26%20performance.png)
+
+![MyValidCV W3C Nu HTML Checker validation result](static/images/MVCV-%20html%20test%20%26%20performance.png)
+
 ## ATS v2
 
 ATS v2 provides an explainable **CV-to-role evidence match**, not a prediction
