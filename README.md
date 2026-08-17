@@ -6,7 +6,7 @@ social login and 30-day CV retention.
 
 ## Product overview
 
-![MyValidCV product overview](static/images/cv-validation-steps.jpg)
+![MyValidCV product overview](static/images/Dashboard01.png)
 
 ### Wireframe preview
 
