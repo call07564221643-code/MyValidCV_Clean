@@ -168,6 +168,23 @@ python manage.py test
 python manage.py check --deploy
 ```
 
+### PostgreSQL smoke check
+
+Use a PostgreSQL-backed environment for production-like validation before release:
+
+```powershell
+$env:DATABASE_URL='postgres://postgres:postgres@localhost:5432/myvalidcv'
+python manage.py check
+python manage.py migrate
+python manage.py test
+python manage.py check --deploy
+```
+
+This confirms the application still behaves correctly when the database is
+PostgreSQL instead of SQLite. Complete a quick browser smoke test for signup,
+login, CV upload and ATS analysis in the PostgreSQL environment before final
+release.
+
 Mock Stripe checkout is available only when both `DEBUG=True` and
 `STRIPE_MOCK_MODE=True`; it is unreachable in production.
 
