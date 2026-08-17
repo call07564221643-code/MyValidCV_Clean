@@ -129,6 +129,11 @@ Use the final project closure phase to confirm quality, not to add new scope.
 - Any work not needed for release readiness is moved to a post-release backlog.
 - Every story must have acceptance criteria and a validation path before it is
   accepted as done.
+- For handover, critical release gates must be closed with evidence or explicitly
+  marked as approved exceptions with an owner, reason and next action.
+- Quality and polish items such as README polish, demo assets, wording review and
+  policy content can be closed as completion evidence when they are final and
+  accurate, without expanding scope.
 
 This keeps the team aligned with the lean operating model and prevents the final
 phase from turning into feature bloat.

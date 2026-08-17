@@ -13,8 +13,9 @@ progress and attach evidence before moving a card to Done.
 
 Board structure: **Finalised on 20 July 2026**
 
-MVP release: **Not yet closed** - the open evidence and release gates below must
-be completed or recorded as approved delivery exceptions on 21 July.
+MVP release: **Ready for handover review** - the final release gates must either be
+completed with evidence or recorded as approved delivery exceptions before the
+project is formally closed.
 
 ## In Progress - Release Gates
 
@@ -26,6 +27,9 @@ be completed or recorded as approved delivery exceptions on 21 July.
 
 - [ ] **#21 Live Stripe payment confirmation** - Critical, 3 points
   - Confirm checkout, test payment, receipt, entitlement update and clean logs.
+
+- [ ] **#24 Final project presentation** - Critical, 5 points
+  - Final handover evidence, screenshots and demo script must be ready.
 
 - [ ] **#22 ATS scoring quality review** - Critical, 5 points
   - Compare related and unrelated CV/job pairs and record the expected result.
@@ -43,7 +47,6 @@ be completed or recorded as approved delivery exceptions on 21 July.
 - [ ] **#28 Owner promo-code workflow guide** - Medium, 3 points
 - [ ] **#25 Demo script and screenshots** - Critical, 3 points
 - [ ] **#26 README final polish** - High, 2 points
-- [ ] **#24 Final project presentation** - Critical, 5 points
 
 ## Done - Released Increments
 
