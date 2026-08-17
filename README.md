@@ -6,16 +6,16 @@ social login and 30-day CV retention.
 
 ## Product overview
 
-![MyValidCV product overview](static/images/Dashboard01.png)
+![MyValidCV product overview](https://github.com/call07564221643-code/MyValidCV_Clean/raw/agile-kanban-correction/static/images/Dashboard01.png)
 
 ### Wireframe preview
 
-See the visual handover wireframe in [docs/WIREFRAME.md](docs/WIREFRAME.md).
+See the visual handover wireframe in [docs/WIREFRAME.md](https://github.com/call07564221643-code/MyValidCV_Clean/blob/agile-kanban-correction/docs/WIREFRAME.md).
 
 ### Product screenshots
 
 <div align="center">
-  <img src="static/images/Dashboard01.png" alt="MyValidCV dashboard overview" width="880" />
+  <img src="https://github.com/call07564221643-code/MyValidCV_Clean/raw/agile-kanban-correction/static/images/Dashboard01.png" alt="MyValidCV dashboard overview" width="880" />
 </div>
 
 ## ATS v2
