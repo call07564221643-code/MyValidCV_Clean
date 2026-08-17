@@ -18,15 +18,6 @@ See the visual handover wireframe in [docs/WIREFRAME.md](docs/WIREFRAME.md).
   <img src="static/images/Dashboard01.png" alt="MyValidCV dashboard overview" width="880" />
 </div>
 
-<div align="center">
-  <img src="static/images/MVCV-%20Desk%20Top%20Speed%20test%20%26%20performance.png" alt="MyValidCV Google PageSpeed Insights desktop loading speed result" width="420" />
-  <img src="static/images/MVCV-%20Mobil%20Speed%20test%20%26%20performance.png" alt="MyValidCV Google PageSpeed Insights mobile loading speed result" width="420" />
-</div>
-
-<div align="center">
-  <img src="static/images/MVCV-%20html%20test%20%26%20performance.png" alt="MyValidCV W3C Nu HTML Checker validation result" width="860" />
-</div>
-
 ## ATS v2
 
 ATS v2 provides an explainable **CV-to-role evidence match**, not a prediction
