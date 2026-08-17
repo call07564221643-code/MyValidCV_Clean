@@ -78,7 +78,7 @@ if not SECRET_KEY:
 DEBUG = env_bool('DEBUG', False)
 IS_HEROKU = bool(os.environ.get('DYNO'))
 
-ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1,myvalidcv.com,www.myvalidcv.com')
 HEROKU_APP_NAME = os.environ.get('HEROKU_APP_NAME', '')
 if HEROKU_APP_NAME:
     ALLOWED_HOSTS.append(f'{HEROKU_APP_NAME}.herokuapp.com')
@@ -86,6 +86,10 @@ if HEROKU_APP_NAME:
 CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS')
 if HEROKU_APP_NAME:
     CSRF_TRUSTED_ORIGINS.append(f'https://{HEROKU_APP_NAME}.herokuapp.com')
+if 'myvalidcv.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('myvalidcv.com')
+if 'www.myvalidcv.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('www.myvalidcv.com')
 CSRF_TRUSTED_ORIGINS.extend(
     origin for origin in (csrf_origin_from_host(host) for host in ALLOWED_HOSTS) if origin
 )
