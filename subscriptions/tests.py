@@ -47,3 +47,9 @@ class EntitlementPolicyTests(TestCase):
             current_period_end=timezone.now() - timedelta(seconds=1),
         )
         self.assertEqual(get_entitlements(self.user).code, "free")
+
+    def test_superuser_does_not_inherit_enterprise_customer_access(self):
+        owner = User.objects.create_superuser("platform-owner", password="password")
+        access = get_entitlements(owner)
+        self.assertEqual(access.code, "free")
+        self.assertFalse(access.enterprise_reports)

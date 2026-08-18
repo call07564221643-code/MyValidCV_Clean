@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 from docx import Document
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core import mail
 from django.contrib.auth.models import User
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
@@ -98,7 +99,12 @@ class UploadAndUrlSecurityTests(SimpleTestCase):
 
 class EnterpriseWorkspaceTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user("enterprise-owner", password="password")
+        self.user = User.objects.create_user("enterprise-owner", "recruiter@example.com", "password")
+        plan = SubscriptionPlan.objects.create(
+            code="enterprise", name="Enterprise", price="49.00",
+            monthly_bulk_cv_limit=50, includes_enterprise_reports=True,
+        )
+        CustomerSubscription.objects.create(user=self.user, plan=plan, status="active")
         self.job_role = JobRole.objects.create(
             user=self.user,
             title="Operations Manager",
@@ -110,7 +116,7 @@ class EnterpriseWorkspaceTests(TestCase):
             job_role=self.job_role,
             title="Operations shortlist",
         )
-        EnterpriseCandidateResult.objects.create(
+        self.candidate = EnterpriseCandidateResult.objects.create(
             batch=self.batch,
             candidate_name="Alex Candidate",
             cv_file="enterprise_cvs/alex.txt",
@@ -119,6 +125,7 @@ class EnterpriseWorkspaceTests(TestCase):
             missing_skills="Budget ownership",
             recommendation="Review the supporting evidence with the hiring panel.",
             rank=1,
+            candidate_email="alex@example.com",
         )
 
     def test_enterprise_report_is_concise_responsive_evidence_workspace(self):
@@ -126,15 +133,90 @@ class EnterpriseWorkspaceTests(TestCase):
         response = self.client.get(reverse("enterprise_report", args=[self.batch.id]))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Enterprise evidence workspace")
-        self.assertContains(response, "Candidate evidence comparison")
-        self.assertContains(response, "enterprise-mobile-list")
-        self.assertContains(response, "Advisory results—not automated hiring decisions")
-        self.assertContains(response, "Above 50% alignment")
+        self.assertContains(response, "Enterprise recruitment evidence")
+        self.assertContains(response, "Applicants scoring 55% and above")
+        self.assertContains(response, "Mandatory evidence")
+        self.assertContains(response, "Human review comes first")
+        self.assertContains(response, "55%+ alignment")
         self.assertNotContains(response, "Cover-letter draft")
 
     def test_daily_usage_reuses_existing_candidate_rows(self):
         self.assertEqual(enterprise_daily_usage(self.user), 1)
+
+    def test_report_defaults_to_applicants_scoring_at_least_55(self):
+        EnterpriseCandidateResult.objects.create(
+            batch=self.batch, candidate_name="Below Threshold", cv_file="enterprise_cvs/low.txt",
+            score=54, rank=2,
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("enterprise_report", args=[self.batch.id]))
+        self.assertContains(response, "Alex Candidate")
+        self.assertNotContains(response, "Below Threshold")
+        audit = self.client.get(reverse("enterprise_report", args=[self.batch.id]) + "?show=all")
+        self.assertContains(audit, "Below Threshold")
+
+    def test_human_review_status_generates_applicant_email_draft(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("enterprise_candidate_review", args=[self.batch.id, self.candidate.id]),
+            {"review_status": "shortlisted"},
+        )
+        self.assertRedirects(response, reverse("enterprise_report", args=[self.batch.id]))
+        self.candidate.refresh_from_db()
+        self.assertEqual(self.candidate.review_status, "shortlisted")
+        self.assertIn("shortlisted", self.candidate.email_subject)
+
+    def test_other_enterprise_account_cannot_change_candidate(self):
+        other = User.objects.create_user("other-enterprise", password="password")
+        self.client.force_login(other)
+        response = self.client.post(
+            reverse("enterprise_candidate_review", args=[self.batch.id, self.candidate.id]),
+            {"review_status": "shortlisted"},
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_bulk_review_updates_selected_applicants_only(self):
+        untouched = EnterpriseCandidateResult.objects.create(
+            batch=self.batch, candidate_name="Untouched", cv_file="enterprise_cvs/untouched.txt",
+            score=70, rank=2,
+        )
+        self.client.force_login(self.user)
+        self.client.post(
+            reverse("enterprise_bulk_review", args=[self.batch.id]),
+            {"candidate_ids": [self.candidate.id], "review_status": "criteria_failed"},
+        )
+        self.candidate.refresh_from_db()
+        untouched.refresh_from_db()
+        self.assertEqual(self.candidate.review_status, "criteria_failed")
+        self.assertEqual(untouched.review_status, "pending")
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_authorized_reviewed_email_can_be_sent(self):
+        self.client.force_login(self.user)
+        self.client.post(reverse("enterprise_email_authorize", args=[self.batch.id]), {"authorize": "yes"})
+        self.client.post(
+            reverse("enterprise_candidate_review", args=[self.batch.id, self.candidate.id]),
+            {"review_status": "shortlisted"},
+        )
+        response = self.client.post(
+            reverse("enterprise_candidate_email", args=[self.batch.id, self.candidate.id]),
+            {"confirm_send": "yes"},
+        )
+        self.assertRedirects(response, reverse("enterprise_report", args=[self.batch.id]))
+        self.candidate.refresh_from_db()
+        self.assertIsNotNone(self.candidate.email_sent_at)
+        self.assertEqual(mail.outbox[0].from_email, "support@myvalidcv.com")
+        self.assertEqual(mail.outbox[0].reply_to, ["recruiter@example.com"])
+
+    def test_enterprise_user_can_change_authorized_sender(self):
+        self.client.force_login(self.user)
+        self.client.post(
+            reverse("enterprise_email_authorize", args=[self.batch.id]),
+            {"authorize": "yes", "sender_email": "jobs@example.com"},
+        )
+        self.batch.refresh_from_db()
+        self.assertTrue(self.batch.email_sending_authorized)
+        self.assertEqual(self.batch.sender_email, "jobs@example.com")
 
 
 class StructuredCVDraftTests(SimpleTestCase):

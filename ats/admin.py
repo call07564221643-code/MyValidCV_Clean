@@ -135,13 +135,13 @@ class ApplicationReminderAdmin(admin.ModelAdmin):
 
 @admin.register(EnterpriseBatch)
 class EnterpriseBatchAdmin(admin.ModelAdmin):
-    list_display = ("title", "job_role", "user", "created_at")
-    list_filter = ("created_at",)
+    list_display = ("title", "job_role", "user", "sender_email", "email_sending_authorized", "created_at")
+    list_filter = ("email_sending_authorized", "created_at")
     search_fields = ("title", "job_role__title", "user__username", "notes")
 
 
 @admin.register(EnterpriseCandidateResult)
 class EnterpriseCandidateResultAdmin(admin.ModelAdmin):
-    list_display = ("rank", "candidate_name", "batch", "score", "created_at")
-    list_filter = ("score", "created_at")
-    search_fields = ("candidate_name", "batch__title", "matched_skills", "missing_skills")
+    list_display = ("rank", "candidate_name", "batch", "score", "mandatory_pass", "review_status", "created_at")
+    list_filter = ("mandatory_pass", "review_status", "score", "created_at")
+    search_fields = ("candidate_name", "candidate_email", "batch__title", "matched_skills", "missing_skills")

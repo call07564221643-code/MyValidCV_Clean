@@ -4,6 +4,7 @@ import csv
 import ipaddress
 import logging
 import socket
+import math
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
@@ -12,6 +13,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.conf import settings
+from django.core.mail import EmailMessage
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
@@ -44,6 +49,42 @@ from subscriptions.services import get_active_subscription, get_entitlements
 APPLY_STRONG_THRESHOLD = 75
 APPLY_MINIMUM_THRESHOLD = 55
 logger = logging.getLogger(__name__)
+
+
+def extract_candidate_email(cv_text):
+    """Return the first plausible email address found in candidate-supplied CV text."""
+    match = re.search(r"(?i)(?<![\w.-])[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+", cv_text)
+    return match.group(0).strip(".,;:()[]<>") if match else ""
+
+
+def split_mandatory_requirements(value):
+    return [item.strip(" -\t") for item in value.splitlines() if item.strip(" -\t")]
+
+
+def evaluate_mandatory_requirements(cv_text, requirements):
+    normalized_cv = re.sub(r"[^a-z0-9]+", " ", cv_text.lower()).strip()
+    matched, missing = [], []
+    for requirement in requirements:
+        normalized_requirement = re.sub(r"[^a-z0-9]+", " ", requirement.lower()).strip()
+        (matched if normalized_requirement and normalized_requirement in normalized_cv else missing).append(requirement)
+    return matched, missing
+
+
+def candidate_email_draft(candidate):
+    job_title = candidate.batch.job_role.title
+    subjects = {
+        "shortlisted": f"Your application for {job_title} has been shortlisted",
+        "criteria_failed": f"Update on your application for {job_title}",
+        "mandatory_failed": f"Application requirements for {job_title}",
+        "pending": f"Your application for {job_title}",
+    }
+    bodies = {
+        "shortlisted": "Thank you for your application. Following a human review, we would like to progress your application to the shortlist.",
+        "criteria_failed": "Thank you for your application. Following a human review, we will not be progressing your application on this occasion.",
+        "mandatory_failed": "Thank you for your application. The information supplied did not demonstrate all mandatory requirements listed for this role. A reviewer has confirmed this outcome.",
+        "pending": "Thank you for your application. Your application is currently being reviewed.",
+    }
+    return subjects[candidate.review_status], f"Dear {candidate.candidate_name},\n\n{bodies[candidate.review_status]}\n\nKind regards"
 
 
 def get_user_profile(user):
@@ -1561,6 +1602,7 @@ def enterprise_bulk_upload(request):
 
             job_title = infer_job_title(form, job_description)
             prepared_candidates = []
+            mandatory_requirements = split_mandatory_requirements(form.cleaned_data.get("mandatory_requirements", ""))
             invalid_cvs = []
             for uploaded_file in cv_files:
                 cv_text = extract_uploaded_cv_text(uploaded_file)
@@ -1569,7 +1611,11 @@ def enterprise_bulk_upload(request):
                     invalid_cvs.append(f"{uploaded_file.name}: {reason}")
                     continue
                 score, matched, missing, recommendation = calculate_score(cv_text, job_description, job_title)
-                prepared_candidates.append((uploaded_file, score, matched, missing, recommendation))
+                mandatory_matched, mandatory_missing = evaluate_mandatory_requirements(cv_text, mandatory_requirements)
+                prepared_candidates.append((
+                    uploaded_file, score, matched, missing, recommendation,
+                    extract_candidate_email(cv_text), mandatory_matched, mandatory_missing,
+                ))
 
             if invalid_cvs:
                 form.add_error("cv_files", "Some uploaded files are not usable CVs. " + " ".join(invalid_cvs[:5]))
@@ -1589,10 +1635,11 @@ def enterprise_bulk_upload(request):
                 job_role=job_role,
                 title=form.cleaned_data["batch_title"],
                 notes=form.cleaned_data.get("notes", ""),
+                mandatory_requirements=form.cleaned_data.get("mandatory_requirements", ""),
             )
 
             candidate_results = []
-            for uploaded_file, score, matched, missing, recommendation in prepared_candidates:
+            for uploaded_file, score, matched, missing, recommendation, candidate_email, mandatory_matched, mandatory_missing in prepared_candidates:
                 candidate = EnterpriseCandidateResult(
                     batch=batch,
                     candidate_name=uploaded_file.name.rsplit(".", 1)[0].replace("_", " ").replace("-", " ").title(),
@@ -1600,6 +1647,11 @@ def enterprise_bulk_upload(request):
                     matched_skills=", ".join(matched),
                     missing_skills=", ".join(missing),
                     recommendation=recommendation,
+                    candidate_email=candidate_email,
+                    mandatory_matched=mandatory_matched,
+                    mandatory_missing=mandatory_missing,
+                    mandatory_pass=not mandatory_missing,
+                    review_status="mandatory_failed" if mandatory_missing else "pending",
                 )
                 candidate.cv_file.save(uploaded_file.name, uploaded_file, save=False)
                 candidate_results.append(candidate)
@@ -1628,14 +1680,21 @@ def enterprise_report(request, batch_id):
         batch = get_object_or_404(EnterpriseBatch, id=batch_id)
     else:
         batch = get_object_or_404(EnterpriseBatch, id=batch_id, user=request.user)
-    results = batch.candidate_results.all()
-    candidate_count = results.count()
-    top_candidate = results.first()
-    aligned_count = results.filter(score__gt=50).count()
-    gap_count = results.filter(score__lte=50).count()
+    all_results = batch.candidate_results.all()
+    candidate_count = all_results.count()
+    top_candidate = all_results.first()
+    qualified_count = all_results.filter(score__gte=55).count()
+    below_threshold_count = all_results.filter(score__lt=55).count()
+    mandatory_pass_count = all_results.filter(mandatory_pass=True).count()
+    shortlisted_count = all_results.filter(review_status="shortlisted").count()
+    results = all_results if request.GET.get("show") == "all" else all_results.filter(score__gte=55)
+    top_twenty_count = math.ceil(shortlisted_count * 0.2) if shortlisted_count else 0
+    top_twenty_ids = set(all_results.filter(review_status="shortlisted").order_by("rank", "-score").values_list("id", flat=True)[:top_twenty_count])
+    for result in results:
+        result.is_top_twenty = result.id in top_twenty_ids
     average_score = 0
     if candidate_count:
-        average_score = int(sum(result.score for result in results) / candidate_count)
+        average_score = int(sum(result.score for result in all_results) / candidate_count)
     return render(
         request,
         "ats/enterprise_report.html",
@@ -1644,13 +1703,111 @@ def enterprise_report(request, batch_id):
             "results": results,
             "summary": {
                 "candidate_count": candidate_count,
-                "aligned_count": aligned_count,
-                "gap_count": gap_count,
+                "qualified_count": qualified_count,
+                "below_threshold_count": below_threshold_count,
+                "mandatory_pass_count": mandatory_pass_count,
+                "shortlisted_count": shortlisted_count,
+                "top_twenty_count": top_twenty_count,
                 "average_score": average_score,
                 "top_candidate": top_candidate,
             },
+            "show_all": request.GET.get("show") == "all",
+            "can_manage": not request.user.is_superuser,
         },
     )
+
+
+@login_required(login_url="login")
+@require_http_methods(["POST"])
+def enterprise_candidate_review(request, batch_id, candidate_id):
+    batch = get_object_or_404(EnterpriseBatch, id=batch_id, user=request.user)
+    if not user_can_use_enterprise(request.user):
+        return HttpResponse(status=403)
+    candidate = get_object_or_404(EnterpriseCandidateResult, id=candidate_id, batch=batch)
+    status = request.POST.get("review_status", "")
+    valid_statuses = dict(EnterpriseCandidateResult.REVIEW_STATUS_CHOICES)
+    if status not in valid_statuses:
+        messages.error(request, "Choose a valid review outcome.")
+    else:
+        candidate.review_status = status
+        candidate.reviewed_at = timezone.now()
+        candidate.email_subject, candidate.email_body = candidate_email_draft(candidate)
+        candidate.save(update_fields=["review_status", "reviewed_at", "email_subject", "email_body"])
+        messages.success(request, f"{candidate.candidate_name} marked as {valid_statuses[status].lower()}; email draft prepared.")
+    return redirect("enterprise_report", batch_id=batch.id)
+
+
+@login_required(login_url="login")
+@require_http_methods(["POST"])
+def enterprise_bulk_review(request, batch_id):
+    batch = get_object_or_404(EnterpriseBatch, id=batch_id, user=request.user)
+    if not user_can_use_enterprise(request.user):
+        return HttpResponse(status=403)
+    status = request.POST.get("review_status", "")
+    valid_statuses = dict(EnterpriseCandidateResult.REVIEW_STATUS_CHOICES)
+    candidate_ids = request.POST.getlist("candidate_ids")
+    candidates = list(batch.candidate_results.filter(id__in=candidate_ids))
+    if status not in valid_statuses or not candidates:
+        messages.error(request, "Select at least one applicant and a valid review outcome.")
+    else:
+        now = timezone.now()
+        for candidate in candidates:
+            candidate.review_status = status
+            candidate.reviewed_at = now
+            candidate.email_subject, candidate.email_body = candidate_email_draft(candidate)
+            candidate.save(update_fields=["review_status", "reviewed_at", "email_subject", "email_body"])
+        messages.success(request, f"Updated {len(candidates)} applicant(s) and prepared individual email drafts.")
+    return redirect("enterprise_report", batch_id=batch.id)
+
+
+@login_required(login_url="login")
+@require_http_methods(["POST"])
+def enterprise_email_authorize(request, batch_id):
+    batch = get_object_or_404(EnterpriseBatch, id=batch_id, user=request.user)
+    if not user_can_use_enterprise(request.user) or not request.user.email:
+        messages.error(request, "Add a verified account email before enabling recruitment email.")
+    elif request.POST.get("authorize") == "yes":
+        sender_email = request.POST.get("sender_email", "").strip() or settings.ENTERPRISE_FROM_EMAIL
+        try:
+            validate_email(sender_email)
+        except ValidationError:
+            messages.error(request, "Enter a valid sender email address.")
+            return redirect("enterprise_report", batch_id=batch.id)
+        batch.email_sending_authorized = True
+        batch.email_authorized_at = timezone.now()
+        batch.sender_email = sender_email
+        batch.save(update_fields=["email_sending_authorized", "email_authorized_at", "sender_email"])
+        messages.success(request, f"Recruitment email sender set to {sender_email}.")
+    return redirect("enterprise_report", batch_id=batch.id)
+
+
+@login_required(login_url="login")
+@require_http_methods(["POST"])
+def enterprise_candidate_email(request, batch_id, candidate_id):
+    batch = get_object_or_404(EnterpriseBatch, id=batch_id, user=request.user)
+    candidate = get_object_or_404(EnterpriseCandidateResult, id=candidate_id, batch=batch)
+    if not user_can_use_enterprise(request.user) or not batch.email_sending_authorized:
+        messages.error(request, "Authorize recruitment email for this job before sending.")
+    elif not candidate.candidate_email:
+        messages.error(request, "No reliable applicant email address was found in this CV.")
+    elif not candidate.email_subject or not request.POST.get("confirm_send"):
+        messages.error(request, "Review the draft and explicitly confirm sending.")
+    else:
+        try:
+            EmailMessage(
+                subject=candidate.email_subject,
+                body=candidate.email_body,
+                from_email=batch.sender_email or settings.ENTERPRISE_FROM_EMAIL,
+                to=[candidate.candidate_email],
+                reply_to=[request.user.email],
+            ).send(fail_silently=False)
+            candidate.email_sent_at = timezone.now()
+            candidate.save(update_fields=["email_sent_at"])
+            messages.success(request, f"Email sent to {candidate.candidate_email}.")
+        except Exception:
+            logger.exception("Enterprise candidate email failed", extra={"candidate_id": candidate.id})
+            messages.error(request, "The email provider did not accept the message. Nothing was marked as sent.")
+    return redirect("enterprise_report", batch_id=batch.id)
 
 
 @login_required(login_url="login")
@@ -1665,7 +1822,13 @@ def enterprise_report_csv(request, batch_id):
     writer.writerow([
         "Advisory Rank",
         "Candidate",
+        "Applicant Email",
         "Document Alignment Score",
+        "Mandatory Requirements Passed",
+        "Mandatory Evidence Found",
+        "Mandatory Evidence Missing",
+        "Human Review Outcome",
+        "Email Sent At",
         "Matched Skills",
         "Missing Evidence",
         "Recommendation",
@@ -1675,7 +1838,13 @@ def enterprise_report_csv(request, batch_id):
         writer.writerow([
             result.rank,
             result.candidate_name,
+            result.candidate_email,
             result.score,
+            "Yes" if result.mandatory_pass else "No",
+            ", ".join(result.mandatory_matched),
+            ", ".join(result.mandatory_missing),
+            result.get_review_status_display(),
+            result.email_sent_at.isoformat() if result.email_sent_at else "",
             result.matched_skills,
             result.missing_skills,
             result.recommendation,

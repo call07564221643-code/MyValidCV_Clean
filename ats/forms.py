@@ -247,6 +247,15 @@ class EnterpriseBulkAnalysisForm(forms.Form):
         required=False,
         widget=forms.Textarea(attrs={"class": "form-control", "rows": 3, "placeholder": "Optional recruiter notes"})
     )
+    mandatory_requirements = forms.CharField(
+        required=False,
+        help_text="One objective requirement per line. Do not enter age or other protected characteristics.",
+        widget=forms.Textarea(attrs={
+            "class": "form-control",
+            "rows": 5,
+            "placeholder": "Python\n5 years' commercial experience\nValid UK driving licence\nRight to work in the UK",
+        }),
+    )
 
     def clean_cv_files(self):
         cv_files = self.cleaned_data["cv_files"]

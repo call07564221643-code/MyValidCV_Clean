@@ -397,6 +397,13 @@ class EnterpriseBatch(models.Model):
     job_role = models.ForeignKey(JobRole, on_delete=models.CASCADE, related_name="enterprise_batches")
     title = models.CharField(max_length=180)
     notes = models.TextField(blank=True)
+    mandatory_requirements = models.TextField(
+        blank=True,
+        help_text="One objective must-have skill, experience, licence, certification, or legal eligibility requirement per line.",
+    )
+    email_sending_authorized = models.BooleanField(default=False)
+    email_authorized_at = models.DateTimeField(null=True, blank=True)
+    sender_email = models.EmailField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -408,6 +415,13 @@ class EnterpriseBatch(models.Model):
 
 
 class EnterpriseCandidateResult(models.Model):
+    REVIEW_STATUS_CHOICES = [
+        ("pending", "Awaiting human review"),
+        ("shortlisted", "Shortlisted"),
+        ("criteria_failed", "Does not meet criteria"),
+        ("mandatory_failed", "Missing mandatory requirements"),
+    ]
+
     batch = models.ForeignKey(EnterpriseBatch, on_delete=models.CASCADE, related_name="candidate_results")
     candidate_name = models.CharField(max_length=180)
     cv_file = models.FileField(upload_to="enterprise_cvs/")
@@ -416,6 +430,15 @@ class EnterpriseCandidateResult(models.Model):
     missing_skills = models.TextField(blank=True)
     recommendation = models.TextField(blank=True)
     rank = models.PositiveIntegerField(default=0)
+    candidate_email = models.EmailField(blank=True)
+    mandatory_matched = models.JSONField(default=list, blank=True)
+    mandatory_missing = models.JSONField(default=list, blank=True)
+    mandatory_pass = models.BooleanField(default=True)
+    review_status = models.CharField(max_length=24, choices=REVIEW_STATUS_CHOICES, default="pending")
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    email_subject = models.CharField(max_length=220, blank=True)
+    email_body = models.TextField(blank=True)
+    email_sent_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -460,10 +460,11 @@
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'owner_feedback' %}active{% endif %}" href="{% url 'owner_feedback' %}">Feedback</a>
                             </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Reports</a>
+                            </li>
                         {% endif %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Reports</a>
-                        </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'account_settings' %}active{% endif %}" href="{% url 'account_settings' %}">Account</a>
                         </li>

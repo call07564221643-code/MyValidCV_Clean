@@ -71,7 +71,7 @@ def register(request):
 def login_view(request):
     """Authorise local credentials and establish Django's session cookie."""
     if request.user.is_authenticated:
-        return redirect('dashboard')
+        return redirect('owner_console' if request.user.is_superuser else 'dashboard')
     redirect_to = safe_next_url(request)
     if request.method == 'POST':
         form = CustomAuthenticationForm(request, data=request.POST)
@@ -82,6 +82,8 @@ def login_view(request):
             if user is not None:
                 login(request, user)
                 messages.success(request, f'Welcome back, {user.get_short_name() or user.username}!')
+                if user.is_superuser and not (request.POST.get('next') or request.GET.get('next')):
+                    redirect_to = 'owner_console'
                 return redirect(redirect_to)
     else:
         form = CustomAuthenticationForm()

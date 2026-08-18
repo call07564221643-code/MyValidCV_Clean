@@ -62,6 +62,26 @@ class CustomerNavigationTests(TestCase):
         })
         self.assertRedirects(response, reverse('dashboard'))
 
+    def test_owner_login_redirects_to_owner_console(self):
+        User.objects.create_superuser('platform-owner', 'platform@example.com', 'password')
+        response = self.client.post(reverse('login'), {
+            'username': 'platform-owner',
+            'password': 'password',
+        })
+        self.assertRedirects(response, reverse('owner_console'))
+
+    def test_owner_dashboard_redirects_to_owner_console_without_enterprise_ui(self):
+        owner = User.objects.create_superuser('platform-owner', 'platform@example.com', 'password')
+        self.client.force_login(owner)
+        response = self.client.get(reverse('dashboard'))
+        self.assertRedirects(response, reverse('owner_console'))
+
+        owner_response = self.client.get(reverse('owner_console'))
+        self.assertContains(owner_response, 'Owner Console')
+        self.assertNotContains(owner_response, 'Enterprise dashboard')
+        self.assertNotContains(owner_response, 'Bulk analysis')
+        self.assertNotContains(owner_response, 'User dashboard')
+
     def test_login_accepts_email_case_insensitively(self):
         response = self.client.post(reverse('login'), {
             'username': 'CUSTOMER@EXAMPLE.COM',
@@ -160,9 +180,11 @@ class CustomerNavigationTests(TestCase):
         )
         self.client.force_login(self.user)
         response = self.client.get(reverse('dashboard'))
-        self.assertContains(response, 'Enterprise candidate intelligence')
-        self.assertContains(response, 'Bulk analysis')
-        self.assertContains(response, 'Enterprise dashboard')
+        self.assertContains(response, 'Applicant screening dashboard')
+        self.assertContains(response, 'Analyse applicants')
+        self.assertContains(response, 'Mandatory evidence passed')
+        self.assertNotContains(response, 'Suggested CV drafts')
+        self.assertNotContains(response, 'Application reminders')
 
     def test_profile_label_without_active_subscription_does_not_enable_bulk(self):
         self.user.profile.plan = 'enterprise'

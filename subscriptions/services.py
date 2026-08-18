@@ -90,15 +90,11 @@ def get_entitlements(user):
     """Resolve effective access from verified subscription state and plan rows.
 
     UserProfile.plan is a display/cache field and is deliberately not trusted as
-    proof of payment. Superusers receive Enterprise operations access.
+    proof of payment. Platform-owner privileges are kept separate from customer
+    plan entitlements; superusers use the owner console instead of inheriting an
+    Enterprise subscription.
     """
     subscription = get_active_subscription(user)
-    if getattr(user, "is_superuser", False):
-        code = "enterprise"
-        plan = SubscriptionPlan.objects.filter(code=code, is_active=True).first()
-        values = _values_from_plan(plan, PLAN_DEFAULTS[code])
-        return Entitlements(code=code, subscription=subscription, plan=plan, **values)
-
     if subscription and subscription.plan.code in PLAN_DEFAULTS:
         code = subscription.plan.code
         values = _values_from_plan(subscription.plan, PLAN_DEFAULTS[code])

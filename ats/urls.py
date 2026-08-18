@@ -19,4 +19,8 @@ urlpatterns = [
     path("enterprise/bulk/", views.enterprise_bulk_upload, name="enterprise_bulk"),
     path("enterprise/report/<int:batch_id>/", views.enterprise_report, name="enterprise_report"),
     path("enterprise/report/<int:batch_id>/csv/", views.enterprise_report_csv, name="enterprise_report_csv"),
+    path("enterprise/report/<int:batch_id>/candidate/<int:candidate_id>/review/", views.enterprise_candidate_review, name="enterprise_candidate_review"),
+    path("enterprise/report/<int:batch_id>/bulk-review/", views.enterprise_bulk_review, name="enterprise_bulk_review"),
+    path("enterprise/report/<int:batch_id>/candidate/<int:candidate_id>/email/", views.enterprise_candidate_email, name="enterprise_candidate_email"),
+    path("enterprise/report/<int:batch_id>/authorize-email/", views.enterprise_email_authorize, name="enterprise_email_authorize"),
 ]

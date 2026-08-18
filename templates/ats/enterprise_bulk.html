@@ -80,6 +80,13 @@
                         </div>
 
                         <div class="mt-3">
+                            {{ form.mandatory_requirements.label_tag }}
+                            {{ form.mandatory_requirements }}
+                            <small class="text-muted">{{ form.mandatory_requirements.help_text }}</small>
+                            {% if form.mandatory_requirements.errors %}<div class="invalid-feedback d-block">{{ form.mandatory_requirements.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <div class="mt-3">
                             {{ form.notes.label_tag }}
                             {{ form.notes }}
                         </div>

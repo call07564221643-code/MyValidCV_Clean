@@ -309,6 +309,7 @@ STRIPE_MOCK_MODE = env_bool('STRIPE_MOCK_MODE', False) if DEBUG else False
 # Email receipts
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'receipts@myvalidcv.local')
+ENTERPRISE_FROM_EMAIL = os.environ.get('ENTERPRISE_FROM_EMAIL', 'support@myvalidcv.com')
 EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')

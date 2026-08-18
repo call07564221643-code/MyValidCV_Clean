@@ -2,7 +2,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Count, Q, Sum
 from django.utils import timezone
@@ -18,6 +18,37 @@ def owner_required(user):
     return user.is_authenticated and user.is_superuser
 
 
+def enterprise_dashboard(request, user_profile, entitlements):
+    candidates = EnterpriseCandidateResult.objects.filter(batch__user=request.user)
+    batches = EnterpriseBatch.objects.filter(user=request.user).select_related("job_role").annotate(
+        candidate_count=Count("candidate_results"),
+        qualified_count=Count("candidate_results", filter=Q(candidate_results__score__gte=55)),
+        mandatory_pass_count=Count("candidate_results", filter=Q(candidate_results__mandatory_pass=True)),
+        shortlisted_count=Count("candidate_results", filter=Q(candidate_results__review_status="shortlisted")),
+        pending_count=Count("candidate_results", filter=Q(candidate_results__review_status="pending")),
+    )
+    total = candidates.count()
+    qualified = candidates.filter(score__gte=55).count()
+    mandatory_pass = candidates.filter(mandatory_pass=True).count()
+    shortlisted = candidates.filter(review_status="shortlisted").count()
+    awaiting_email = candidates.exclude(review_status="pending").filter(email_sent_at__isnull=True).count()
+    month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    usage_count = candidates.filter(created_at__gte=month_start).count()
+    limit = entitlements.bulk_limit
+    return render(request, "dashboard/enterprise_home.html", {
+        "batches": batches[:20],
+        "summary": {
+            "jobs": batches.count(), "applicants": total, "qualified": qualified,
+            "below_threshold": total - qualified, "mandatory_pass": mandatory_pass,
+            "mandatory_failed": total - mandatory_pass, "shortlisted": shortlisted,
+            "awaiting_email": awaiting_email,
+        },
+        "usage_count": usage_count, "limit": limit,
+        "usage_percent": min(100, int((usage_count / limit) * 100)) if limit else 0,
+        "remaining_usage": max(0, limit - usage_count), "user_profile": user_profile,
+    })
+
+
 @login_required(login_url='login')
 def dashboard(request):
     """Compose the authorised dashboard from records owned by the login user.
@@ -27,15 +58,21 @@ def dashboard(request):
     batch queries are filtered by ``request.user`` to prevent cross-account
     disclosure. Website-owner controls live separately at ``/owner/``.
     """
+    if request.user.is_superuser:
+        return redirect("owner_console")
+
     user_profile, _created = UserProfile.objects.get_or_create(user=request.user)
     user_profile.reset_daily_usage_if_needed()
+    entitlements = get_entitlements(request.user)
+    if entitlements.code == "enterprise":
+        return enterprise_dashboard(request, user_profile, entitlements)
+
     recent_results = list(ATSResult.objects.filter(user=request.user).select_related('cv')[:5])
     uploaded_cvs = list(CV.objects.filter(user=request.user)[:5])
     saved_jobs = JobRole.objects.filter(user=request.user).annotate(result_count=Count('results'))[:5]
     reminders = ApplicationReminder.objects.filter(user=request.user, is_sent=False).select_related('job_role')[:5]
     generated_cvs = GeneratedCV.objects.filter(user=request.user).select_related('ats_result')[:5]
     enterprise_batches = EnterpriseBatch.objects.filter(user=request.user).select_related('job_role').annotate(candidate_count=Count('candidate_results'))[:5]
-    entitlements = get_entitlements(request.user)
     active_subscription = entitlements.subscription
     effective_plan = entitlements.code
 
