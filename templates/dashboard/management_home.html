@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Management Workspace - MyValidCV{% endblock %}
+{% block content %}
+<section class="container py-5">
+    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
+        <div>
+            <span class="text-uppercase small fw-bold text-primary">Permission-aware operations</span>
+            <h1 class="display-6 fw-bold mb-2">Management Workspace</h1>
+            <p class="text-body-secondary mb-0">Only the operational areas assigned to your account are shown.</p>
+        </div>
+        <a href="{% url 'admin:index' %}" class="btn btn-outline-primary">Open management tools</a>
+    </div>
+    <div class="row g-4">
+        {% for card in management_cards %}
+        <div class="col-md-6 col-xl-4">
+            <article class="card border-0 shadow-sm h-100"><div class="card-body p-4 d-flex flex-column">
+                <span class="text-uppercase small fw-bold text-body-secondary">{{ card.title }}</span>
+                <strong class="display-6 text-primary my-2">{{ card.value }}</strong>
+                <p class="text-body-secondary">{{ card.text }}</p>
+                <a href="{% url card.url %}" class="btn btn-primary mt-auto">Open {{ card.title|lower }}</a>
+            </div></article>
+        </div>
+        {% empty %}<p>No management areas are assigned to this account.</p>{% endfor %}
+    </div>
+</section>
+{% endblock %}

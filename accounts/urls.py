@@ -37,4 +37,5 @@ urlpatterns = [
     path('social/login/<str:provider>/', views.social_login_start, name='social_login_start'),
     path('logout/', views.logout_view, name='logout'),
     path('settings/', views.settings_view, name='account_settings'),
+    path('redeem/', views.redeem_voucher, name='redeem_voucher'),
 ]

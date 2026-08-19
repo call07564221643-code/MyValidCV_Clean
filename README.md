@@ -130,6 +130,14 @@ GOOGLE_OAUTH_CLIENT_ID
 GOOGLE_OAUTH_CLIENT_SECRET
 LINKEDIN_OAUTH_CLIENT_ID
 LINKEDIN_OAUTH_CLIENT_SECRET
+GOOGLE_ANALYTICS_ID
+GOOGLE_SITE_VERIFICATION
+META_APP_ID
+META_APP_SECRET
+META_PIXEL_ID
+TIKTOK_CLIENT_KEY
+TIKTOK_CLIENT_SECRET
+TIKTOK_PIXEL_ID
 EMAIL_BACKEND
 EMAIL_HOST
 EMAIL_HOST_USER
@@ -167,6 +175,15 @@ catalogue. Configure Heroku Scheduler to run:
 python manage.py purge_expired_cvs
 python manage.py send_application_reminders
 ```
+
+The release process also seeds eight least-privilege management roles and
+non-secret setup records for Google, LinkedIn, Analytics, Search Console, Meta
+and TikTok. Assign roles through Owner Console -> Management roles. Managers
+then use `/dashboard/management/`; they never inherit Owner Console access.
+
+Partner access codes are issued from Partners and growth -> Access vouchers.
+Customers redeem them at `/redeem/`. Referral links use `?ref=<code>` with
+optional UTM parameters; attribution is persisted only after analytics consent.
 
 Run retention daily and reminders at least daily. CV file bytes are retained in
 PostgreSQL so Heroku dyno restarts do not lose them; purging the CV row removes

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Confirm Owner Access - MyValidCV{% endblock %}
+{% block content %}
+<section class="container py-5"><div class="row justify-content-center"><div class="col-md-7 col-lg-5">
+    <div class="card border-0 shadow-sm"><div class="card-body p-4">
+        <span class="text-uppercase small fw-bold text-primary">Protected governance</span>
+        <h1 class="h3 mt-2">Confirm your owner password</h1>
+        <p class="text-body-secondary">Sensitive role, partner, consent and integration settings remain unlocked for 15 minutes.</p>
+        {% if error %}<div class="alert alert-danger">The password was not accepted.</div>{% endif %}
+        <form method="post">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+            <label class="form-label" for="owner-password">Owner password</label>
+            <input class="form-control mb-3" id="owner-password" name="password" type="password" autocomplete="current-password" required autofocus>
+            <button class="btn btn-primary w-100" type="submit">Unlock governance settings</button>
+        </form>
+    </div></div>
+</div></div></section>
+{% endblock %}

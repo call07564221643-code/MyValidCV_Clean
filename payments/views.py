@@ -442,6 +442,13 @@ def activate_paid_transaction(
     if transaction.discount_code and not was_paid:
         transaction.discount_code.redemptions += 1
         transaction.discount_code.save(update_fields=["redemptions"])
+    if not was_paid:
+        try:
+            from growth.services import record_paid_referral_conversion
+            with db_transaction.atomic():
+                record_paid_referral_conversion(transaction)
+        except Exception:
+            logger.exception("Referral conversion recording failed for transaction %s", transaction.checkout_reference)
     return transaction
 
 

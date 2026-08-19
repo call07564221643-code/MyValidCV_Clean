@@ -5,11 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MyValidCV - AI Career Intelligence{% endblock %}</title>
     <meta name="description" content="{% block meta_description %}Compare your CV with a job description, check ATS compatibility, and improve your application with MyValidCV.{% endblock %}">
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content="{{ seo_robots }}">
+    <link rel="canonical" href="{{ canonical_url }}">
+    {% if google_site_verification %}<meta name="google-site-verification" content="{{ google_site_verification }}">{% endif %}
     <meta property="og:site_name" content="MyValidCV">
     <meta property="og:title" content="{% block og_title %}MyValidCV - AI CV and ATS Checker{% endblock %}">
     <meta property="og:description" content="{% block og_description %}Validate your CV against a job role and get clear, practical application feedback.{% endblock %}">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ canonical_url }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"MyValidCV","applicationCategory":"BusinessApplication","operatingSystem":"Web","url":"https://www.myvalidcv.com/"}</script>
+    {% if google_analytics_id and analytics_consent == 'granted' %}
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ google_analytics_id|urlencode }}"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ google_analytics_id|escapejs }}');</script>
+    {% endif %}
     <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
 
@@ -460,10 +469,15 @@
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'owner_feedback' %}active{% endif %}" href="{% url 'owner_feedback' %}">Feedback</a>
                             </li>
+                        {% elif user.is_staff %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'management_dashboard' %}active{% endif %}" href="{% url 'management_dashboard' %}">Management</a>
+                            </li>
                         {% else %}
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Reports</a>
                             </li>
+                            {% if has_partner_workspace %}<li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'partner_dashboard' %}active{% endif %}" href="{% url 'partner_dashboard' %}">Partner</a></li>{% endif %}
                         {% endif %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'account_settings' %}active{% endif %}" href="{% url 'account_settings' %}">Account</a>
@@ -560,5 +574,13 @@
     <script src="{% static 'js/main.js' %}" defer></script>
 
     {% block extra_js %}{% endblock %}
+    {% if not analytics_consent %}
+    <aside class="position-fixed bottom-0 start-0 end-0 p-3" style="z-index:1080" aria-label="Analytics preference">
+        <div class="container"><div class="card border-0 shadow-lg"><div class="card-body d-flex gap-3 align-items-center justify-content-between flex-wrap">
+            <p class="mb-0 small">Choose whether MyValidCV may use privacy-conscious analytics to improve the service. Essential account functions do not depend on this choice.</p>
+            <div class="d-flex gap-2"><form method="post" action="{% url 'analytics_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="declined"><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-sm btn-outline-secondary" type="submit">Decline</button></form><form method="post" action="{% url 'analytics_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="granted"><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-sm btn-primary" type="submit">Allow analytics</button></form></div>
+        </div></div></div>
+    </aside>
+    {% endif %}
 </body>
 </html>

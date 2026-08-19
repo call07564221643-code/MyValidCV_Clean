@@ -85,7 +85,9 @@ def register(request):
 def login_view(request):
     """Authorise local credentials and establish Django's session cookie."""
     if request.user.is_authenticated:
-        return redirect('owner_console' if request.user.is_superuser else 'dashboard')
+        if request.user.is_superuser:
+            return redirect('owner_console')
+        return redirect('management_dashboard' if request.user.is_staff else 'dashboard')
     redirect_to = safe_next_url(request)
     if request.method == 'POST':
         form = CustomAuthenticationForm(request, data=request.POST)
@@ -98,6 +100,8 @@ def login_view(request):
                 messages.success(request, f'Welcome back, {user.get_short_name() or user.username}!')
                 if user.is_superuser and not (request.POST.get('next') or request.GET.get('next')):
                     redirect_to = 'owner_console'
+                elif user.is_staff and not (request.POST.get('next') or request.GET.get('next')):
+                    redirect_to = 'management_dashboard'
                 return redirect(redirect_to)
     else:
         form = CustomAuthenticationForm()
@@ -171,3 +175,27 @@ def settings_view(request):
         'form': form,
         'profile': getattr(request.user, 'profile', None),
     })
+
+
+@login_required(login_url='login')
+@require_http_methods(['GET', 'POST'])
+def redeem_voucher(request):
+    from governance.models import AuditEvent
+    from growth.services import VoucherError, redeem_access_voucher
+
+    if request.method == 'POST':
+        code = request.POST.get('code', '').strip()
+        try:
+            subscription = redeem_access_voucher(code=code, user=request.user)
+        except VoucherError as exc:
+            messages.error(request, str(exc))
+        else:
+            AuditEvent.objects.create(
+                actor=request.user, action='voucher.redeemed',
+                target_type='subscriptions.CustomerSubscription',
+                target_id=str(subscription.id),
+                summary=f'Partner access activated for {request.user}.',
+            )
+            messages.success(request, f'{subscription.plan.name} access activated.')
+            return redirect('dashboard')
+    return render(request, 'accounts/redeem_voucher.html')

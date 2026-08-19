@@ -58,6 +58,20 @@
     "LINKEDIN_OAUTH_CLIENT_SECRET": {
       "required": false
     },
+    "GOOGLE_ANALYTICS_ID": {
+      "description": "Optional GA4 measurement ID; tracking loads only after consent.",
+      "required": false
+    },
+    "GOOGLE_SITE_VERIFICATION": {
+      "description": "Optional Google Search Console verification token.",
+      "required": false
+    },
+    "META_APP_ID": {"required": false},
+    "META_APP_SECRET": {"required": false},
+    "META_PIXEL_ID": {"required": false},
+    "TIKTOK_CLIENT_KEY": {"required": false},
+    "TIKTOK_CLIENT_SECRET": {"required": false},
+    "TIKTOK_PIXEL_ID": {"required": false},
     "EMAIL_BACKEND": {
       "description": "Use an SMTP/transactional backend in production.",
       "value": "django.core.mail.backends.smtp.EmailBackend"

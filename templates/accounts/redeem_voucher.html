@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Redeem Access - MyValidCV{% endblock %}
+{% block content %}
+<section class="container py-5"><div class="row justify-content-center"><div class="col-md-7 col-lg-5">
+    <div class="card border-0 shadow-sm"><div class="card-body p-4">
+        <span class="text-uppercase small fw-bold text-primary">Sponsored or partner access</span>
+        <h1 class="h3 mt-2">Redeem an access code</h1>
+        <p class="text-body-secondary">Enter the single-use or bulk programme code supplied by your university, employer or partner.</p>
+        <form method="post">{% csrf_token %}
+            <label class="form-label" for="voucher-code">Access code</label>
+            <input class="form-control mb-3 text-uppercase" id="voucher-code" name="code" required autocomplete="off">
+            <button class="btn btn-primary w-100" type="submit">Activate access</button>
+        </form>
+    </div></div>
+</div></div></section>
+{% endblock %}

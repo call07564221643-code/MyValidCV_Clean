@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Partner Workspace - MyValidCV{% endblock %}
+{% block content %}
+<section class="container py-5">
+    <span class="text-uppercase small fw-bold text-primary">Institutional access</span>
+    <h1 class="display-6 fw-bold mt-2">Partner Workspace</h1>
+    <p class="text-body-secondary">Usage and commercial reporting is restricted to organisations linked to your account.</p>
+    {% for item in organisations %}
+    <article class="card border-0 shadow-sm mb-4"><div class="card-body p-4">
+        <div class="d-flex justify-content-between gap-3 flex-wrap"><div><h2 class="h4 mb-1">{{ item.organisation.name }}</h2><span class="badge bg-primary">{{ item.membership.get_role_display }}</span></div><span class="text-body-secondary">{{ item.organisation.get_organisation_type_display }}</span></div>
+        <div class="row g-3 my-2"><div class="col-6 col-md-3"><strong class="d-block fs-3">{{ item.purchases|length }}</strong><small>Bulk purchases</small></div><div class="col-6 col-md-3"><strong class="d-block fs-3">{{ item.voucher_count }}</strong><small>Voucher campaigns</small></div><div class="col-6 col-md-3"><strong class="d-block fs-3">{{ item.redemptions }}</strong><small>Redemptions</small></div><div class="col-6 col-md-3"><strong class="d-block fs-3">{{ item.attribution_count }}</strong><small>Attributed users</small></div></div>
+        {% if item.active_vouchers %}<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Access code</th><th>Plan</th><th>Used</th><th>Valid until</th></tr></thead><tbody>{% for voucher in item.active_vouchers %}<tr><td><strong>{{ voucher.code }}</strong></td><td>{{ voucher.plan.name }}</td><td>{{ voucher.redemptions }} / {{ voucher.max_redemptions }}</td><td>{{ voucher.valid_until|date:"d M Y"|default:"No fixed expiry" }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+    </div></article>
+    {% empty %}<div class="alert alert-info">No active partner organisation is linked to your account.</div>{% endfor %}
+</section>
+{% endblock %}

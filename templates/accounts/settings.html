@@ -32,6 +32,15 @@
                         {% endfor %}
                         <button class="btn btn-primary" type="submit">Save account</button>
                     </form>
+                    <div class="border-top mt-4 pt-4 d-flex gap-2 flex-wrap">
+                        <a class="btn btn-outline-primary btn-sm" href="{% url 'redeem_voucher' %}">Redeem partner access</a>
+                        <a class="btn btn-outline-secondary btn-sm" href="{% url 'socialaccount_connections' %}">Manage connected social accounts</a>
+                    </div>
+                    <div class="border-top mt-4 pt-4">
+                        <h2 class="h6">Analytics preference</h2>
+                        <p class="small text-body-secondary">Current choice: {{ analytics_consent|default:"not selected"|capfirst }}. You can change or withdraw it at any time.</p>
+                        <div class="d-flex gap-2"><form method="post" action="{% url 'analytics_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="granted"><input type="hidden" name="next" value="{% url 'account_settings' %}"><button class="btn btn-primary btn-sm" type="submit">Allow analytics</button></form><form method="post" action="{% url 'analytics_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="declined"><input type="hidden" name="next" value="{% url 'account_settings' %}"><button class="btn btn-outline-secondary btn-sm" type="submit">Withdraw analytics consent</button></form></div>
+                    </div>
                 </div>
             </div>
         </div>

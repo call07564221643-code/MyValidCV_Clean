@@ -258,3 +258,29 @@ provider sandbox tests remain necessary.
 - Do not trust template visibility as authorisation.
 - Do not merge scoring implementations again: `ats.scoring` is authoritative.
 - Keep paid access derived from active subscription records and entitlements.
+
+## Governance and growth extension (August 2026)
+
+Platform ownership remains superuser-only. Operational managers use individual
+staff accounts and one or more seeded Django permission groups through the
+separate Management Workspace. The `governance` app owns organisations,
+memberships, auditable management assignments and append-only security events.
+Owner access to governance/growth administration requires password step-up and
+expires after 15 minutes.
+
+The `growth` app owns partner pipeline records, bulk purchases, access vouchers,
+individual voucher redemptions, referrals, attribution, commissions, consent,
+external-provider status, marketing campaigns, approvals and growth events.
+It never owns CV content or candidate hiring decisions.
+
+Key transaction boundaries:
+
+```text
+partner bulk purchase -> locked voucher redemption -> CustomerSubscription
+consented referral -> verified PaymentTransaction -> one commission entry
+campaign draft -> review -> approval -> permission-controlled publication
+```
+
+Provider records contain non-secret setup guidance only. OAuth, advertising and
+analytics secrets remain environment configuration. SumUp is intentionally not
+part of this extension and requires separate approval.

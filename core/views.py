@@ -11,8 +11,11 @@ import urllib.request
 
 from django.conf import settings
 from django.db import DatabaseError
-from django.http import JsonResponse
-from django.shortcuts import render
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from accounts.models import UserProfile
@@ -23,6 +26,50 @@ from subscriptions.services import get_entitlements
 
 
 logger = logging.getLogger(__name__)
+
+
+def robots_txt(request):
+    sitemap = request.build_absolute_uri(reverse("sitemap_xml"))
+    body = "\n".join([
+        "User-agent: *", "Allow: /", "Disallow: /admin/", "Disallow: /owner/",
+        "Disallow: /dashboard/", "Disallow: /ats/", "Disallow: /settings/",
+        f"Sitemap: {sitemap}", "",
+    ])
+    return HttpResponse(body, content_type="text/plain")
+
+
+def sitemap_xml(request):
+    urls = [request.build_absolute_uri(reverse(name)) for name in ("home", "pricing")]
+    body = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    body += "".join(f"  <url><loc>{url}</loc></url>\n" for url in urls)
+    body += "</urlset>"
+    return HttpResponse(body, content_type="application/xml")
+
+
+@require_POST
+def analytics_consent(request):
+    choice = "granted" if request.POST.get("choice") == "granted" else "declined"
+    next_url = request.POST.get("next") or reverse("home")
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        next_url = reverse("home")
+    if request.user.is_authenticated:
+        from growth.models import ConsentRecord
+        ConsentRecord.objects.filter(
+            user=request.user, purpose="analytics", is_granted=True, withdrawn_at__isnull=True,
+        ).update(is_granted=False, withdrawn_at=timezone.now())
+        ConsentRecord.objects.create(
+            user=request.user, purpose="analytics", provider="google_analytics",
+            scopes=["site_usage"] if choice == "granted" else [],
+            policy_version="analytics-v1", is_granted=choice == "granted",
+            withdrawn_at=None if choice == "granted" else timezone.now(),
+            evidence={"source": "privacy_banner"},
+        )
+    response = redirect(next_url)
+    response.set_cookie(
+        "mvcv_analytics_consent", choice, max_age=365 * 24 * 60 * 60,
+        secure=request.is_secure(), httponly=True, samesite="Lax",
+    )
+    return response
 
 
 def home(request):

@@ -120,6 +120,8 @@ INSTALLED_APPS = [
     'subscriptions',
     'payments',
     'analytics',
+    'governance',
+    'growth',
 ]
 
 MIDDLEWARE = [
@@ -130,6 +132,8 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'governance.middleware.OwnerGovernanceStepUpMiddleware',
+    'growth.middleware.ReferralAttributionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -147,6 +151,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.platform_integrations',
             ],
         },
     },
@@ -166,11 +171,20 @@ ACCOUNT_EMAIL_VERIFICATION = 'optional'
 ACCOUNT_UNIQUE_EMAIL = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_LOGIN_ON_GET = False
+SOCIALACCOUNT_ADAPTER = 'accounts.social_adapter.MyValidCVSocialAccountAdapter'
 
 GOOGLE_OAUTH_CLIENT_ID = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', '')
 GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET', '')
 LINKEDIN_OAUTH_CLIENT_ID = os.environ.get('LINKEDIN_OAUTH_CLIENT_ID', '')
 LINKEDIN_OAUTH_CLIENT_SECRET = os.environ.get('LINKEDIN_OAUTH_CLIENT_SECRET', '')
+GOOGLE_ANALYTICS_ID = os.environ.get('GOOGLE_ANALYTICS_ID', '')
+GOOGLE_SITE_VERIFICATION = os.environ.get('GOOGLE_SITE_VERIFICATION', '')
+META_APP_ID = os.environ.get('META_APP_ID', '')
+META_APP_SECRET = os.environ.get('META_APP_SECRET', '')
+META_PIXEL_ID = os.environ.get('META_PIXEL_ID', '')
+TIKTOK_CLIENT_KEY = os.environ.get('TIKTOK_CLIENT_KEY', '')
+TIKTOK_CLIENT_SECRET = os.environ.get('TIKTOK_CLIENT_SECRET', '')
+TIKTOK_PIXEL_ID = os.environ.get('TIKTOK_PIXEL_ID', '')
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {

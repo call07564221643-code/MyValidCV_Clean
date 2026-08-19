@@ -3,19 +3,89 @@ from decimal import Decimal
 
 from django.contrib.auth.models import User
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Count, Q, Sum
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_http_methods
 from accounts.models import UserProfile
 from ats.models import ApplicationReminder, ATSResult, CV, EnterpriseBatch, EnterpriseCandidateResult, GeneratedCV, JobRole
 from payments.models import Invoice, PaymentTransaction, Refund
 from subscriptions.models import CustomerSubscription, DiscountCode
 from subscriptions.services import get_entitlements
 from core.models import ExperienceFeedback
+from governance.models import AuditEvent, ManagementAssignment, Organisation
+from growth.models import (
+    BulkPurchase, CommissionEntry, ConsentRecord, MarketingCampaign,
+    PartnerProfile, ProviderConnection, ReferralPartner,
+)
 
 
 def owner_required(user):
     return user.is_authenticated and user.is_superuser
+
+
+@login_required(login_url="login")
+@require_http_methods(["GET", "POST"])
+def owner_governance_unlock(request):
+    if not request.user.is_superuser:
+        return render(request, "dashboard/owner_forbidden.html", status=403)
+    next_url = request.POST.get("next") or request.GET.get("next") or reverse("owner_console")
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        next_url = reverse("owner_console")
+    if request.method == "POST":
+        if request.user.check_password(request.POST.get("password", "")):
+            request.session["owner_governance_verified_at"] = timezone.now().timestamp()
+            AuditEvent.objects.create(
+                actor=request.user, action="owner.governance_unlocked",
+                summary="Owner completed password re-verification for governance access.",
+            )
+            return redirect(next_url)
+        AuditEvent.objects.create(
+            actor=request.user, action="owner.governance_unlock_failed",
+            summary="Owner password re-verification failed.",
+        )
+        return render(request, "dashboard/owner_governance_unlock.html", {"next": next_url, "error": True}, status=403)
+    return render(request, "dashboard/owner_governance_unlock.html", {"next": next_url})
+
+
+MANAGEMENT_PERMISSIONS = {
+    "partnerships": "growth.view_partnerprofile",
+    "bulk_access": "growth.view_bulkpurchase",
+    "marketing": "growth.view_marketingcampaign",
+    "approvals": "growth.approve_campaign",
+    "finance": "growth.view_commissionentry",
+    "privacy": "growth.view_consentrecord",
+    "integrations": "growth.view_providerconnection",
+    "analytics": "growth.view_analyticsevent",
+}
+
+
+@login_required(login_url="login")
+def management_dashboard(request):
+    """Permission-aware operational workspace; never grants owner governance."""
+    if request.user.is_superuser:
+        return redirect("owner_console")
+    if not request.user.is_staff or not any(request.user.has_perm(code) for code in MANAGEMENT_PERMISSIONS.values()):
+        return render(request, "dashboard/owner_forbidden.html", status=403)
+
+    definitions = [
+        ("partnerships", "Partners", PartnerProfile.objects.count(), "Manage the partnership pipeline and assigned organisations.", "admin:growth_partnerprofile_changelist"),
+        ("bulk_access", "Bulk access", BulkPurchase.objects.count(), "Manage institutional purchases, allocations and vouchers.", "admin:growth_bulkpurchase_changelist"),
+        ("marketing", "Campaigns", MarketingCampaign.objects.count(), "Prepare channel-specific campaigns for review.", "admin:growth_marketingcampaign_changelist"),
+        ("approvals", "Campaign approvals", MarketingCampaign.objects.filter(status="review").count(), "Review campaigns before publishing or expenditure.", "admin:growth_campaignapproval_changelist"),
+        ("finance", "Partner commissions", CommissionEntry.objects.filter(status__in=["pending", "approved", "payable"]).count(), "Review commission liabilities and payment status.", "admin:growth_commissionentry_changelist"),
+        ("privacy", "Consent records", ConsentRecord.objects.count(), "Review consent evidence, scope and withdrawal status.", "admin:growth_consentrecord_changelist"),
+        ("integrations", "Provider connections", ProviderConnection.objects.count(), "Review non-secret provider connection status.", "admin:growth_providerconnection_changelist"),
+        ("analytics", "Growth analytics", ReferralPartner.objects.filter(is_active=True).count(), "Review referral, campaign and conversion data.", "admin:growth_analyticsevent_changelist"),
+    ]
+    cards = [
+        {"title": title, "value": value, "text": text, "url": url}
+        for key, title, value, text, url in definitions
+        if request.user.has_perm(MANAGEMENT_PERMISSIONS[key])
+    ]
+    return render(request, "dashboard/management_home.html", {"management_cards": cards})
 
 
 def enterprise_dashboard(request, user_profile, entitlements):
@@ -60,6 +130,8 @@ def dashboard(request):
     """
     if request.user.is_superuser:
         return redirect("owner_console")
+    if request.user.is_staff:
+        return redirect("management_dashboard")
 
     user_profile, _created = UserProfile.objects.get_or_create(user=request.user)
     user_profile.reset_daily_usage_if_needed()
@@ -189,6 +261,42 @@ def owner_console(request):
     payment_success_rate = int((paid_count / payment_count) * 100) if payment_count else 0
 
     management_cards = [
+        {
+            "title": "Management roles",
+            "value": ManagementAssignment.objects.filter(is_active=True).count(),
+            "text": "Assign specialist roles without granting platform-owner access.",
+            "primary_label": "Manage roles",
+            "primary_url": "admin:governance_managementassignment_changelist",
+            "secondary_label": "Role groups",
+            "secondary_url": "admin:auth_group_changelist",
+        },
+        {
+            "title": "Organisations",
+            "value": Organisation.objects.count(),
+            "text": "Govern enterprise customers, universities, agencies and institutional partners.",
+            "primary_label": "Manage organisations",
+            "primary_url": "admin:governance_organisation_changelist",
+            "secondary_label": "Memberships",
+            "secondary_url": "admin:governance_organisationmembership_changelist",
+        },
+        {
+            "title": "Partners and growth",
+            "value": PartnerProfile.objects.exclude(stage="closed").count(),
+            "text": "Oversee partners, bulk access, referrals, vouchers, commissions and campaigns.",
+            "primary_label": "Manage partners",
+            "primary_url": "admin:growth_partnerprofile_changelist",
+            "secondary_label": "Campaigns",
+            "secondary_url": "admin:growth_marketingcampaign_changelist",
+        },
+        {
+            "title": "Governance audit",
+            "value": AuditEvent.objects.count(),
+            "text": "Review security-sensitive management and permission activity.",
+            "primary_label": "Open audit",
+            "primary_url": "admin:governance_auditevent_changelist",
+            "secondary_label": "Provider status",
+            "secondary_url": "admin:growth_providerconnection_changelist",
+        },
         {
             "title": "Users",
             "value": users_total,
