@@ -231,12 +231,12 @@ class ExperienceFeedbackTests(TestCase):
     def test_owner_feedback_report_is_superuser_only(self):
         customer = User.objects.create_user("customer", "customer@example.com", "password")
         self.client.force_login(customer)
-        denied = self.client.get(reverse("owner_feedback"))
+        denied = self.client.get(reverse("owner_feedback"), follow=True)
         self.assertEqual(denied.status_code, 403)
 
         owner = User.objects.create_superuser("site-owner", "site-owner@example.com", "password")
         self.client.force_login(owner)
-        allowed = self.client.get(reverse("owner_feedback"))
+        allowed = self.client.get(reverse("owner_feedback"), follow=True)
         self.assertEqual(allowed.status_code, 200)
         self.assertContains(allowed, "Customer experience")
 

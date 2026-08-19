@@ -39,6 +39,13 @@ ROLE_PERMISSIONS = {
         "view_marketingcampaign", "view_bulkpurchase", "view_voucherredemption",
         "view_commissionentry",
     ],
+    "Recruitment Insights Manager": [
+        "view_atsresult", "view_enterprisebatch", "view_enterprisecandidateresult",
+        "view_jobfamily", "view_roletemplate", "view_skill", "view_qualification",
+    ],
+    "Customer Experience Manager": [
+        "view_experiencefeedback",
+    ],
 }
 
 

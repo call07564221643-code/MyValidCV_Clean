@@ -25,6 +25,16 @@ class GovernanceTests(TestCase):
         assignment.save()
         self.manager = User.objects.get(pk=self.manager.pk)
         self.assertFalse(self.manager.has_perm("growth.view_marketingcampaign"))
+        self.assertFalse(self.manager.is_staff)
+
+    def test_revocation_preserves_independently_privileged_staff(self):
+        role = Group.objects.get(name="Marketing Manager")
+        assignment = ManagementAssignment.objects.create(user=self.manager, role=role, assigned_by=self.owner)
+        self.manager.user_permissions.add(role.permissions.first())
+        assignment.is_active = False
+        assignment.save()
+        self.manager.refresh_from_db()
+        self.assertTrue(self.manager.is_staff)
 
     def test_one_manager_can_hold_multiple_roles(self):
         for name in ("Marketing Manager", "Growth Analyst"):

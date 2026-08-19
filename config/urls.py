@@ -1,6 +1,7 @@
 """Main URL configuration for MyValidCV."""
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 from dashboard import views as dashboard_views
@@ -18,8 +19,10 @@ urlpatterns = [
     path('', include('payments.urls')),
     path('owner/', dashboard_views.owner_console, name='owner_console'),
     path('owner/governance/', dashboard_views.owner_governance_unlock, name='owner_governance_unlock'),
-    path('owner/reports/', dashboard_views.owner_reports, name='owner_reports'),
-    path('owner/feedback/', dashboard_views.owner_feedback, name='owner_feedback'),
+    path('management/reports/', dashboard_views.management_reports, name='management_reports'),
+    path('management/feedback/', dashboard_views.management_feedback, name='management_feedback'),
+    path('owner/reports/', RedirectView.as_view(pattern_name='management_reports', permanent=False), name='owner_reports'),
+    path('owner/feedback/', RedirectView.as_view(pattern_name='management_feedback', permanent=False), name='owner_feedback'),
     path('dashboard/', include('dashboard.urls')),
     path('ats/', include('ats.urls')),
     path('accounts/', include('allauth.urls')),

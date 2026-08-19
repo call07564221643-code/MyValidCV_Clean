@@ -29,6 +29,11 @@ class UserProfile(models.Model):
     company_name = models.CharField(max_length=180, blank=True)
     position_title = models.CharField(max_length=180, blank=True)
     email_signature_mode = models.CharField(max_length=20, choices=SIGNATURE_CHOICES, default='personal')
+    is_test_data = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text='Exclude this account and its related records from production KPIs.',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

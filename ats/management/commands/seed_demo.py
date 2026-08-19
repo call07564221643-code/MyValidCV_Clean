@@ -107,8 +107,9 @@ class Command(BaseCommand):
             profile, created = UserProfile.objects.get_or_create(user=user)
             counters["profiles"] += int(created)
             profile.plan = plan_code
+            profile.is_test_data = True
             profile.analyses_this_month = 1 if plan_code == "free" else min(index % 5 + 1, profile.get_analysis_limit())
-            profile.save(update_fields=["plan", "analyses_this_month"])
+            profile.save(update_fields=["plan", "is_test_data", "analyses_this_month"])
 
             storage, created = CVStorage.objects.get_or_create(
                 user=user,

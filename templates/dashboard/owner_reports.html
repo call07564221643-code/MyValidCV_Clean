@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Owner Reports - MyValidCV{% endblock %}
+{% block title %}Recruitment Reports - MyValidCV{% endblock %}
 
 {% block content %}
 <section class="py-5 bg-body-tertiary min-vh-100">
     <div class="container">
         <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
             <div>
-                <span class="badge text-bg-primary mb-2">Owner only</span>
+                <span class="badge text-bg-primary mb-2">Recruitment insights</span>
                 <h1 class="display-6 fw-bold mb-2">Report explorer</h1>
-                <p class="text-body-secondary mb-0">Explore customer ATS and enterprise reports without entering the Enterprise dashboard.</p>
+                <p class="text-body-secondary mb-0">Read-only oversight of ATS and enterprise screening activity.</p>
             </div>
-            <a href="{% url 'owner_console' %}" class="btn btn-outline-primary">Back to Owner Console</a>
+            <a href="{% if request.user.is_superuser %}{% url 'owner_console' %}{% else %}{% url 'management_dashboard' %}{% endif %}" class="btn btn-outline-primary">Back to workspace</a>
         </div>
 
         <form method="get" class="card card-body shadow-sm mb-4">
@@ -19,7 +19,7 @@
             <div class="input-group">
                 <input id="report-search" name="q" value="{{ query }}" class="form-control" placeholder="Username, email, CV, job, or batch title">
                 <button class="btn btn-primary" type="submit">Search</button>
-                {% if query %}<a href="{% url 'owner_reports' %}" class="btn btn-outline-secondary">Clear</a>{% endif %}
+                {% if query %}<a href="{% url 'management_reports' %}" class="btn btn-outline-secondary">Clear</a>{% endif %}
             </div>
         </form>
 
@@ -30,7 +30,7 @@
                 <tbody>{% for result in results %}<tr>
                     <td>{{ result.user.username }}<br><small class="text-body-secondary">{{ result.user.email }}</small></td>
                     <td>{{ result.cv.title }}</td><td>{{ result.job_title }}</td><td>{{ result.score }}%</td><td>{{ result.created_at|date:"M d, Y" }}</td>
-                    <td><a href="{% url 'ats_result' result.id %}" class="btn btn-sm btn-outline-primary">Open</a></td>
+                    <td><a href="{% url 'admin:ats_atsresult_change' result.id %}" class="btn btn-sm btn-outline-primary">Review</a></td>
                 </tr>{% empty %}<tr><td colspan="6" class="text-center text-body-secondary py-4">No ATS reports found.</td></tr>{% endfor %}</tbody>
             </table></div>
         </div>
@@ -42,7 +42,7 @@
                 <tbody>{% for batch in batches %}<tr>
                     <td>{{ batch.user.username }}<br><small class="text-body-secondary">{{ batch.user.email }}</small></td>
                     <td>{{ batch.title }}</td><td>{{ batch.job_role.title }}</td><td>{{ batch.candidate_count }}</td><td>{{ batch.created_at|date:"M d, Y" }}</td>
-                    <td><a href="{% url 'enterprise_report' batch.id %}" class="btn btn-sm btn-outline-primary">Open</a></td>
+                    <td><a href="{% url 'admin:ats_enterprisebatch_change' batch.id %}" class="btn btn-sm btn-outline-primary">Review</a></td>
                 </tr>{% empty %}<tr><td colspan="6" class="text-center text-body-secondary py-4">No enterprise reports found.</td></tr>{% endfor %}</tbody>
             </table></div>
         </div>

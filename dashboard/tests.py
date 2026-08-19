@@ -33,6 +33,26 @@ class ManagementDashboardTests(TestCase):
         response = self.client.post(reverse("login"), {"username": "manager", "password": "password"})
         self.assertRedirects(response, reverse("management_dashboard"))
 
+    def test_recruitment_manager_can_open_reports_but_not_feedback(self):
+        ManagementAssignment.objects.create(
+            user=self.manager, role=Group.objects.get(name="Recruitment Insights Manager")
+        )
+        self.client.force_login(self.manager)
+        self.assertEqual(self.client.get(reverse("management_reports")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("management_feedback")).status_code, 403)
+
+    def test_customer_experience_manager_can_open_feedback_but_not_reports(self):
+        ManagementAssignment.objects.create(
+            user=self.manager, role=Group.objects.get(name="Customer Experience Manager")
+        )
+        self.client.force_login(self.manager)
+        self.assertEqual(self.client.get(reverse("management_feedback")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("management_reports")).status_code, 403)
+
+    def test_legacy_owner_urls_redirect_to_specialist_pages(self):
+        self.assertRedirects(self.client.get(reverse("owner_reports")), reverse("management_reports"), fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(reverse("owner_feedback")), reverse("management_feedback"), fetch_redirect_response=False)
+
 
 @override_settings(SECURE_SSL_REDIRECT=False, GOOGLE_ANALYTICS_ID="G-TEST123")
 class PublicGrowthFoundationTests(TestCase):

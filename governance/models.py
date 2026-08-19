@@ -39,6 +39,7 @@ class Organisation(models.Model):
     class Meta:
         ordering = ["name"]
         permissions = [("approve_organisation", "Can approve or suspend organisations")]
+        indexes = [models.Index(fields=["status", "organisation_type"], name="org_status_type_idx")]
 
     def __str__(self):
         return self.name
@@ -69,6 +70,10 @@ class OrganisationMembership(models.Model):
             models.UniqueConstraint(fields=["organisation", "user"], name="unique_org_membership")
         ]
         ordering = ["organisation", "user__username"]
+        indexes = [
+            models.Index(fields=["user", "is_active"], name="org_member_user_idx"),
+            models.Index(fields=["organisation", "is_active"], name="org_member_org_idx"),
+        ]
 
     def __str__(self):
         return f"{self.user} · {self.organisation} ({self.role})"
@@ -104,6 +109,16 @@ class ManagementAssignment(models.Model):
                 self.user.save(update_fields=["is_staff"])
         else:
             self.user.groups.remove(self.role)
+            self._reconcile_staff_status()
+
+    def _reconcile_staff_status(self):
+        """Remove assignment-derived staff access when no privileged source remains."""
+        user = type(self.user).objects.get(pk=self.user_id)
+        has_active_assignment = user.management_assignments.filter(is_active=True).exists()
+        has_other_privileges = user.groups.exists() or user.user_permissions.exists()
+        if user.is_staff and not user.is_superuser and not has_active_assignment and not has_other_privileges:
+            user.is_staff = False
+            user.save(update_fields=["is_staff"])
 
     def __str__(self):
         return f"{self.user} · {self.role}"
@@ -112,6 +127,8 @@ class ManagementAssignment(models.Model):
         user, role = self.user, self.role
         result = super().delete(*args, **kwargs)
         user.groups.remove(role)
+        self.user = user
+        self._reconcile_staff_status()
         return result
 
 

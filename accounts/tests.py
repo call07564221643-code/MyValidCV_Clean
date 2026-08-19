@@ -167,14 +167,14 @@ class CustomerNavigationTests(TestCase):
     def test_owner_has_separate_report_explorer(self):
         owner = User.objects.create_superuser('owner', 'owner@example.com', 'password')
         self.client.force_login(owner)
-        response = self.client.get(reverse('owner_reports'))
+        response = self.client.get(reverse('owner_reports'), follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Report explorer')
-        self.assertContains(response, 'Owner Reports')
+        self.assertContains(response, 'Recruitment Reports')
 
     def test_customer_cannot_access_owner_report_explorer(self):
         self.client.force_login(self.user)
-        response = self.client.get(reverse('owner_reports'))
+        response = self.client.get(reverse('owner_reports'), follow=True)
         self.assertEqual(response.status_code, 403)
 
     def test_authenticated_user_cannot_return_to_login(self):

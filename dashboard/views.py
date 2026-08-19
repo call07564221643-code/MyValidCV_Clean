@@ -1,18 +1,13 @@
-from datetime import date, timedelta
-from decimal import Decimal
-
-from django.contrib.auth.models import User
+from datetime import date
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
-from django.db.models import Avg, Count, Q, Sum
+from django.db.models import Avg, Count, Q
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_http_methods
 from accounts.models import UserProfile
 from ats.models import ApplicationReminder, ATSResult, CV, EnterpriseBatch, EnterpriseCandidateResult, GeneratedCV, JobRole
-from payments.models import Invoice, PaymentTransaction, Refund
-from subscriptions.models import CustomerSubscription, DiscountCode
 from subscriptions.services import get_entitlements
 from core.models import ExperienceFeedback
 from governance.models import AuditEvent, ManagementAssignment, Organisation
@@ -59,6 +54,8 @@ MANAGEMENT_PERMISSIONS = {
     "privacy": "growth.view_consentrecord",
     "integrations": "growth.view_providerconnection",
     "analytics": "growth.view_analyticsevent",
+    "recruitment_reports": "ats.view_atsresult",
+    "customer_experience": "core.view_experiencefeedback",
 }
 
 
@@ -79,6 +76,8 @@ def management_dashboard(request):
         ("privacy", "Consent records", ConsentRecord.objects.count(), "Review consent evidence, scope and withdrawal status.", "admin:growth_consentrecord_changelist"),
         ("integrations", "Provider connections", ProviderConnection.objects.count(), "Review non-secret provider connection status.", "admin:growth_providerconnection_changelist"),
         ("analytics", "Growth analytics", ReferralPartner.objects.filter(is_active=True).count(), "Review referral, campaign and conversion data.", "admin:growth_analyticsevent_changelist"),
+        ("recruitment_reports", "Recruitment reports", ATSResult.objects.count(), "Review ATS and enterprise screening activity without changing customer records.", "management_reports"),
+        ("customer_experience", "Customer feedback", ExperienceFeedback.objects.count(), "Review ratings, comments and experience trends.", "management_feedback"),
     ]
     cards = [
         {"title": title, "value": value, "text": text, "url": url}
@@ -281,6 +280,15 @@ def owner_console(request):
             "secondary_label": "Provider status",
             "secondary_url": "admin:growth_providerconnection_changelist",
         },
+        {
+            "title": "Platform health",
+            "value": "Live",
+            "text": "Supervise technical, data-quality, usage and financial health with test accounts excluded from KPIs.",
+            "primary_label": "Open health",
+            "primary_url": "website_health",
+            "secondary_label": "Financial assumptions",
+            "secondary_url": "admin:analytics_financialassumption_changelist",
+        },
     ]
 
     context = {
@@ -296,9 +304,9 @@ def owner_console(request):
 
 
 @login_required(login_url='login')
-def owner_reports(request):
-    """Owner-only report explorer, separate from customer Enterprise tools."""
-    if not request.user.is_superuser:
+def management_reports(request):
+    """Read-only recruitment reporting for authorised managers and owners."""
+    if not (request.user.is_superuser or request.user.has_perm("ats.view_atsresult")):
         return render(request, "dashboard/owner_forbidden.html", status=403)
 
     query = request.GET.get("q", "").strip()
@@ -324,8 +332,9 @@ def owner_reports(request):
 
 
 @login_required(login_url="login")
-def owner_feedback(request):
-    if not request.user.is_superuser:
+def management_feedback(request):
+    """Read-only experience feedback for authorised managers and owners."""
+    if not (request.user.is_superuser or request.user.has_perm("core.view_experiencefeedback")):
         return render(request, "dashboard/owner_forbidden.html", status=403)
 
     feedback = ExperienceFeedback.objects.select_related("user")

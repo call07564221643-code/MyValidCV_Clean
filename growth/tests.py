@@ -65,7 +65,7 @@ class PartnerAccessTests(TestCase):
         OrganisationMembership.objects.create(
             organisation=self.organisation, user=self.user, role="manager"
         )
-        other = Organisation.objects.create(
+        Organisation.objects.create(
             name="Other Partner", slug="other-partner", organisation_type="agency"
         )
         self.client.force_login(self.user)
