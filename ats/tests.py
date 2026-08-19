@@ -156,6 +156,18 @@ class EnterpriseWorkspaceTests(TestCase):
         audit = self.client.get(reverse("enterprise_report", args=[self.batch.id]) + "?show=all")
         self.assertContains(audit, "Below Threshold")
 
+    def test_anonymous_review_hides_candidate_identity_and_cv_link(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("enterprise_report", args=[self.batch.id]) + "?review=anonymous"
+        )
+
+        self.assertContains(response, "Anonymous first review is on")
+        self.assertContains(response, "Applicant 1")
+        self.assertNotContains(response, "Alex Candidate")
+        self.assertNotContains(response, "alex@example.com")
+        self.assertNotContains(response, "Open source CV")
+
     def test_human_review_status_generates_applicant_email_draft(self):
         self.client.force_login(self.user)
         response = self.client.post(

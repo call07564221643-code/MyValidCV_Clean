@@ -1706,7 +1706,9 @@ def enterprise_report(request, batch_id):
     below_threshold_count = all_results.filter(score__lt=55).count()
     mandatory_pass_count = all_results.filter(mandatory_pass=True).count()
     shortlisted_count = all_results.filter(review_status="shortlisted").count()
-    results = all_results if request.GET.get("show") == "all" else all_results.filter(score__gte=55)
+    show_all = request.GET.get("show") == "all"
+    anonymous_review = request.GET.get("review") == "anonymous"
+    results = all_results if show_all else all_results.filter(score__gte=55)
     top_twenty_count = math.ceil(shortlisted_count * 0.2) if shortlisted_count else 0
     top_twenty_ids = set(all_results.filter(review_status="shortlisted").order_by("rank", "-score").values_list("id", flat=True)[:top_twenty_count])
     for result in results:
@@ -1730,7 +1732,8 @@ def enterprise_report(request, batch_id):
                 "average_score": average_score,
                 "top_candidate": top_candidate,
             },
-            "show_all": request.GET.get("show") == "all",
+            "show_all": show_all,
+            "anonymous_review": anonymous_review,
             "can_manage": not request.user.is_superuser,
             "signature_ready": request.user.is_superuser or enterprise_signature_ready(request.user),
         },
