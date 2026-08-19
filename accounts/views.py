@@ -139,6 +139,16 @@ def settings_view(request):
     form = UserSettingsForm(request.POST or None, instance=request.user)
     if request.method == 'POST' and form.is_valid():
         form.save()
+        if request.user.profile.plan == 'enterprise':
+            from ats.models import EnterpriseCandidateResult
+            from ats.views import candidate_email_draft
+            drafts = EnterpriseCandidateResult.objects.filter(
+                batch__user=request.user,
+                email_sent_at__isnull=True,
+            ).exclude(review_status='pending')
+            for result in drafts:
+                result.email_subject, result.email_body = candidate_email_draft(result)
+                result.save(update_fields=['email_subject', 'email_body'])
         messages.success(request, 'Your account settings have been updated.')
         return redirect('account_settings')
     return render(request, 'accounts/settings.html', {
