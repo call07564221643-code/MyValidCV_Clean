@@ -124,6 +124,22 @@ class CustomerNavigationTests(TestCase):
         response = self.client.get(reverse('login'))
         self.assertContains(response, reverse('password_reset'))
 
+    def test_social_login_buttons_are_hidden_without_credentials(self):
+        response = self.client.get(reverse('login'))
+        self.assertNotContains(response, 'Sign in with Google')
+        self.assertNotContains(response, 'Sign in with LinkedIn')
+
+    @override_settings(
+        GOOGLE_OAUTH_CLIENT_ID='google-id',
+        GOOGLE_OAUTH_CLIENT_SECRET='google-secret',
+        LINKEDIN_OAUTH_CLIENT_ID='linkedin-id',
+        LINKEDIN_OAUTH_CLIENT_SECRET='linkedin-secret',
+    )
+    def test_social_login_buttons_appear_when_credentials_are_configured(self):
+        response = self.client.get(reverse('login'))
+        self.assertContains(response, 'Sign in with Google')
+        self.assertContains(response, 'Sign in with LinkedIn')
+
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_password_reset_sends_one_time_link(self):
         response = self.client.post(reverse('password_reset'), {

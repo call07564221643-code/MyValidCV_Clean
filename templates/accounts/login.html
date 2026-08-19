@@ -214,9 +214,10 @@
                     <p class="auth-switch"><a href="{% url 'password_reset' %}">Forgot your password?</a></p>
                 {% endblock %}
 
+                {% if google_social_login_enabled or linkedin_social_login_enabled %}
                 <div class="auth-divider"><span>or continue with</span></div>
-
                 <div class="oauth-grid">
+                    {% if google_social_login_enabled %}
                     <a class="oauth-button" href="{% url 'social_login_start' 'google' %}?next={{ next|urlencode }}">
                         <span class="oauth-logo" aria-hidden="true">
                             <svg viewBox="0 0 24 24">
@@ -228,11 +229,15 @@
                         </span>
                         {% block google_label %}Sign in with Google{% endblock %}
                     </a>
+                    {% endif %}
+                    {% if linkedin_social_login_enabled %}
                     <a class="oauth-button" href="{% url 'social_login_start' 'linkedin' %}?next={{ next|urlencode }}">
                         <span class="oauth-logo oauth-linkedin" aria-hidden="true">in</span>
                         {% block linkedin_label %}Sign in with LinkedIn{% endblock %}
                     </a>
+                    {% endif %}
                 </div>
+                {% endif %}
 
                 <p class="auth-switch">{% block auth_switch %}Don't have an account?
                     <a href="{% url 'register' %}?next={{ next|urlencode }}">Sign up</a>{% endblock %}</p>

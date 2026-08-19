@@ -35,6 +35,18 @@ def get_social_auth_providers():
     ]
 
 
+def social_login_context():
+    """Expose a provider only when both production OAuth values are present."""
+    return {
+        'google_social_login_enabled': bool(
+            settings.GOOGLE_OAUTH_CLIENT_ID and settings.GOOGLE_OAUTH_CLIENT_SECRET
+        ),
+        'linkedin_social_login_enabled': bool(
+            settings.LINKEDIN_OAUTH_CLIENT_ID and settings.LINKEDIN_OAUTH_CLIENT_SECRET
+        ),
+    }
+
+
 @require_http_methods(['GET', 'POST'])
 def register(request):
     """Stage 1 of local registration: validate, create, authenticate, redirect.
@@ -60,11 +72,13 @@ def register(request):
     else:
         form = CustomUserCreationForm()
 
-    return render(request, 'accounts/register.html', {
+    context = {
         'form': form,
         'next': redirect_to,
         'social_providers': get_social_auth_providers(),
-    })
+    }
+    context.update(social_login_context())
+    return render(request, 'accounts/register.html', context)
 
 
 @require_http_methods(['GET', 'POST'])
@@ -88,11 +102,13 @@ def login_view(request):
     else:
         form = CustomAuthenticationForm()
 
-    return render(request, 'accounts/login.html', {
+    context = {
         'form': form,
         'next': redirect_to,
         'social_providers': get_social_auth_providers(),
-    })
+    }
+    context.update(social_login_context())
+    return render(request, 'accounts/login.html', context)
 
 
 def social_login_start(request, provider):
