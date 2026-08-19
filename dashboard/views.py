@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_http_methods
 from accounts.models import UserProfile
+from analytics.models import FinancialEntry
 from ats.models import ApplicationReminder, ATSResult, CV, EnterpriseBatch, EnterpriseCandidateResult, GeneratedCV, JobRole
 from subscriptions.services import get_entitlements
 from core.models import ExperienceFeedback
@@ -73,6 +74,7 @@ def management_dashboard(request):
         ("marketing", "Campaigns", MarketingCampaign.objects.count(), "Prepare channel-specific campaigns for review.", "admin:growth_marketingcampaign_changelist"),
         ("approvals", "Campaign approvals", MarketingCampaign.objects.filter(status="review").count(), "Review campaigns before publishing or expenditure.", "admin:growth_campaignapproval_changelist"),
         ("finance", "Partner commissions", CommissionEntry.objects.filter(status__in=["pending", "approved", "payable"]).count(), "Review commission liabilities and payment status.", "admin:growth_commissionentry_changelist"),
+        ("finance", "Finance feed", FinancialEntry.objects.exclude(status="void").count(), "Record and reconcile money in and out; configure import-ready finance feeds.", "admin:analytics_financialentry_changelist"),
         ("privacy", "Consent records", ConsentRecord.objects.count(), "Review consent evidence, scope and withdrawal status.", "admin:growth_consentrecord_changelist"),
         ("integrations", "Provider connections", ProviderConnection.objects.count(), "Review non-secret provider connection status.", "admin:growth_providerconnection_changelist"),
         ("analytics", "Growth analytics", ReferralPartner.objects.filter(is_active=True).count(), "Review referral, campaign and conversion data.", "admin:growth_analyticsevent_changelist"),

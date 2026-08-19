@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import FinancialAssumption
+from .models import FinanceFeedConnection, FinancialAssumption, FinancialEntry
 
 
 @admin.register(FinancialAssumption)
@@ -45,3 +45,25 @@ class FinancialAssumptionAdmin(admin.ModelAdmin):
             "fields": ("cash_reserve", "accounts_payable", "tax_accrual_percent"),
         }),
     )
+
+
+@admin.register(FinancialEntry)
+class FinancialEntryAdmin(admin.ModelAdmin):
+    list_display = ("occurred_on", "direction", "category", "description", "amount", "currency", "source", "status")
+    list_filter = ("direction", "status", "source", "currency", "category")
+    search_fields = ("description", "external_reference", "provider", "notes")
+    date_hierarchy = "occurred_on"
+    autocomplete_fields = ("entered_by",)
+
+    def save_model(self, request, obj, form, change):
+        if not obj.entered_by_id:
+            obj.entered_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(FinanceFeedConnection)
+class FinanceFeedConnectionAdmin(admin.ModelAdmin):
+    list_display = ("name", "provider", "status", "currency", "last_synced_at", "last_sync_status")
+    list_filter = ("provider", "status", "currency")
+    search_fields = ("name", "account_reference", "last_sync_status")
+    readonly_fields = ("last_synced_at", "last_sync_status", "created_at", "updated_at")

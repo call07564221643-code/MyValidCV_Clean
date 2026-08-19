@@ -12,7 +12,7 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from accounts.models import SocialAuthProvider, UserProfile
-from analytics.models import FinancialAssumption
+from analytics.models import FinanceFeedConnection, FinancialAssumption, FinancialEntry
 from ats.models import ATSResult, CV, CVStorage, EnterpriseBatch, EnterpriseCandidateResult, GeneratedCV
 from payments.models import Invoice, PaymentTransaction, PaymentWebhookLog, Refund
 from subscriptions.models import CustomerSubscription, SubscriptionPlan
@@ -112,6 +112,9 @@ def website_health(request):
     production_refunds = Refund.objects.exclude(transaction__user__profile__is_test_data=True)
     production_invoices = Invoice.objects.exclude(user__profile__is_test_data=True)
     refunds_total = _money(production_refunds.filter(status__in=["approved", "processed"]).aggregate(total=Sum("amount"))["total"])
+    refunds_30_days = _money(production_refunds.filter(
+        status__in=["approved", "processed"], created_at__gte=last_30_days,
+    ).aggregate(total=Sum("amount"))["total"])
     open_invoice_value = _money(production_invoices.filter(status="open").aggregate(total=Sum("amount"))["total"])
     open_invoices = production_invoices.filter(status="open").count()
     paid_invoices = production_invoices.filter(status="paid").count()
@@ -142,6 +145,17 @@ def website_health(request):
     }
 
     finance_assumption = FinancialAssumption.current()
+    finance_entries_30_days = FinancialEntry.objects.filter(
+        occurred_on__gte=last_30_days.date(),
+        status__in=["recorded", "reconciled"],
+        currency=finance_assumption.currency,
+    )
+    recorded_other_income = _money(
+        finance_entries_30_days.filter(direction="income").aggregate(total=Sum("amount"))["total"]
+    )
+    recorded_expenses = _money(
+        finance_entries_30_days.filter(direction="expense").aggregate(total=Sum("amount"))["total"]
+    )
     payment_processing_cost = (
         revenue_30_days * finance_assumption.payment_percent_fee
     ) + (Decimal(str(paid_count_30_days)) * finance_assumption.payment_fixed_fee)
@@ -159,7 +173,9 @@ def website_health(request):
         {"name": "AI / ATS processing", "type": "Variable estimate", "amount": ai_processing_cost},
     ]
     supplier_expense_total = sum((item["amount"] for item in supplier_expenses), Decimal("0.00"))
-    net_revenue_30_days = revenue_30_days - refunds_total
+    gross_income_30_days = revenue_30_days + recorded_other_income
+    net_revenue_30_days = gross_income_30_days - refunds_30_days
+    recorded_profit_30_days = net_revenue_30_days - recorded_expenses
     estimated_profit_30_days = net_revenue_30_days - supplier_expense_total
     estimated_margin = _percent(float(estimated_profit_30_days), float(net_revenue_30_days)) if net_revenue_30_days > 0 else 0
     tax_accrual = estimated_profit_30_days * finance_assumption.tax_accrual_percent if estimated_profit_30_days > 0 else Decimal("0.00")
@@ -388,7 +404,13 @@ def website_health(request):
             "assumption_id": finance_assumption.id,
             "assumption_name": finance_assumption.name,
             "gross_revenue_30_days": _currency(revenue_30_days),
-            "refunds_total": _currency(refunds_total),
+            "other_income_30_days": _currency(recorded_other_income),
+            "gross_income_30_days": _currency(gross_income_30_days),
+            "refunds_total": _currency(refunds_30_days),
+            "recorded_expenses_30_days": _currency(recorded_expenses),
+            "recorded_profit_30_days": _currency(recorded_profit_30_days),
+            "entry_count_30_days": finance_entries_30_days.count(),
+            "connected_feeds": FinanceFeedConnection.objects.filter(status="connected").count(),
             "net_revenue_30_days": _currency(net_revenue_30_days),
             "supplier_expenses": [
                 {**item, "amount": _currency(item["amount"])} for item in supplier_expenses

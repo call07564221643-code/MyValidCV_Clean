@@ -25,6 +25,9 @@ ROLE_PERMISSIONS = {
     "Partner Finance Manager": [
         "view_bulkpurchase", "view_commissionentry", "change_commissionentry",
         "approve_commission", "view_paymenttransaction", "view_invoice", "view_refund",
+        "view_financialentry", "add_financialentry", "change_financialentry",
+        "view_financefeedconnection", "add_financefeedconnection", "change_financefeedconnection",
+        "sync_finance_feed", "view_financialassumption", "change_financialassumption",
     ],
     "Privacy Manager": [
         "view_consentrecord", "change_consentrecord", "view_auditevent",

@@ -1,6 +1,9 @@
 from decimal import Decimal
 
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 
 class FinancialAssumption(models.Model):
@@ -76,3 +79,92 @@ class FinancialAssumption(models.Model):
             ],
             Decimal("0.00"),
         )
+
+
+class FinancialEntry(models.Model):
+    """Auditable money-in/money-out feed entry; never stores bank credentials."""
+
+    DIRECTION_CHOICES = [("income", "Money in"), ("expense", "Money out")]
+    SOURCE_CHOICES = [
+        ("manual", "Manual entry"),
+        ("import", "CSV/accounting import"),
+        ("provider", "Connected provider"),
+        ("recurring", "Recurring schedule"),
+    ]
+    STATUS_CHOICES = [
+        ("forecast", "Forecast"),
+        ("recorded", "Recorded"),
+        ("reconciled", "Reconciled"),
+        ("void", "Void"),
+    ]
+
+    direction = models.CharField(max_length=10, choices=DIRECTION_CHOICES, db_index=True)
+    category = models.CharField(max_length=80, db_index=True)
+    description = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=3, default="GBP")
+    occurred_on = models.DateField(default=timezone.localdate, db_index=True)
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default="manual")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="recorded", db_index=True)
+    provider = models.CharField(max_length=40, blank=True)
+    external_reference = models.CharField(max_length=160, blank=True)
+    evidence_url = models.URLField(blank=True)
+    notes = models.TextField(blank=True)
+    entered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="financial_entries_created",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-occurred_on", "-created_at"]
+        indexes = [
+            models.Index(fields=["direction", "status", "-occurred_on"], name="finance_entry_period_idx"),
+        ]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(amount__gte=0), name="finance_entry_amount_gte_0"),
+            models.UniqueConstraint(
+                fields=["provider", "external_reference"],
+                condition=~models.Q(external_reference=""),
+                name="unique_finance_provider_reference",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.occurred_on} · {self.get_direction_display()} · {self.currency} {self.amount}"
+
+
+class FinanceFeedConnection(models.Model):
+    """Non-secret configuration and sync status for an external finance feed."""
+
+    PROVIDER_CHOICES = [
+        ("stripe", "Stripe"), ("sumup", "SumUp"), ("bank_csv", "Bank CSV"),
+        ("xero", "Xero"), ("quickbooks", "QuickBooks"), ("other", "Other"),
+    ]
+    STATUS_CHOICES = [("draft", "Draft"), ("ready", "Ready"), ("connected", "Connected"), ("error", "Error"), ("disabled", "Disabled")]
+
+    name = models.CharField(max_length=120)
+    provider = models.CharField(max_length=30, choices=PROVIDER_CHOICES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    currency = models.CharField(max_length=3, default="GBP")
+    account_reference = models.CharField(max_length=120, blank=True, help_text="Non-secret merchant/account label only.")
+    configuration = models.JSONField(default=dict, blank=True, help_text="Non-secret mapping options only; keep API keys in environment variables.")
+    last_synced_at = models.DateTimeField(null=True, blank=True)
+    last_sync_status = models.CharField(max_length=120, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["provider", "name"]
+        permissions = [("sync_finance_feed", "Can synchronize finance feeds")]
+
+    def __str__(self):
+        return f"{self.name} ({self.get_provider_display()})"
+
+    def clean(self):
+        forbidden = {"secret", "password", "token", "api_key", "private_key", "client_secret"}
+        supplied = {str(key).lower() for key in self.configuration}
+        if supplied & forbidden:
+            raise ValidationError({"configuration": "Store credentials in environment variables, never in this database field."})
