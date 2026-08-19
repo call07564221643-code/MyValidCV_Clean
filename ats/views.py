@@ -84,7 +84,26 @@ def candidate_email_draft(candidate):
         "mandatory_failed": "Thank you for your application. The information supplied did not demonstrate all mandatory requirements listed for this role. A reviewer has confirmed this outcome.",
         "pending": "Thank you for your application. Your application is currently being reviewed.",
     }
-    return subjects[candidate.review_status], f"Dear {candidate.candidate_name},\n\n{bodies[candidate.review_status]}\n\nKind regards"
+    user = candidate.batch.user
+    profile = user.profile
+    if profile.email_signature_mode == "system":
+        signature = "Kind regards,\n\nMyValidCV Recruitment System"
+        if profile.company_name:
+            signature += f"\nGenerated on behalf of {profile.company_name}"
+    else:
+        signer_name = user.get_full_name().strip() or user.username
+        signature_lines = ["Kind regards,", "", signer_name]
+        if profile.position_title:
+            signature_lines.append(profile.position_title)
+        if profile.company_name:
+            signature_lines.append(profile.company_name)
+        signature = "\n".join(signature_lines)
+    return subjects[candidate.review_status], f"Dear {candidate.candidate_name},\n\n{bodies[candidate.review_status]}\n\n{signature}"
+
+
+def enterprise_signature_ready(user):
+    profile = user.profile
+    return profile.email_signature_mode == "system" or bool(profile.company_name and profile.position_title)
 
 
 def get_user_profile(user):
@@ -1713,6 +1732,7 @@ def enterprise_report(request, batch_id):
             },
             "show_all": request.GET.get("show") == "all",
             "can_manage": not request.user.is_superuser,
+            "signature_ready": request.user.is_superuser or enterprise_signature_ready(request.user),
         },
     )
 
@@ -1786,6 +1806,9 @@ def enterprise_email_authorize(request, batch_id):
 def enterprise_candidate_email(request, batch_id, candidate_id):
     batch = get_object_or_404(EnterpriseBatch, id=batch_id, user=request.user)
     candidate = get_object_or_404(EnterpriseCandidateResult, id=candidate_id, batch=batch)
+    if not enterprise_signature_ready(request.user):
+        messages.error(request, "Complete your company name and position in Account Settings, or choose the MyValidCV system signature.")
+        return redirect("account_settings")
     if not user_can_use_enterprise(request.user) or not batch.email_sending_authorized:
         messages.error(request, "Authorize recruitment email for this job before sending.")
     elif not candidate.candidate_email:

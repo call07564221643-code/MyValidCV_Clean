@@ -16,12 +16,19 @@ class UserProfile(models.Model):
         ('plus', 'Plus'),
         ('enterprise', 'Enterprise'),
     ]
+    SIGNATURE_CHOICES = [
+        ('personal', 'Personal / company signature'),
+        ('system', 'MyValidCV system-generated email'),
+    ]
 
     # Database link: deleting the Django User also deletes this dependent profile.
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     plan = models.CharField(max_length=20, choices=PLAN_CHOICES, default='free')
     analyses_this_month = models.PositiveIntegerField(default=0)
     last_reset = models.DateTimeField(default=timezone.now)
+    company_name = models.CharField(max_length=180, blank=True)
+    position_title = models.CharField(max_length=180, blank=True)
+    email_signature_mode = models.CharField(max_length=20, choices=SIGNATURE_CHOICES, default='personal')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

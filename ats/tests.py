@@ -45,6 +45,7 @@ from .views import (
     build_reliability_guidance,
     build_truth_gate_summary,
     calculate_score,
+    candidate_email_draft,
     enterprise_daily_usage,
     humanize_requirement_term,
     format_document_heading,
@@ -166,6 +167,25 @@ class EnterpriseWorkspaceTests(TestCase):
         self.assertEqual(self.candidate.review_status, "shortlisted")
         self.assertIn("shortlisted", self.candidate.email_subject)
 
+    def test_personal_email_signature_uses_account_name_position_and_company(self):
+        self.user.first_name = "Alex"
+        self.user.last_name = "Morgan"
+        self.user.save(update_fields=["first_name", "last_name"])
+        self.user.profile.company_name = "Example Company"
+        self.user.profile.position_title = "Recruitment Manager"
+        self.user.profile.email_signature_mode = "personal"
+        self.user.profile.save(update_fields=["company_name", "position_title", "email_signature_mode"])
+        self.candidate.review_status = "shortlisted"
+        _subject, body = candidate_email_draft(self.candidate)
+        self.assertIn("Alex Morgan\nRecruitment Manager\nExample Company", body)
+
+    def test_system_email_signature_uses_myvalidcv_identity(self):
+        self.user.profile.email_signature_mode = "system"
+        self.user.profile.save(update_fields=["email_signature_mode"])
+        self.candidate.review_status = "shortlisted"
+        _subject, body = candidate_email_draft(self.candidate)
+        self.assertIn("MyValidCV Recruitment System", body)
+
     def test_other_enterprise_account_cannot_change_candidate(self):
         other = User.objects.create_user("other-enterprise", password="password")
         self.client.force_login(other)
@@ -192,6 +212,8 @@ class EnterpriseWorkspaceTests(TestCase):
 
     @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
     def test_authorized_reviewed_email_can_be_sent(self):
+        self.user.profile.email_signature_mode = "system"
+        self.user.profile.save(update_fields=["email_signature_mode"])
         self.client.force_login(self.user)
         self.client.post(reverse("enterprise_email_authorize", args=[self.batch.id]), {"authorize": "yes"})
         self.client.post(

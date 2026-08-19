@@ -64,15 +64,52 @@ class CustomAuthenticationForm(AuthenticationForm):
 
 
 class UserSettingsForm(forms.ModelForm):
+    company_name = forms.CharField(required=False, max_length=180)
+    position_title = forms.CharField(required=False, max_length=180, label='Your position')
+    email_signature_mode = forms.ChoiceField(
+        choices=(('personal', 'Sign with my name, position and company'), ('system', 'Use MyValidCV system-generated email')),
+        widget=forms.RadioSelect,
+        label='Recruitment email signature',
+        required=False,
+    )
+
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'email')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        profile = getattr(self.instance, 'profile', None)
+        if profile:
+            self.fields['company_name'].initial = profile.company_name
+            self.fields['position_title'].initial = profile.position_title
+            self.fields['email_signature_mode'].initial = profile.email_signature_mode
         self.fields['email'].required = True
         for field in self.fields.values():
-            field.widget.attrs.update({'class': 'form-control'})
+            if not isinstance(field.widget, forms.RadioSelect):
+                field.widget.attrs.update({'class': 'form-control'})
+
+    def clean(self):
+        cleaned_data = super().clean()
+        profile = getattr(self.instance, 'profile', None)
+        signature_mode = cleaned_data.get('email_signature_mode') or 'personal'
+        cleaned_data['email_signature_mode'] = signature_mode
+        if profile and profile.plan == 'enterprise' and signature_mode == 'personal':
+            if not cleaned_data.get('company_name'):
+                self.add_error('company_name', 'Enter your company name or choose the MyValidCV system signature.')
+            if not cleaned_data.get('position_title'):
+                self.add_error('position_title', 'Enter your position or choose the MyValidCV system signature.')
+        return cleaned_data
+
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+        profile = user.profile
+        profile.company_name = self.cleaned_data.get('company_name', '')
+        profile.position_title = self.cleaned_data.get('position_title', '')
+        profile.email_signature_mode = self.cleaned_data.get('email_signature_mode', 'personal')
+        if commit:
+            profile.save(update_fields=['company_name', 'position_title', 'email_signature_mode'])
+        return user
 
     def clean_email(self):
         email = self.cleaned_data['email'].strip().lower()

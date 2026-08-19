@@ -33,6 +33,33 @@ class CustomerNavigationTests(TestCase):
         self.user.refresh_from_db()
         self.assertEqual(self.user.email, 'alex@example.com')
 
+    def test_enterprise_settings_save_company_position_and_system_signature(self):
+        self.user.profile.plan = 'enterprise'
+        self.user.profile.save(update_fields=['plan'])
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('account_settings'), {
+            'first_name': 'Alex', 'last_name': 'Morgan', 'email': 'customer@example.com',
+            'company_name': 'Example Company', 'position_title': 'Recruitment Manager',
+            'email_signature_mode': 'system',
+        })
+        self.assertRedirects(response, reverse('account_settings'))
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.company_name, 'Example Company')
+        self.assertEqual(self.user.profile.position_title, 'Recruitment Manager')
+        self.assertEqual(self.user.profile.email_signature_mode, 'system')
+
+    def test_enterprise_personal_signature_requires_company_and_position(self):
+        self.user.profile.plan = 'enterprise'
+        self.user.profile.save(update_fields=['plan'])
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('account_settings'), {
+            'first_name': 'Alex', 'last_name': 'Morgan', 'email': 'customer@example.com',
+            'email_signature_mode': 'personal',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Enter your company name')
+        self.assertContains(response, 'Enter your position')
+
     def test_landing_page_has_start_now_and_no_enterprise_link(self):
         response = self.client.get(reverse('home'))
         self.assertContains(response, 'Start Now')
