@@ -194,27 +194,17 @@
     <div class="container">
         <div class="owner-hero">
             <div>
-                <div class="owner-kicker">Owner-only SaaS control</div>
+                <div class="owner-kicker">Platform ownership and governance</div>
                 <h1>Owner Console</h1>
-                <p class="mb-0">Manage users, plans, payments, refunds, promo codes, reports, and website health from one place.</p>
-            </div>
-            <div class="d-flex gap-2 flex-wrap">
-                <a href="{% url 'admin:index' %}" class="btn btn-primary">Django admin</a>
+                <p class="mb-0">Supervise authority, organisations, provider controls and security without entering operational management.</p>
             </div>
         </div>
 
         <div class="owner-summary">
-            <div class="owner-card owner-card-pad owner-metric"><span>Total users</span><strong>{{ summary.users_total }}</strong></div>
-            <div class="owner-card owner-card-pad owner-metric"><span>Active users</span><strong>{{ summary.active_users }}</strong></div>
-            <div class="owner-card owner-card-pad owner-metric"><span>30-day revenue</span><strong>GBP {{ summary.revenue_30_days }}</strong></div>
-            <div class="owner-card owner-card-pad owner-metric"><span>Payment success</span><strong>{{ summary.payment_success_rate }}%</strong></div>
-        </div>
-
-        <div class="owner-summary">
-            <div class="owner-card owner-card-pad owner-metric"><span>Free</span><strong>{{ summary.free_users }}</strong></div>
-            <div class="owner-card owner-card-pad owner-metric"><span>Plus</span><strong>{{ summary.plus_users }}</strong></div>
-            <div class="owner-card owner-card-pad owner-metric"><span>Enterprise</span><strong>{{ summary.enterprise_users }}</strong></div>
-            <div class="owner-card owner-card-pad owner-metric"><span>Open invoices</span><strong>{{ summary.open_invoices }}</strong></div>
+            <div class="owner-card owner-card-pad owner-metric"><span>Assigned managers</span><strong>{{ summary.active_managers }}</strong></div>
+            <div class="owner-card owner-card-pad owner-metric"><span>Organisations</span><strong>{{ summary.organisations }}</strong></div>
+            <div class="owner-card owner-card-pad owner-metric"><span>Active partners</span><strong>{{ summary.active_partners }}</strong></div>
+            <div class="owner-card owner-card-pad owner-metric"><span>Connected providers</span><strong>{{ summary.providers_ready }}</strong></div>
         </div>
 
         <div class="owner-grid mb-4">
@@ -232,59 +222,6 @@
             {% endfor %}
         </div>
 
-        <div class="row g-4">
-            <div class="col-lg-4">
-                <div class="owner-card owner-card-pad h-100">
-                    <h2 class="h5">Recent users</h2>
-                    <div class="owner-table-wrap">
-                        <table class="table owner-mini-table align-middle">
-                            <thead><tr><th>User</th><th>Email</th><th>Joined</th></tr></thead>
-                            <tbody>
-                                {% for user in recent_users %}
-                                    <tr><td>{{ user.username }}</td><td>{{ user.email|default:"-" }}</td><td>{{ user.date_joined|date:"M d" }}</td></tr>
-                                {% empty %}
-                                    <tr><td colspan="3">No users yet.</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="owner-card owner-card-pad h-100">
-                    <h2 class="h5">Recent payments</h2>
-                    <div class="owner-table-wrap">
-                        <table class="table owner-mini-table align-middle">
-                            <thead><tr><th>User</th><th>Plan</th><th>Status</th><th>Amount</th></tr></thead>
-                            <tbody>
-                                {% for payment in recent_payments %}
-                                    <tr><td>{{ payment.user.username }}</td><td>{{ payment.plan.name }}</td><td>{{ payment.status }}</td><td>{{ payment.currency }} {{ payment.amount }}</td></tr>
-                                {% empty %}
-                                    <tr><td colspan="4">No payments yet.</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="owner-card owner-card-pad h-100">
-                    <h2 class="h5">Recent refunds</h2>
-                    <div class="owner-table-wrap">
-                        <table class="table owner-mini-table align-middle">
-                            <thead><tr><th>User</th><th>Status</th><th>Amount</th></tr></thead>
-                            <tbody>
-                                {% for refund in recent_refunds %}
-                                    <tr><td>{{ refund.transaction.user.username }}</td><td>{{ refund.status }}</td><td>{{ refund.transaction.currency }} {{ refund.amount }}</td></tr>
-                                {% empty %}
-                                    <tr><td colspan="3">No refunds yet.</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </section>
 {% endblock %}

@@ -463,12 +463,6 @@
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'owner_console' %}active{% endif %}" href="{% url 'owner_console' %}">Owner Console</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'owner_reports' %}active{% endif %}" href="{% url 'owner_reports' %}">Owner Reports</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'owner_feedback' %}active{% endif %}" href="{% url 'owner_feedback' %}">Feedback</a>
-                            </li>
                         {% elif user.is_staff %}
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'management_dashboard' %}active{% endif %}" href="{% url 'management_dashboard' %}">Management</a>

@@ -105,6 +105,12 @@ class CustomerNavigationTests(TestCase):
 
         owner_response = self.client.get(reverse('owner_console'))
         self.assertContains(owner_response, 'Owner Console')
+        self.assertContains(owner_response, 'Platform ownership and governance')
+        self.assertContains(owner_response, 'Management roles')
+        self.assertNotContains(owner_response, 'Promo codes')
+        self.assertNotContains(owner_response, 'Recent users')
+        self.assertNotContains(owner_response, 'Recent payments')
+        self.assertNotContains(owner_response, '>Owner Reports<', html=False)
         self.assertNotContains(owner_response, 'Enterprise dashboard')
         self.assertNotContains(owner_response, 'Bulk analysis')
         self.assertNotContains(owner_response, 'User dashboard')

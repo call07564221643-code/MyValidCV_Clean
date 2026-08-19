@@ -244,22 +244,6 @@ def dashboard(request):
 def owner_console(request):
     if not request.user.is_superuser:
         return render(request, "dashboard/owner_forbidden.html", status=403)
-
-    now = timezone.now()
-    month_start = now - timedelta(days=30)
-    paid_transactions = PaymentTransaction.objects.filter(status="paid")
-    revenue_total = paid_transactions.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
-    revenue_30_days = paid_transactions.filter(created_at__gte=month_start).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
-    refunds_total = Refund.objects.exclude(status="rejected").aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
-    users_total = User.objects.count()
-    active_users = User.objects.filter(is_active=True).count()
-    free_users = UserProfile.objects.filter(plan="free").count()
-    plus_users = UserProfile.objects.filter(plan__in=["plus", "professional"]).count()
-    enterprise_users = UserProfile.objects.filter(plan="enterprise").count()
-    payment_count = PaymentTransaction.objects.count()
-    paid_count = paid_transactions.count()
-    payment_success_rate = int((paid_count / payment_count) * 100) if payment_count else 0
-
     management_cards = [
         {
             "title": "Management roles",
@@ -280,13 +264,13 @@ def owner_console(request):
             "secondary_url": "admin:governance_organisationmembership_changelist",
         },
         {
-            "title": "Partners and growth",
-            "value": PartnerProfile.objects.exclude(stage="closed").count(),
-            "text": "Oversee partners, bulk access, referrals, vouchers, commissions and campaigns.",
-            "primary_label": "Manage partners",
-            "primary_url": "admin:growth_partnerprofile_changelist",
-            "secondary_label": "Campaigns",
-            "secondary_url": "admin:growth_marketingcampaign_changelist",
+            "title": "Provider governance",
+            "value": ProviderConnection.objects.count(),
+            "text": "Supervise non-secret setup status for Google, LinkedIn, Meta, TikTok and analytics.",
+            "primary_label": "Provider settings",
+            "primary_url": "admin:growth_providerconnection_changelist",
+            "secondary_label": "Consent records",
+            "secondary_url": "admin:growth_consentrecord_changelist",
         },
         {
             "title": "Governance audit",
@@ -297,98 +281,16 @@ def owner_console(request):
             "secondary_label": "Provider status",
             "secondary_url": "admin:growth_providerconnection_changelist",
         },
-        {
-            "title": "Users",
-            "value": users_total,
-            "text": "Add, deactivate, delete, or change staff/superuser access.",
-            "primary_label": "Manage users",
-            "primary_url": "admin:auth_user_changelist",
-            "secondary_label": "Add user",
-            "secondary_url": "admin:auth_user_add",
-        },
-        {
-            "title": "Subscriptions",
-            "value": CustomerSubscription.objects.filter(status="active").count(),
-            "text": "Change plan status, cancel subscriptions, and review renewal dates.",
-            "primary_label": "Manage subscriptions",
-            "primary_url": "admin:subscriptions_customersubscription_changelist",
-            "secondary_label": "Plans",
-            "secondary_url": "admin:subscriptions_subscriptionplan_changelist",
-        },
-        {
-            "title": "Promo codes",
-            "value": DiscountCode.objects.filter(is_active=True).count(),
-            "text": "Create launch discounts, deactivate expired offers, and track redemptions.",
-            "primary_label": "Manage codes",
-            "primary_url": "admin:subscriptions_discountcode_changelist",
-            "secondary_label": "Add code",
-            "secondary_url": "admin:subscriptions_discountcode_add",
-        },
-        {
-            "title": "Payments",
-            "value": payment_count,
-            "text": "Check checkout references, payment status, receipts, and provider IDs.",
-            "primary_label": "Transactions",
-            "primary_url": "admin:payments_paymenttransaction_changelist",
-            "secondary_label": "Invoices",
-            "secondary_url": "admin:payments_invoice_changelist",
-        },
-        {
-            "title": "Refunds",
-            "value": Refund.objects.count(),
-            "text": "Record refund requests and approve, process, or reject them.",
-            "primary_label": "Manage refunds",
-            "primary_url": "admin:payments_refund_changelist",
-            "secondary_label": "Add refund",
-            "secondary_url": "admin:payments_refund_add",
-        },
-        {
-            "title": "Reports",
-            "value": ATSResult.objects.count(),
-            "text": "Review ATS results, generated CVs, cover letters, and enterprise reports.",
-            "primary_label": "Explore reports",
-            "primary_url": "owner_reports",
-            "secondary_label": "Enterprise",
-            "secondary_url": "admin:ats_enterprisebatch_changelist",
-        },
-        {
-            "title": "Website health",
-            "value": payment_success_rate,
-            "suffix": "%",
-            "text": "Check operational health, revenue, assumptions, usage, and risks.",
-            "primary_label": "Open health",
-            "primary_url": "website_health",
-            "secondary_label": "Financial inputs",
-            "secondary_url": "admin:analytics_financialassumption_changelist",
-        },
-        {
-            "title": "Experience feedback",
-            "value": ExperienceFeedback.objects.count(),
-            "text": "Review ratings, comments, feature trends, and testimonial consent.",
-            "primary_label": "Feedback report",
-            "primary_url": "owner_feedback",
-            "secondary_label": "Moderate",
-            "secondary_url": "admin:core_experiencefeedback_changelist",
-        },
     ]
 
     context = {
         "summary": {
-            "users_total": users_total,
-            "active_users": active_users,
-            "free_users": free_users,
-            "plus_users": plus_users,
-            "enterprise_users": enterprise_users,
-            "revenue_total": revenue_total,
-            "revenue_30_days": revenue_30_days,
-            "refunds_total": refunds_total,
-            "payment_success_rate": payment_success_rate,
-            "open_invoices": Invoice.objects.filter(status="open").count(),
+            "active_managers": ManagementAssignment.objects.filter(is_active=True).count(),
+            "organisations": Organisation.objects.count(),
+            "active_partners": PartnerProfile.objects.filter(stage="active").count(),
+            "providers_ready": ProviderConnection.objects.filter(status="connected").count(),
         },
         "management_cards": management_cards,
-        "recent_users": User.objects.order_by("-date_joined")[:6],
-        "recent_payments": PaymentTransaction.objects.select_related("user", "plan")[:6],
-        "recent_refunds": Refund.objects.select_related("transaction", "transaction__user")[:6],
     }
     return render(request, "dashboard/owner_console.html", context)
 
