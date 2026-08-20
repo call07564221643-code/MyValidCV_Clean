@@ -157,6 +157,13 @@ class CustomerNavigationTests(TestCase):
         self.assertContains(response, 'Continue with Google')
         self.assertContains(response, 'MyValidCV never receives your Google password')
 
+    def test_allauth_login_uses_branded_template(self):
+        response = self.client.get(reverse('account_login'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'account/login.html')
+        self.assertContains(response, 'auth-shell')
+        self.assertNotContains(response, '<strong>Menu:</strong>', html=False)
+
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_password_reset_sends_one_time_link(self):
         response = self.client.post(reverse('password_reset'), {
