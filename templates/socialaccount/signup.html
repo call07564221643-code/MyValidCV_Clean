@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Complete your account - MyValidCV{% endblock %}
+
+{% block extra_css %}
+<style>
+    .social-signup-shell {
+        min-height: calc(100vh - 180px);
+        display: grid;
+        place-items: center;
+        padding: 2rem 1rem;
+        background: radial-gradient(circle at 75% 15%, rgba(31, 51, 116, .09), transparent 30%), #f8fafc;
+    }
+    .social-signup-card {
+        width: min(520px, 100%);
+        padding: clamp(1.5rem, 5vw, 2.5rem);
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 18px 50px rgba(15, 23, 42, .10);
+    }
+    .social-signup-mark {
+        width: 54px; height: 54px; display: grid; place-items: center;
+        margin-bottom: 1.25rem; border-radius: 14px; background: #eef2ff;
+        color: #1f3374; font-size: 1.35rem; font-weight: 800;
+    }
+    .social-signup-card h1 { font-size: 1.7rem; letter-spacing: -.035em; }
+    .social-signup-intro { color: #475569; line-height: 1.65; }
+    .social-signup-form label { display: block; margin-bottom: .35rem; font-weight: 650; }
+    .social-signup-form input {
+        width: 100%; min-height: 46px; padding: .7rem .85rem;
+        border: 1px solid #cbd5e1; border-radius: 9px; background: #fff;
+    }
+    .social-signup-form input:focus { border-color: #1f3374; outline: 3px solid rgba(31, 51, 116, .14); }
+    .social-signup-form .errorlist { margin: .4rem 0 0; padding: 0; list-style: none; color: #b42318; font-size: .875rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="social-signup-shell">
+    <div class="social-signup-card">
+        <div class="social-signup-mark" aria-hidden="true">{% if account.provider == "google" %}G{% else %}in{% endif %}</div>
+        <h1>Complete your MyValidCV account</h1>
+        <p class="social-signup-intro">Your {{ account.get_provider.name }} identity has been confirmed. Review the details below to finish creating your MyValidCV account.</p>
+        <form method="post" action="{% url 'socialaccount_signup' %}" class="social-signup-form" novalidate>
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+                <div class="mb-3">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}{% if not field.field.required %} <span class="text-body-secondary fw-normal">(optional)</span>{% endif %}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                    {% if field.help_text %}<div class="form-text">{{ field.help_text|safe }}</div>{% endif %}
+                </div>
+            {% endfor %}
+            {{ redirect_field }}
+            <button type="submit" class="btn btn-primary btn-lg w-100">Create MyValidCV account</button>
+            <a href="{% url 'login' %}" class="btn btn-outline-secondary w-100 mt-2">Cancel</a>
+        </form>
+        <p class="small text-body-secondary mt-4 mb-0">By continuing, you acknowledge the <a href="{% url 'privacy_policy' %}">Privacy Policy</a>. MyValidCV never receives your provider password.</p>
+    </div>
+</section>
+{% endblock %}
