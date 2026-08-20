@@ -220,6 +220,8 @@
         <div class="plans-hero">
             <h1>Choose the plan that fits your job search.</h1>
             <p>Transparent monthly plans for individual job seekers and hiring teams. Choose the usage and application support you need.</p>
+            {% if sumup_sandbox %}<div class="alert alert-warning mt-3" role="alert">SumUp sandbox mode is active. Test payments do not transfer real funds.</div>{% endif %}
+            {% if payment_provider == "sumup" %}<p class="small mt-2">SumUp checkout currently activates one billing period. Automatic recurring collection is not enabled yet.</p>{% endif %}
         </div>
 
         <div class="row g-4 align-items-stretch">
@@ -287,6 +289,12 @@
                                         {% if plan.price == 0 %}Activate Free{% else %}Pay Now{% endif %}
                                     </button>
                                 </form>
+                                {% if sumup_test_available and plan.price > 0 %}
+                                <form method="post" action="{% url 'sumup_sandbox_test' plan.code %}" class="mt-2">
+                                    {% csrf_token %}
+                                    <button class="btn btn-outline-primary w-100" type="submit">Owner: test SumUp sandbox</button>
+                                </form>
+                                {% endif %}
                             {% else %}
                                 <a class="btn btn-primary w-100" href="{% url 'register' %}?next={% url 'pricing' %}">
                                     {% if plan.price == 0 %}Sign up{% else %}Create account to pay{% endif %}

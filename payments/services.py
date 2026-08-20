@@ -21,6 +21,67 @@ class StripeSignatureError(Exception):
     pass
 
 
+class SumUpConfigurationError(Exception):
+    pass
+
+
+class SumUpAPIError(Exception):
+    pass
+
+
+def is_sumup_configured():
+    return bool(settings.SUMUP_API_KEY and settings.SUMUP_MERCHANT_CODE)
+
+
+def _sumup_request(path, method="GET", payload=None, idempotency_key=""):
+    if not is_sumup_configured():
+        raise SumUpConfigurationError("SUMUP_API_KEY and SUMUP_MERCHANT_CODE are required.")
+    headers = {
+        "Authorization": f"Bearer {settings.SUMUP_API_KEY}",
+        "Accept": "application/json",
+    }
+    data = None
+    if payload is not None:
+        headers["Content-Type"] = "application/json"
+        data = json.dumps(payload).encode("utf-8")
+    if idempotency_key:
+        headers["Idempotency-Key"] = idempotency_key
+    request = urllib.request.Request(
+        f"https://api.sumup.com{path}", data=data, headers=headers, method=method,
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            return json.loads(response.read().decode("utf-8") or "{}")
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="ignore")[:1000]
+        raise SumUpAPIError(f"SumUp request failed with HTTP {exc.code}: {body}") from exc
+    except urllib.error.URLError as exc:
+        raise SumUpAPIError(f"Could not reach SumUp: {exc}") from exc
+
+
+def create_sumup_checkout(transaction, webhook_url, redirect_url):
+    payload = {
+        "checkout_reference": str(transaction.checkout_reference),
+        "amount": float(transaction.amount),
+        "currency": transaction.currency.upper(),
+        "merchant_code": settings.SUMUP_MERCHANT_CODE,
+        "description": f"MyValidCV {transaction.plan.name}",
+        "return_url": webhook_url,
+        "redirect_url": redirect_url,
+        "hosted_checkout": {"enabled": True},
+    }
+    return _sumup_request(
+        "/v0.1/checkouts", method="POST", payload=payload,
+        idempotency_key=f"mvcv-{transaction.checkout_reference}",
+    )
+
+
+def retrieve_sumup_checkout(checkout_id):
+    if not checkout_id:
+        raise SumUpAPIError("Missing SumUp checkout ID.")
+    return _sumup_request(f"/v0.1/checkouts/{checkout_id}")
+
+
 def is_stripe_configured():
     return bool(settings.STRIPE_SECRET_KEY)
 

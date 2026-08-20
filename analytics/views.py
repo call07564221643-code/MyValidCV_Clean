@@ -141,6 +141,9 @@ def website_health(request):
     provider_readiness = {
         "stripe_live": bool(getattr(settings, "STRIPE_SECRET_KEY", "")) and not getattr(settings, "STRIPE_MOCK_MODE", True),
         "stripe_mock": getattr(settings, "STRIPE_MOCK_MODE", True),
+        "payment_provider": getattr(settings, "PAYMENT_PROVIDER", "stripe"),
+        "sumup_configured": bool(getattr(settings, "SUMUP_API_KEY", "") and getattr(settings, "SUMUP_MERCHANT_CODE", "")),
+        "sumup_mode": getattr(settings, "SUMUP_MODE", "sandbox"),
         "email_console": "console" in getattr(settings, "EMAIL_BACKEND", ""),
     }
 
@@ -311,9 +314,20 @@ def website_health(request):
         ),
         _check(
             "Payment provider readiness",
-            "ok" if provider_readiness["stripe_live"] else "warning",
-            "Stripe live mode is configured." if provider_readiness["stripe_live"] else "Stripe live credentials are incomplete.",
-            "Add the Stripe secret and webhook keys before accepting payments.",
+            "ok" if (
+                provider_readiness["sumup_configured"] if provider_readiness["payment_provider"] == "sumup"
+                else provider_readiness["stripe_live"]
+            ) else "warning",
+            (
+                f"SumUp is configured in {provider_readiness['sumup_mode']} mode."
+                if provider_readiness["payment_provider"] == "sumup" and provider_readiness["sumup_configured"]
+                else "SumUp credentials are incomplete."
+                if provider_readiness["payment_provider"] == "sumup"
+                else "Stripe live mode is configured."
+                if provider_readiness["stripe_live"]
+                else "Stripe live credentials are incomplete."
+            ),
+            "Complete sandbox verification before changing the production payment provider.",
             "Payments",
         ),
         _check(

@@ -27,6 +27,7 @@ class PaymentTransaction(models.Model):
 
     PROVIDER_CHOICES = [
         ("stripe", "Stripe"),
+        ("sumup", "SumUp"),
         ("manual", "Manual"),
     ]
 

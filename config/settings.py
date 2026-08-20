@@ -320,6 +320,13 @@ STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
 # Stripe Checkout (or fails closed when Stripe is not configured).
 STRIPE_MOCK_MODE = env_bool('STRIPE_MOCK_MODE', False) if DEBUG else False
 
+# Payment provider selection. Keep Stripe as the default until SumUp sandbox
+# checkout, return and webhook verification have passed end-to-end testing.
+PAYMENT_PROVIDER = os.environ.get('PAYMENT_PROVIDER', 'stripe').lower()
+SUMUP_API_KEY = os.environ.get('SUMUP_API_KEY', '')
+SUMUP_MERCHANT_CODE = os.environ.get('SUMUP_MERCHANT_CODE', '')
+SUMUP_MODE = os.environ.get('SUMUP_MODE', 'sandbox').lower()
+
 # Email receipts
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'receipts@myvalidcv.local')

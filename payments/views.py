@@ -27,6 +27,10 @@ from .services import (
     create_stripe_checkout_session,
     retrieve_stripe_checkout_session,
     verify_stripe_signature,
+    SumUpAPIError,
+    SumUpConfigurationError,
+    create_sumup_checkout,
+    retrieve_sumup_checkout,
 )
 
 
@@ -36,7 +40,175 @@ logger = logging.getLogger(__name__)
 def pricing(request):
     """Stage 1 of payment: read the seeded plan catalogue without mutating it."""
     plans = SubscriptionPlan.objects.filter(is_active=True, code__in=["free", "plus", "enterprise"])
-    return render(request, "payments/pricing.html", {"plans": plans})
+    return render(request, "payments/pricing.html", {
+        "plans": plans,
+        "payment_provider": settings.PAYMENT_PROVIDER,
+        "sumup_sandbox": settings.PAYMENT_PROVIDER == "sumup" and settings.SUMUP_MODE == "sandbox",
+        "sumup_test_available": bool(
+            request.user.is_superuser and settings.SUMUP_MODE == "sandbox"
+            and settings.SUMUP_API_KEY and settings.SUMUP_MERCHANT_CODE
+        ),
+    })
+
+
+@login_required(login_url="login")
+@require_POST
+def start_checkout(request, plan_code):
+    if settings.PAYMENT_PROVIDER == "sumup":
+        return start_sumup_checkout(request, plan_code)
+    return start_stripe_checkout(request, plan_code)
+
+
+@login_required(login_url="login")
+@require_POST
+def start_sumup_checkout(request, plan_code):
+    """Create a local audit record and redirect to SumUp Hosted Checkout."""
+    plan = get_object_or_404(SubscriptionPlan, code=plan_code, is_active=True)
+    discount = None
+    amount = plan.price
+    code = request.POST.get("discount_code", "").strip()
+    if code:
+        discount = DiscountCode.objects.filter(code__iexact=code).first()
+        if not discount or not discount.is_valid_now():
+            messages.error(request, "This discount code is not valid.")
+            return redirect("pricing")
+        amount = discount.apply_to(amount)
+
+    payment = PaymentTransaction.objects.create(
+        user=request.user, plan=plan, discount_code=discount, amount=amount,
+        currency=plan.currency, provider="sumup", status="pending",
+        raw_response={"requested_provider": "sumup", "mode": settings.SUMUP_MODE},
+    )
+    Invoice.objects.create(
+        user=request.user, transaction=payment,
+        invoice_number=f"MVCV-{payment.id:06d}", amount=amount,
+        currency=plan.currency, status="open",
+    )
+    if amount == Decimal("0.00"):
+        activate_paid_transaction(payment, raw_response={"sumup_free_plan": True})
+        messages.success(request, f"{plan.name} activated.")
+        return redirect("payment_receipt", checkout_reference=payment.checkout_reference)
+
+    redirect_url = request.build_absolute_uri(reverse("sumup_return", args=[payment.checkout_reference]))
+    webhook_url = request.build_absolute_uri(reverse("sumup_webhook"))
+    try:
+        checkout = create_sumup_checkout(payment, webhook_url, redirect_url)
+    except (SumUpConfigurationError, SumUpAPIError):
+        logger.exception("SumUp checkout failed for %s", payment.checkout_reference)
+        messages.error(request, "SumUp checkout could not be started. Please try again or contact support.")
+        return redirect("pricing")
+
+    payment.provider_checkout_id = checkout.get("id", "")
+    payment.hosted_checkout_url = checkout.get("hosted_checkout_url", "")
+    payment.raw_response = checkout
+    payment.save(update_fields=["provider_checkout_id", "hosted_checkout_url", "raw_response", "updated_at"])
+    if payment.provider_checkout_id and payment.hosted_checkout_url:
+        return redirect(payment.hosted_checkout_url)
+    messages.error(request, "SumUp did not return a hosted checkout URL. Please contact support.")
+    return redirect("pricing")
+
+
+@login_required(login_url="login")
+@require_POST
+def start_sumup_sandbox_test(request, plan_code):
+    """Owner-only bridge for testing SumUp without changing the public provider."""
+    if not request.user.is_superuser or settings.SUMUP_MODE != "sandbox":
+        raise Http404("SumUp sandbox testing is unavailable.")
+    return start_sumup_checkout(request, plan_code)
+
+
+def _sumup_checkout_matches(payment, checkout):
+    try:
+        amount_matches = Decimal(str(checkout.get("amount"))).quantize(Decimal("0.01")) == payment.amount
+    except (TypeError, ValueError, ArithmeticError):
+        amount_matches = False
+    return bool(
+        checkout.get("id") == payment.provider_checkout_id
+        and checkout.get("checkout_reference") == str(payment.checkout_reference)
+        and checkout.get("merchant_code") == settings.SUMUP_MERCHANT_CODE
+        and str(checkout.get("currency", "")).upper() == payment.currency.upper()
+        and amount_matches
+    )
+
+
+def _apply_sumup_checkout(payment, checkout):
+    if not _sumup_checkout_matches(payment, checkout):
+        raise ValueError("SumUp checkout does not match the local payment record.")
+    status = str(checkout.get("status", "")).upper()
+    if status == "PAID":
+        transactions = checkout.get("transactions") or []
+        provider_transaction_id = transactions[-1].get("transaction_code", "") if transactions else ""
+        activate_paid_transaction(payment, raw_response=checkout)
+        if provider_transaction_id and not payment.provider_transaction_id:
+            PaymentTransaction.objects.filter(pk=payment.pk).update(provider_transaction_id=provider_transaction_id)
+    elif status == "FAILED":
+        PaymentTransaction.objects.filter(pk=payment.pk, status="pending").update(status="failed", raw_response=checkout)
+    elif status == "EXPIRED":
+        PaymentTransaction.objects.filter(pk=payment.pk, status="pending").update(status="cancelled", raw_response=checkout)
+    return status
+
+
+@login_required(login_url="login")
+def sumup_return(request, checkout_reference):
+    payment = get_object_or_404(
+        PaymentTransaction, checkout_reference=checkout_reference, user=request.user, provider="sumup",
+    )
+    if payment.status == "paid":
+        return redirect("payment_receipt", checkout_reference=payment.checkout_reference)
+    try:
+        checkout = retrieve_sumup_checkout(payment.provider_checkout_id)
+        status = _apply_sumup_checkout(payment, checkout)
+    except (SumUpConfigurationError, SumUpAPIError, ValueError):
+        logger.exception("SumUp return verification failed for %s", payment.checkout_reference)
+        status = "PENDING"
+    payment.refresh_from_db()
+    if payment.status == "paid":
+        messages.success(request, "Payment confirmed. Your subscription is active.")
+        return redirect("payment_receipt", checkout_reference=payment.checkout_reference)
+    if status in ("FAILED", "EXPIRED"):
+        messages.error(request, "The SumUp payment was not completed. You can safely try again.")
+        return redirect("pricing")
+    messages.info(request, "SumUp is still confirming the payment. Please check again shortly.")
+    return render(request, "payments/payment_pending.html", {"transaction": payment, "provider_name": "SumUp"})
+
+
+@csrf_exempt
+def sumup_webhook(request):
+    """Verify every unsigned SumUp notification against the SumUp API."""
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required")
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest("Invalid JSON")
+    checkout_id = payload.get("id", "")
+    if payload.get("event_type") != "CHECKOUT_STATUS_CHANGED" or not checkout_id:
+        return JsonResponse({"ok": True, "ignored": True})
+    payment = PaymentTransaction.objects.filter(provider="sumup", provider_checkout_id=checkout_id).first()
+    if not payment:
+        return JsonResponse({"ok": True, "ignored": True})
+    try:
+        checkout = retrieve_sumup_checkout(checkout_id)
+        status = str(checkout.get("status", "")).upper()
+        event_id = f"sumup:{checkout_id}:{status}"[:120]
+        log, created = PaymentWebhookLog.objects.get_or_create(
+            event_id=event_id,
+            defaults={"provider": "sumup", "event_type": payload.get("event_type", ""),
+                      "checkout_reference": str(payment.checkout_reference), "payload": payload},
+        )
+        if not created and log.is_processed:
+            return JsonResponse({"ok": True, "duplicate": True})
+        _apply_sumup_checkout(payment, checkout)
+        log.is_processed = True
+        log.error = ""
+        log.save(update_fields=["is_processed", "error"])
+    except (SumUpConfigurationError, SumUpAPIError, ValueError) as exc:
+        logger.exception("SumUp webhook verification failed for checkout %s", checkout_id)
+        if 'log' in locals():
+            log.error = str(exc)[:1000]
+            log.save(update_fields=["error"])
+        return JsonResponse({"ok": False}, status=500)
+    return JsonResponse({"ok": True, "status": status})
 
 
 def demo_checkout_context(transaction, form_data=None):

@@ -18,6 +18,97 @@ from .models import Invoice, PaymentTransaction, PaymentWebhookLog
 from .services import create_stripe_checkout_session
 
 
+@override_settings(
+    SECURE_SSL_REDIRECT=False,
+    PAYMENT_PROVIDER="sumup",
+    SUMUP_API_KEY="sumup-test-key",
+    SUMUP_MERCHANT_CODE="MEYUPGAT",
+    SUMUP_MODE="sandbox",
+)
+class SumUpCheckoutTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("sumup-payer", "sumup@example.com", "password")
+        self.client.force_login(self.user)
+        self.plan = SubscriptionPlan.objects.create(
+            code="plus", name="Plus", price=Decimal("4.99"), currency="GBP",
+        )
+
+    @patch("payments.views.create_sumup_checkout")
+    def test_default_sumup_provider_creates_hosted_checkout(self, create_checkout):
+        create_checkout.return_value = {
+            "id": "checkout-1", "status": "PENDING",
+            "hosted_checkout_url": "https://checkout.sumup.com/pay/checkout-1",
+        }
+        response = self.client.post(reverse("start_checkout", args=[self.plan.code]))
+        self.assertRedirects(
+            response, "https://checkout.sumup.com/pay/checkout-1", fetch_redirect_response=False,
+        )
+        payment = PaymentTransaction.objects.get()
+        self.assertEqual(payment.provider, "sumup")
+        self.assertEqual(payment.provider_checkout_id, "checkout-1")
+
+    @patch("payments.views.retrieve_sumup_checkout")
+    def test_verified_sumup_return_activates_subscription(self, retrieve_checkout):
+        payment = PaymentTransaction.objects.create(
+            user=self.user, plan=self.plan, provider="sumup", amount=self.plan.price,
+            currency="GBP", status="pending", provider_checkout_id="checkout-paid",
+        )
+        Invoice.objects.create(
+            user=self.user, transaction=payment, invoice_number="SUMUP-PAID",
+            amount=payment.amount, currency="GBP", status="open",
+        )
+        retrieve_checkout.return_value = {
+            "id": "checkout-paid", "checkout_reference": str(payment.checkout_reference),
+            "merchant_code": "MEYUPGAT", "amount": 4.99, "currency": "GBP", "status": "PAID",
+            "transactions": [{"transaction_code": "TX-SUMUP-1"}],
+        }
+        response = self.client.get(reverse("sumup_return", args=[payment.checkout_reference]))
+        self.assertRedirects(response, reverse("payment_receipt", args=[payment.checkout_reference]))
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, "paid")
+        self.assertEqual(payment.provider_transaction_id, "TX-SUMUP-1")
+        self.assertEqual(CustomerSubscription.objects.get(user=self.user).status, "active")
+
+    @patch("payments.views.retrieve_sumup_checkout")
+    def test_sumup_webhook_verifies_checkout_and_is_idempotent(self, retrieve_checkout):
+        payment = PaymentTransaction.objects.create(
+            user=self.user, plan=self.plan, provider="sumup", amount=self.plan.price,
+            currency="GBP", status="pending", provider_checkout_id="checkout-hook",
+        )
+        retrieve_checkout.return_value = {
+            "id": "checkout-hook", "checkout_reference": str(payment.checkout_reference),
+            "merchant_code": "MEYUPGAT", "amount": "4.99", "currency": "GBP", "status": "PAID",
+            "transactions": [],
+        }
+        payload = {"event_type": "CHECKOUT_STATUS_CHANGED", "id": "checkout-hook"}
+        first = self.client.post(reverse("sumup_webhook"), data=json.dumps(payload), content_type="application/json")
+        second = self.client.post(reverse("sumup_webhook"), data=json.dumps(payload), content_type="application/json")
+        self.assertEqual(first.status_code, 200)
+        self.assertTrue(second.json()["duplicate"])
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, "paid")
+
+    @patch("payments.views.retrieve_sumup_checkout")
+    def test_mismatched_sumup_checkout_never_activates_access(self, retrieve_checkout):
+        payment = PaymentTransaction.objects.create(
+            user=self.user, plan=self.plan, provider="sumup", amount=self.plan.price,
+            currency="GBP", status="pending", provider_checkout_id="checkout-mismatch",
+        )
+        retrieve_checkout.return_value = {
+            "id": "checkout-mismatch", "checkout_reference": "wrong-reference",
+            "merchant_code": "MEYUPGAT", "amount": 4.99, "currency": "GBP", "status": "PAID",
+        }
+        response = self.client.get(reverse("sumup_return", args=[payment.checkout_reference]))
+        self.assertEqual(response.status_code, 200)
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, "pending")
+        self.assertFalse(CustomerSubscription.objects.filter(user=self.user).exists())
+
+    def test_non_owner_cannot_use_sumup_sandbox_override(self):
+        response = self.client.post(reverse("sumup_sandbox_test", args=[self.plan.code]))
+        self.assertEqual(response.status_code, 404)
+
+
 @override_settings(SECURE_SSL_REDIRECT=False)
 class StripeCheckoutTests(TestCase):
     def setUp(self):

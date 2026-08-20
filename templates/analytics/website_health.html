@@ -271,6 +271,14 @@
                         <strong>{{ mini_finance.currency }} {{ mini_finance.balance_sheet.deferred_service_liability }}</strong>
                     </div>
                     <div class="provider-row">
+                        <span>Default payment provider</span>
+                        <strong>{{ provider_readiness.payment_provider|title }}</strong>
+                    </div>
+                    <div class="provider-row">
+                        <span>SumUp</span>
+                        <strong>{% if provider_readiness.sumup_configured %}Configured ({{ provider_readiness.sumup_mode }}){% else %}Not ready{% endif %}</strong>
+                    </div>
+                    <div class="provider-row">
                         <span>Accounts payable</span>
                         <strong>{{ mini_finance.currency }} {{ mini_finance.balance_sheet.accounts_payable }}</strong>
                     </div>
@@ -334,7 +342,7 @@
                         <strong>{% if provider_readiness.email_console %}Console only{% else %}Configured{% endif %}</strong>
                     </div>
                     <p class="text-muted small mb-0 mt-3">
-                        Customers use one Stripe-hosted Pay Now flow. This panel reports whether production billing is ready.
+                        Hosted payment credentials stay in Heroku. Keep SumUp in sandbox until checkout, callback, webhook, failure, and duplicate-event tests pass.
                     </p>
                 </div>
             </div>
