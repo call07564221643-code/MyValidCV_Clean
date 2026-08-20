@@ -8,6 +8,16 @@ from django.urls import reverse
 from ats.models import ATSResult, CV
 from .maya_knowledge import knowledge_context, select_knowledge
 from .models import ExperienceFeedback
+
+
+class PrivacyPolicyTests(TestCase):
+    def test_privacy_policy_is_public_and_linked_from_footer(self):
+        response = self.client.get(reverse("privacy_policy"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Privacy Policy for MyValidCV")
+        self.assertContains(response, "support@myvalidcv.com")
+        home = self.client.get(reverse("home"))
+        self.assertContains(home, reverse("privacy_policy"))
 from .views import _safe_history, fallback_assistant_answer
 
 

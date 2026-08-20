@@ -571,7 +571,7 @@
     {% if not analytics_consent %}
     <aside class="position-fixed bottom-0 start-0 end-0 p-3" style="z-index:1080" aria-label="Analytics preference">
         <div class="container"><div class="card border-0 shadow-lg"><div class="card-body d-flex gap-3 align-items-center justify-content-between flex-wrap">
-            <p class="mb-0 small">Choose whether MyValidCV may use privacy-conscious analytics to improve the service. Essential account functions do not depend on this choice.</p>
+            <p class="mb-0 small">Choose whether MyValidCV may use privacy-conscious analytics to improve the service. Essential account functions do not depend on this choice. <a href="{% url 'privacy_policy' %}">Privacy Policy</a></p>
             <div class="d-flex gap-2"><form method="post" action="{% url 'analytics_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="declined"><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-sm btn-outline-secondary" type="submit">Decline</button></form><form method="post" action="{% url 'analytics_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="granted"><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-sm btn-primary" type="submit">Allow analytics</button></form></div>
         </div></div></div>
     </aside>

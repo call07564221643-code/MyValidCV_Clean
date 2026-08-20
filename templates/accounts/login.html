@@ -241,6 +241,7 @@
 
                 <p class="auth-switch">{% block auth_switch %}Don't have an account?
                     <a href="{% url 'register' %}?next={{ next|urlencode }}">Sign up</a>{% endblock %}</p>
+                <p class="auth-switch small">By using account services, you acknowledge the <a href="{% url 'privacy_policy' %}">Privacy Policy</a>.</p>
             </div>
         </div>
     </div>

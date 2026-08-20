@@ -28,6 +28,10 @@ from subscriptions.services import get_entitlements
 logger = logging.getLogger(__name__)
 
 
+def privacy_policy(request):
+    return render(request, "legal/privacy_policy.html")
+
+
 def robots_txt(request):
     sitemap = request.build_absolute_uri(reverse("sitemap_xml"))
     body = "\n".join([
@@ -39,7 +43,7 @@ def robots_txt(request):
 
 
 def sitemap_xml(request):
-    urls = [request.build_absolute_uri(reverse(name)) for name in ("home", "pricing")]
+    urls = [request.build_absolute_uri(reverse(name)) for name in ("home", "pricing", "privacy_policy")]
     body = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     body += "".join(f"  <url><loc>{url}</loc></url>\n" for url in urls)
     body += "</urlset>"

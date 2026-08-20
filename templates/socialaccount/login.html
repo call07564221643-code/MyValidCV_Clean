@@ -55,7 +55,7 @@
             <button type="submit" class="btn btn-primary btn-lg">Continue with {{ provider.name }}</button>
             <a href="{% url 'login' %}" class="btn btn-outline-secondary">Cancel</a>
         </form>
-        <p class="small mt-4 mb-0">You remain in control of permissions and can revoke access from your provider account.</p>
+        <p class="small mt-4 mb-0">You remain in control of permissions and can revoke access from your provider account. <a href="{% url 'privacy_policy' %}">Privacy Policy</a></p>
     </div>
 </section>
 {% endblock %}
