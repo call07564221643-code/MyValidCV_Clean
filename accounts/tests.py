@@ -146,6 +146,17 @@ class CustomerNavigationTests(TestCase):
         self.assertContains(response, 'Sign in with Google')
         self.assertContains(response, 'Sign in with LinkedIn')
 
+    @override_settings(
+        GOOGLE_OAUTH_CLIENT_ID='google-id',
+        GOOGLE_OAUTH_CLIENT_SECRET='google-secret',
+    )
+    def test_google_confirmation_uses_branded_template(self):
+        response = self.client.get(reverse('google_login'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'socialaccount/login.html')
+        self.assertContains(response, 'Continue with Google')
+        self.assertContains(response, 'MyValidCV never receives your Google password')
+
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_password_reset_sends_one_time_link(self):
         response = self.client.post(reverse('password_reset'), {
