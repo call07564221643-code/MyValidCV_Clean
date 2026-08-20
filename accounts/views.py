@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from .forms import CustomUserCreationForm, CustomAuthenticationForm, UserSettingsForm
 from .models import SocialAuthProvider
 
@@ -20,8 +20,16 @@ def safe_next_url(request, default='dashboard'):
         allowed_hosts={request.get_host()},
         require_https=request.is_secure(),
     ):
-        return next_url
-    return default
+        if next_url.startswith('/'):
+            return next_url
+        try:
+            return reverse(next_url)
+        except NoReverseMatch:
+            pass
+    try:
+        return reverse(default)
+    except NoReverseMatch:
+        return default if default.startswith('/') else '/'
 
 
 def get_social_auth_providers():

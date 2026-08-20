@@ -157,6 +157,18 @@ class CustomerNavigationTests(TestCase):
         self.assertContains(response, 'Continue with Google')
         self.assertContains(response, 'MyValidCV never receives your Google password')
 
+    @override_settings(
+        GOOGLE_OAUTH_CLIENT_ID='google-id',
+        GOOGLE_OAUTH_CLIENT_SECRET='google-secret',
+    )
+    def test_social_login_resolves_named_next_route_to_absolute_path(self):
+        response = self.client.get(
+            reverse('social_login_start', args=['google']),
+            {'next': 'dashboard'},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('next=%2Fdashboard%2F', response['Location'])
+
     def test_allauth_login_uses_branded_template(self):
         response = self.client.get(reverse('account_login'))
         self.assertEqual(response.status_code, 200)
