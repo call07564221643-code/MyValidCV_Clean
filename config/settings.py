@@ -196,9 +196,15 @@ SOCIALACCOUNT_PROVIDERS = {
         'SCOPE': ['profile', 'email'],
         'AUTH_PARAMS': {'access_type': 'online'},
         'OAUTH_PKCE_ENABLED': True,
+        # Google has verified this address. Let an existing MyValidCV customer
+        # sign in with it and retain one account instead of entering a signup
+        # loop caused by ACCOUNT_UNIQUE_EMAIL.
+        'EMAIL_AUTHENTICATION': True,
+        'EMAIL_AUTHENTICATION_AUTO_CONNECT': True,
     },
     'openid_connect': {
         'OAUTH_PKCE_ENABLED': True,
+        'EMAIL_AUTHENTICATION': True,
         'APPS': [{
             'provider_id': 'linkedin',
             'name': 'LinkedIn',
