@@ -36,14 +36,11 @@ def get_social_auth_providers():
 
 
 def social_login_context():
-    """Expose a provider only when both production OAuth values are present."""
+    """Keep supported login choices visible; validate credentials at hand-off."""
+    active_keys = set(SocialAuthProvider.objects.filter(is_active=True).values_list('key', flat=True))
     return {
-        'google_social_login_enabled': bool(
-            settings.GOOGLE_OAUTH_CLIENT_ID and settings.GOOGLE_OAUTH_CLIENT_SECRET
-        ),
-        'linkedin_social_login_enabled': bool(
-            settings.LINKEDIN_OAUTH_CLIENT_ID and settings.LINKEDIN_OAUTH_CLIENT_SECRET
-        ),
+        'google_social_login_enabled': 'google' in active_keys,
+        'linkedin_social_login_enabled': 'linkedin' in active_keys,
     }
 
 

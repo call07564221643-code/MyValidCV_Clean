@@ -130,10 +130,10 @@ class CustomerNavigationTests(TestCase):
         response = self.client.get(reverse('login'))
         self.assertContains(response, reverse('password_reset'))
 
-    def test_social_login_buttons_are_hidden_without_credentials(self):
+    def test_active_social_login_buttons_remain_visible_without_credentials(self):
         response = self.client.get(reverse('login'))
-        self.assertNotContains(response, 'Sign in with Google')
-        self.assertNotContains(response, 'Sign in with LinkedIn')
+        self.assertContains(response, 'Sign in with Google')
+        self.assertContains(response, 'Sign in with LinkedIn')
 
     @override_settings(
         GOOGLE_OAUTH_CLIENT_ID='google-id',
