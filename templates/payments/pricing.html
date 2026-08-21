@@ -115,6 +115,13 @@
         letter-spacing: 0;
     }
 
+    .launch-price-label {
+        margin: -0.75rem 0 0.95rem;
+        color: #475569;
+        font-size: 0.8rem;
+        font-weight: 650;
+    }
+
     .plan-features {
         display: grid;
         gap: 0.7rem;
@@ -245,6 +252,7 @@
                 <span>Renew only when you choose</span>
                 <span>No MyValidCV setup fee</span>
             </div>
+            <p class="small mt-2">Introductory pricing for early MyValidCV customers. Any future pricing change will be communicated in advance.</p>
             {% if sumup_sandbox %}<div class="alert alert-warning mt-3" role="alert">SumUp sandbox mode is active. Test payments do not transfer real funds.</div>{% endif %}
             {% if payment_provider == "sumup" %}<p class="small mt-2">International card providers may convert the GBP charge into your local currency. Any conversion fee is set by your card provider.</p>{% endif %}
         </div>
@@ -275,6 +283,9 @@
                                     £{{ plan.price }} <small>/{{ plan.billing_interval }}</small>
                                 {% endif %}
                             </div>
+                            {% if plan.price > 0 %}
+                                <p class="launch-price-label">Launch price · 30 days of access</p>
+                            {% endif %}
                             {% if plan.code == "plus" %}
                                 <p class="plan-value">About 25p per role check when all 20 checks are used.</p>
                             {% elif plan.code == "enterprise" %}
