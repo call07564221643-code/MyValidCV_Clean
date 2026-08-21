@@ -35,6 +35,23 @@
         max-width: 620px;
     }
 
+    .pricing-assurance {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.55rem 1.25rem;
+        margin-top: 1rem;
+        color: #475569;
+        font-size: 0.84rem;
+    }
+
+    .plan-value {
+        margin: -0.7rem 0 1rem;
+        color: #4f46e5;
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+
     .plan-card {
         height: 100%;
         display: flex;
@@ -210,6 +227,8 @@
         html:not([data-bs-theme="light"]) .plan-features li {
             color: #e2e8f0;
         }
+
+        html:not([data-bs-theme="light"]) .pricing-assurance { color: #cbd5e1; }
     }
 </style>
 {% endblock %}
@@ -218,10 +237,16 @@
 <section class="plans-shell">
     <div class="container">
         <div class="plans-hero">
-            <h1>Choose the plan that fits your job search.</h1>
-            <p>Transparent monthly plans for individual job seekers and hiring teams. Choose the usage and application support you need.</p>
+            <h1>Clear evidence for your next application or hire.</h1>
+            <p>Affordable CV-to-job checks for individuals and focused applicant screening for hiring teams—without paying for an oversized recruitment suite.</p>
+            <div class="pricing-assurance" aria-label="Pricing information">
+                <span>Prices charged in GBP</span>
+                <span>30-day paid access</span>
+                <span>Renew only when you choose</span>
+                <span>No MyValidCV setup fee</span>
+            </div>
             {% if sumup_sandbox %}<div class="alert alert-warning mt-3" role="alert">SumUp sandbox mode is active. Test payments do not transfer real funds.</div>{% endif %}
-            {% if payment_provider == "sumup" %}<p class="small mt-2">SumUp checkout currently activates one billing period. Automatic recurring collection is not enabled yet.</p>{% endif %}
+            {% if payment_provider == "sumup" %}<p class="small mt-2">International card providers may convert the GBP charge into your local currency. Any conversion fee is set by your card provider.</p>{% endif %}
         </div>
 
         <div class="row g-4 align-items-stretch">
@@ -250,6 +275,11 @@
                                     £{{ plan.price }} <small>/{{ plan.billing_interval }}</small>
                                 {% endif %}
                             </div>
+                            {% if plan.code == "plus" %}
+                                <p class="plan-value">About 25p per role check when all 20 checks are used.</p>
+                            {% elif plan.code == "enterprise" %}
+                                <p class="plan-value">98p per screened applicant when all 50 places are used.</p>
+                            {% endif %}
 
                             <ul class="plan-features">
                                 {% if plan.code == "free" %}
@@ -287,7 +317,7 @@
                                         <div class="discount-slot" aria-hidden="true"></div>
                                     {% endif %}
                                     <button class="btn btn-primary w-100" type="submit">
-                                        {% if plan.price == 0 %}Activate Free{% else %}Pay Now{% endif %}
+                                        {% if plan.price == 0 %}Activate Free{% elif plan.code == "enterprise" %}Start screening{% else %}Start Plus{% endif %}
                                     </button>
                                 </form>
                                 {% if sumup_test_available and plan.price > 0 %}
@@ -298,7 +328,7 @@
                                 {% endif %}
                             {% else %}
                                 <a class="btn btn-primary w-100" href="{% url 'register' %}?next={% url 'pricing' %}">
-                                    {% if plan.price == 0 %}Sign up{% else %}Create account to pay{% endif %}
+                                    {% if plan.price == 0 %}Sign up free{% elif plan.code == "enterprise" %}Create hiring account{% else %}Create account for Plus{% endif %}
                                 </a>
                             {% endif %}
                         </div>
