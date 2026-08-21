@@ -750,6 +750,35 @@ class ATSV2Tests(TestCase):
         self.assertContains(rendered, "Evidence to strengthen first")
         self.assertNotContains(rendered, "Proposed summary wording")
 
+    def test_truth_gate_ajax_answer_saves_without_page_redirect(self):
+        user = User.objects.create_user("ajax-candidate", "ajax@example.com", "password")
+        cv = CV.objects.create(user=user, title="Ajax CV", file="cvs/ajax.txt")
+        result = ATSResult.objects.create(
+            user=user,
+            cv=cv,
+            job_title="Developer",
+            job_description="Required Django experience for this developer role. " * 10,
+            metrics={
+                "model_version": "2.1",
+                "score_components": {},
+                "evidence_map": [{"term": "django", "status": "mentioned"}],
+                "requirement_groups": {},
+                "confidence": {},
+            },
+        )
+        self.client.force_login(user)
+        response = self.client.post(
+            reverse("ats_result", args=[result.id]),
+            {"requirement": "django", "evidence_action": "confirmed", "truth_gate_item": "1"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {
+            "ok": True, "action": "confirmed", "answered": 1, "total": 1, "completion": 100,
+        })
+        result.refresh_from_db()
+        self.assertEqual(result.metrics["candidate_confirmations"]["django"], "confirmed")
+
 
 class TruthGateGuidanceTests(SimpleTestCase):
     def test_requirement_labels_are_human_readable(self):

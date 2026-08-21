@@ -2910,6 +2910,46 @@
             });
         });
 
+        panel.querySelectorAll('.evidence-actions').forEach((form) => {
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const submitter = event.submitter;
+                if (!submitter || form.dataset.saving === 'true') return;
+                form.dataset.saving = 'true';
+                form.querySelectorAll('button').forEach((button) => { button.disabled = true; });
+                const data = new FormData(form);
+                data.set('evidence_action', submitter.value);
+                try {
+                    const response = await fetch(window.location.pathname, {
+                        method: 'POST',
+                        body: data,
+                        headers: {'X-Requested-With': 'XMLHttpRequest'},
+                        credentials: 'same-origin',
+                    });
+                    const payload = await response.json();
+                    if (!response.ok || !payload.ok) throw new Error(payload.error || 'Could not save this answer.');
+                    const card = form.closest('[data-truth-card]');
+                    card.dataset.answered = 'true';
+                    const labels = {confirmed: 'I have this experience', training: 'I am training', not_have: 'I do not have this'};
+                    let confirmation = card.querySelector('.candidate-confirmation');
+                    if (!confirmation) {
+                        confirmation = document.createElement('span');
+                        confirmation.className = 'candidate-confirmation';
+                        form.before(confirmation);
+                    }
+                    confirmation.innerHTML = `<strong>Your response</strong>${labels[payload.action]}`;
+                    panel.querySelector('[data-truth-progress-text]').textContent = `${payload.answered}/${payload.total}`;
+                    panel.querySelector('[data-truth-progress]').style.width = `${payload.completion}%`;
+                    if (activeIndex < cards.length - 1) showCard(activeIndex + 1, true);
+                } catch (error) {
+                    window.alert(error.message);
+                } finally {
+                    form.dataset.saving = 'false';
+                    form.querySelectorAll('button').forEach((button) => { button.disabled = false; });
+                }
+            });
+        });
+
         showCard(activeIndex);
     };
 

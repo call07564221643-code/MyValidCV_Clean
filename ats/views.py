@@ -1253,6 +1253,7 @@ def result_detail(request, result_id):
             "historic_score": True,
         }
     if request.method == "POST":
+        wants_json = request.headers.get("x-requested-with") == "XMLHttpRequest"
         submitted_item = request.POST.get("truth_gate_item", "")
         truth_gate_anchor = (
             f"truth-gate-item-{submitted_item}"
@@ -1261,6 +1262,8 @@ def result_detail(request, result_id):
         )
         truth_gate_url = f"{reverse('ats_result', args=[result.id])}#{truth_gate_anchor}"
         if result.user_id != request.user.id:
+            if wants_json:
+                return JsonResponse({"ok": False, "error": "Only the report owner can update this evidence."}, status=403)
             messages.error(request, "Only the candidate who owns this report can confirm its evidence.")
             return redirect(truth_gate_url)
         requirement = re.sub(r"\s+", " ", request.POST.get("requirement", "")).strip().lower()
@@ -1268,6 +1271,8 @@ def result_detail(request, result_id):
         allowed_actions = {"confirmed", "training", "not_have"}
         valid_terms = {item.get("term", "").lower() for item in ats_v2.get("evidence_map", [])}
         if requirement not in valid_terms or action not in allowed_actions:
+            if wants_json:
+                return JsonResponse({"ok": False, "error": "That evidence confirmation could not be recorded."}, status=400)
             messages.error(request, "That evidence confirmation could not be recorded.")
         else:
             stored_metrics = dict(result.metrics or {})
@@ -1276,6 +1281,18 @@ def result_detail(request, result_id):
             stored_metrics["candidate_confirmations"] = confirmations
             result.metrics = stored_metrics
             result.save(update_fields=["metrics", "updated_at"])
+            if wants_json:
+                evidence_map = ats_v2.get("evidence_map", [])
+                for evidence_item in evidence_map:
+                    evidence_item["candidate_action"] = confirmations.get(evidence_item.get("term", ""))
+                summary = build_truth_gate_summary(evidence_map)
+                return JsonResponse({
+                    "ok": True,
+                    "action": action,
+                    "answered": summary["answered"],
+                    "total": summary["total"],
+                    "completion": summary["completion"],
+                })
             messages.success(request, f"Your evidence status for “{requirement}” was recorded.")
         return redirect(truth_gate_url)
     ats_v2["candidate_confirmations"] = (result.metrics or {}).get("candidate_confirmations", {})
