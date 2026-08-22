@@ -4,6 +4,8 @@ from django.conf import settings
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
+from django.core.cache import cache
+from django.utils.crypto import salted_hmac
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -95,12 +97,21 @@ def login_view(request):
         return redirect('management_dashboard' if request.user.is_staff else 'dashboard')
     redirect_to = safe_next_url(request)
     if request.method == 'POST':
+        identifier_key = (request.POST.get('username') or '').strip().casefold()
+        remote_address = request.META.get('REMOTE_ADDR', '')
+        throttle_key = 'login-fail:' + salted_hmac(
+            'myvalidcv-login-throttle', f'{remote_address}:{identifier_key}'
+        ).hexdigest()
+        failed_attempts = cache.get(throttle_key, 0)
         form = CustomAuthenticationForm(request, data=request.POST)
-        if form.is_valid():
+        if failed_attempts >= 5:
+            form.add_error(None, 'Too many unsuccessful attempts. Please wait 15 minutes and try again.')
+        elif form.is_valid():
             identifier = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(username=identifier, password=password)
             if user is not None:
+                cache.delete(throttle_key)
                 login(request, user)
                 messages.success(request, f'Welcome back, {user.get_short_name() or user.username}!')
                 if user.is_superuser and not (request.POST.get('next') or request.GET.get('next')):
@@ -108,6 +119,11 @@ def login_view(request):
                 elif user.is_staff and not (request.POST.get('next') or request.GET.get('next')):
                     redirect_to = 'management_dashboard'
                 return redirect(redirect_to)
+        else:
+            try:
+                cache.incr(throttle_key)
+            except ValueError:
+                cache.set(throttle_key, 1, timeout=15 * 60)
     else:
         form = CustomAuthenticationForm()
 

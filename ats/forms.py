@@ -12,6 +12,7 @@ from .models import CV
 
 ALLOWED_DOCUMENT_EXTENSIONS = (".pdf", ".docx", ".txt")
 MAX_DOCUMENT_SIZE = 5 * 1024 * 1024
+MAX_DOCX_UNCOMPRESSED_SIZE = 20 * 1024 * 1024
 ENTERPRISE_BATCH_LIMIT = 15
 
 
@@ -31,8 +32,19 @@ def validate_document(uploaded_file):
             raise forms.ValidationError("This file has a DOCX name but is not a valid Office document.")
         try:
             with zipfile.ZipFile(uploaded_file) as archive:
-                if "word/document.xml" not in archive.namelist():
+                members = archive.infolist()
+                if "word/document.xml" not in {member.filename for member in members}:
                     raise forms.ValidationError("The DOCX file does not contain a readable Word document.")
+                if any(member.flag_bits & 0x1 for member in members):
+                    raise forms.ValidationError("Password-protected DOCX files cannot be analysed.")
+                if sum(member.file_size for member in members) > MAX_DOCX_UNCOMPRESSED_SIZE:
+                    raise forms.ValidationError("The DOCX expands beyond the safe processing limit.")
+                if any(
+                    member.file_size > 1024 * 1024
+                    and member.file_size > max(member.compress_size, 1) * 150
+                    for member in members
+                ):
+                    raise forms.ValidationError("The DOCX contains unusually compressed content and cannot be processed safely.")
         except (zipfile.BadZipFile, OSError):
             raise forms.ValidationError("The uploaded DOCX file is damaged or invalid.")
         finally:

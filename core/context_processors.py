@@ -11,5 +11,5 @@ def platform_integrations(request):
         "google_site_verification": settings.GOOGLE_SITE_VERIFICATION,
         "analytics_consent": request.COOKIES.get("mvcv_analytics_consent", ""),
         "has_partner_workspace": has_partner_workspace,
-        "seo_robots": "index, follow" if request.path in {"/", "/pricing/"} else "noindex, nofollow",
+        "seo_robots": "index, follow" if request.path in {"/", "/pricing/", "/privacy-policy/"} else "noindex, nofollow",
     }

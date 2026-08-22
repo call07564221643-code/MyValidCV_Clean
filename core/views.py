@@ -36,7 +36,9 @@ def robots_txt(request):
     sitemap = request.build_absolute_uri(reverse("sitemap_xml"))
     body = "\n".join([
         "User-agent: *", "Allow: /", "Disallow: /admin/", "Disallow: /owner/",
-        "Disallow: /dashboard/", "Disallow: /ats/", "Disallow: /settings/",
+        "Disallow: /management/", "Disallow: /dashboard/", "Disallow: /ats/",
+        "Disallow: /accounts/", "Disallow: /analytics/", "Disallow: /partners/",
+        "Disallow: /settings/",
         f"Sitemap: {sitemap}", "",
     ])
     return HttpResponse(body, content_type="text/plain")
