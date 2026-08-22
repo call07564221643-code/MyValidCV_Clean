@@ -213,6 +213,11 @@ SOCIALACCOUNT_PROVIDERS = {
             'settings': {
                 'server_url': 'https://www.linkedin.com/oauth',
                 'oauth_pkce_enabled': True,
+                # LinkedIn expects the client credentials in the token request
+                # form body. Its OIDC discovery document does not currently
+                # advertise token_endpoint_auth_methods_supported, so make the
+                # method explicit instead of allowing provider inference.
+                'token_auth_method': 'client_secret_post',
             },
         }],
     },
