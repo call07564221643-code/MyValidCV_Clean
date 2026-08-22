@@ -4,6 +4,9 @@ Django settings for MyValidCV project.
 
 import os
 from pathlib import Path
+
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 from urllib.parse import urlparse
 
 # Build paths inside the project
@@ -387,3 +390,16 @@ LOGGING = {
         },
     },
 }
+
+# Optional production error monitoring. The application remains functional
+# without a DSN, while the owner health page reports monitoring as incomplete.
+SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        environment=os.environ.get('SENTRY_ENVIRONMENT', 'production' if IS_HEROKU else 'development'),
+        send_default_pii=False,
+        traces_sample_rate=float(os.environ.get('SENTRY_TRACES_SAMPLE_RATE', '0.05')),
+        profiles_sample_rate=0.0,
+    )

@@ -14,6 +14,8 @@ ALLOWED_DOCUMENT_EXTENSIONS = (".pdf", ".docx", ".txt")
 MAX_DOCUMENT_SIZE = 5 * 1024 * 1024
 MAX_DOCX_UNCOMPRESSED_SIZE = 20 * 1024 * 1024
 ENTERPRISE_BATCH_LIMIT = 15
+PDF_ACTIVE_CONTENT_MARKERS = (b"/JavaScript", b"/JS", b"/Launch", b"/EmbeddedFile")
+DOCX_BLOCKED_PARTS = ("vbaproject.bin", "word/embeddings/")
 
 
 def validate_document(uploaded_file):
@@ -27,14 +29,26 @@ def validate_document(uploaded_file):
     uploaded_file.seek(0)
     if filename.endswith(".pdf") and not header.startswith(b"%PDF-"):
         raise forms.ValidationError("This file has a PDF name but does not contain a valid PDF signature.")
+    if filename.endswith(".pdf"):
+        content = uploaded_file.read()
+        uploaded_file.seek(0)
+        if any(marker in content for marker in PDF_ACTIVE_CONTENT_MARKERS):
+            raise forms.ValidationError("PDFs containing scripts, launch actions or embedded files cannot be processed safely.")
     if filename.endswith(".docx"):
         if not header.startswith(b"PK"):
             raise forms.ValidationError("This file has a DOCX name but is not a valid Office document.")
         try:
             with zipfile.ZipFile(uploaded_file) as archive:
                 members = archive.infolist()
-                if "word/document.xml" not in {member.filename for member in members}:
+                member_names = {member.filename for member in members}
+                lowered_names = {name.casefold() for name in member_names}
+                if "word/document.xml" not in member_names:
                     raise forms.ValidationError("The DOCX file does not contain a readable Word document.")
+                if any(
+                    name == DOCX_BLOCKED_PARTS[0] or name.startswith(DOCX_BLOCKED_PARTS[1])
+                    for name in lowered_names
+                ):
+                    raise forms.ValidationError("DOCX files containing macros or embedded objects cannot be processed safely.")
                 if any(member.flag_bits & 0x1 for member in members):
                     raise forms.ValidationError("Password-protected DOCX files cannot be analysed.")
                 if sum(member.file_size for member in members) > MAX_DOCX_UNCOMPRESSED_SIZE:

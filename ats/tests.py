@@ -1,5 +1,6 @@
 from io import BytesIO
 from types import SimpleNamespace
+import zipfile
 
 from docx import Document
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -90,6 +91,25 @@ class UploadAndUrlSecurityTests(SimpleTestCase):
     def test_pdf_extension_with_binary_content_is_rejected(self):
         upload = SimpleUploadedFile("candidate.pdf", b"MZ executable content")
         with self.assertRaisesMessage(Exception, "valid PDF signature"):
+            validate_document(upload)
+
+    def test_pdf_active_content_is_rejected(self):
+        upload = SimpleUploadedFile(
+            "candidate.pdf", b"%PDF-1.7\n1 0 obj<</JavaScript(test)>>endobj"
+        )
+        with self.assertRaisesMessage(Exception, "scripts, launch actions or embedded files"):
+            validate_document(upload)
+
+    def test_docx_embedded_object_is_rejected(self):
+        content = BytesIO()
+        with zipfile.ZipFile(content, "w") as archive:
+            archive.writestr("word/document.xml", "<document />")
+            archive.writestr("word/embeddings/object1.bin", b"embedded")
+        upload = SimpleUploadedFile(
+            "candidate.docx", content.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+        with self.assertRaisesMessage(Exception, "macros or embedded objects"):
             validate_document(upload)
 
     def test_binary_txt_file_is_rejected(self):

@@ -145,6 +145,9 @@ def website_health(request):
         "sumup_configured": bool(getattr(settings, "SUMUP_API_KEY", "") and getattr(settings, "SUMUP_MERCHANT_CODE", "")),
         "sumup_mode": getattr(settings, "SUMUP_MODE", "sandbox"),
         "email_console": "console" in getattr(settings, "EMAIL_BACKEND", ""),
+        "email_configured": bool(getattr(settings, "EMAIL_HOST", "") and getattr(settings, "EMAIL_HOST_USER", "")),
+        "sentry_configured": bool(getattr(settings, "SENTRY_DSN", "")),
+        "durable_media_configured": settings.STORAGES["default"]["BACKEND"] != "django.core.files.storage.FileSystemStorage",
     }
 
     finance_assumption = FinancialAssumption.current()
@@ -269,6 +272,27 @@ def website_health(request):
             "DEBUG is currently on." if settings.DEBUG else "DEBUG is off.",
             "Before launch, set DEBUG=False, configure ALLOWED_HOSTS, HTTPS, and secure cookies.",
             "Compatibility",
+        ),
+        _check(
+            "Automatic error monitoring",
+            "ok" if provider_readiness["sentry_configured"] else "warning",
+            "Sentry error monitoring is active." if provider_readiness["sentry_configured"] else "Sentry is not configured.",
+            "Add SENTRY_DSN in Heroku so production exceptions alert management automatically.",
+            "System",
+        ),
+        _check(
+            "Durable upload storage",
+            "ok" if provider_readiness["durable_media_configured"] else "warning",
+            "Uploads use durable object storage." if provider_readiness["durable_media_configured"] else "Uploads use Heroku local media with PostgreSQL byte fallback.",
+            "Move CV files to private object storage before scaling; retain the 30-day purge policy.",
+            "System",
+        ),
+        _check(
+            "Transactional email",
+            "ok" if provider_readiness["email_configured"] and not provider_readiness["email_console"] else "warning",
+            "Production email transport is configured." if provider_readiness["email_configured"] and not provider_readiness["email_console"] else "Production SMTP or transactional email is not configured.",
+            "Configure SPF, DKIM, DMARC and Heroku email credentials before inviting customers.",
+            "System",
         ),
         _check(
             "Profile creation",
