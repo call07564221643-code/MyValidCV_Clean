@@ -1,4 +1,9 @@
+import logging
+
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+
+
+logger = logging.getLogger(__name__)
 
 
 PROVIDER_SCOPES = {
@@ -14,6 +19,25 @@ class MyValidCVSocialAccountAdapter(DefaultSocialAccountAdapter):
         user = super().save_user(request, sociallogin, form=form)
         self._record_social_consent(user, sociallogin.account.provider)
         return user
+
+    def on_authentication_error(
+        self, request, provider, error=None, exception=None, extra_context=None
+    ):
+        """Log the provider's safe error description without OAuth codes or tokens."""
+        logger.warning(
+            "Social authentication failed provider=%s error=%s exception_type=%s detail=%s",
+            provider.id,
+            error,
+            type(exception).__name__ if exception else "",
+            str(exception)[:500] if exception else "",
+        )
+        return super().on_authentication_error(
+            request,
+            provider,
+            error=error,
+            exception=exception,
+            extra_context=extra_context,
+        )
 
     @staticmethod
     def _record_social_consent(user, provider):
