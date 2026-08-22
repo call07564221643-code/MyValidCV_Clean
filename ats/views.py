@@ -137,12 +137,15 @@ def populate_cv_metadata(cv, uploaded_file, validation_status="valid", validatio
     cv.original_filename = uploaded_file.name[:255]
     cv.mime_type = getattr(uploaded_file, "content_type", "") or ""
     cv.file_size = getattr(uploaded_file, "size", 0) or 0
-    # Heroku's local filesystem is ephemeral. Keep the original bytes in
-    # PostgreSQL for the 30-day retention window so a dyno restart does not make
-    # an otherwise valid CV unreadable. The purge command deletes this row/data.
-    uploaded_file.seek(0)
-    cv.file_data = uploaded_file.read()
-    uploaded_file.seek(0)
+    # Until private object storage is configured, keep a temporary PostgreSQL
+    # fallback because Heroku's local filesystem is ephemeral. Disable this
+    # duplication automatically once durable storage is active.
+    if settings.CV_DATABASE_FILE_FALLBACK:
+        uploaded_file.seek(0)
+        cv.file_data = uploaded_file.read()
+        uploaded_file.seek(0)
+    else:
+        cv.file_data = None
     cv.validation_status = validation_status
     cv.is_valid_cv = validation_status == "valid"
     cv.validation_notes = validation_notes

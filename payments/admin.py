@@ -1,9 +1,13 @@
 from django.contrib import admin
+from django.conf import settings
+from django.contrib import messages
+from django.db import transaction as db_transaction
 from django.utils import timezone
 
 from accounts.models import UserProfile
 from .models import Invoice, PaymentTransaction, PaymentWebhookLog, Refund
 from .views import activate_paid_transaction, send_receipt_email, set_subscription_inactive
+from .services import SumUpAPIError, refund_sumup_transaction
 
 
 @admin.register(PaymentTransaction)
@@ -66,11 +70,54 @@ class RefundAdmin(admin.ModelAdmin):
     list_display = ("transaction", "amount", "reason", "status", "created_at", "processed_at")
     list_filter = ("status", "created_at")
     search_fields = ("transaction__checkout_reference", "reason", "admin_notes")
-    actions = ("approve_refunds", "mark_processed", "reject_refunds")
+    actions = ("approve_refunds", "process_sumup_refunds", "mark_processed", "reject_refunds")
 
     @admin.action(description="Approve selected refunds")
     def approve_refunds(self, request, queryset):
         queryset.update(status="approved")
+
+    @admin.action(description="Process approved refunds through SumUp (moves real money)")
+    def process_sumup_refunds(self, request, queryset):
+        if not settings.SUMUP_REFUNDS_ENABLED:
+            self.message_user(
+                request,
+                "SumUp refunds are disabled. Set SUMUP_REFUNDS_ENABLED=True only after the refund workflow is approved.",
+                level=messages.ERROR,
+            )
+            return
+        processed = 0
+        for refund in queryset.select_related("transaction", "transaction__subscription", "transaction__user"):
+            if refund.status != "approved" or refund.transaction.provider != "sumup":
+                continue
+            try:
+                refund_sumup_transaction(refund.transaction, refund.amount)
+            except SumUpAPIError as exc:
+                refund.admin_notes = f"SumUp refund failed: {str(exc)[:500]}"
+                refund.save(update_fields=["admin_notes"])
+                continue
+            with db_transaction.atomic():
+                refund.status = "processed"
+                refund.processed_at = timezone.now()
+                refund.provider_refund_id = f"sumup:{refund.transaction.provider_transaction_id}:{refund.amount}"
+                refund.save(update_fields=["status", "processed_at", "provider_refund_id"])
+                total_refunded = sum(
+                    (item.amount for item in refund.transaction.refunds.filter(status="processed")),
+                    start=refund.transaction.amount * 0,
+                )
+                if total_refunded >= refund.transaction.amount:
+                    transaction = refund.transaction
+                    transaction.status = "refunded"
+                    transaction.save(update_fields=["status", "updated_at"])
+                    if hasattr(transaction, "invoice"):
+                        transaction.invoice.status = "refunded"
+                        transaction.invoice.save(update_fields=["status"])
+                    if transaction.subscription:
+                        transaction.subscription.status = "cancelled"
+                        transaction.subscription.cancelled_at = timezone.now()
+                        transaction.subscription.save(update_fields=["status", "cancelled_at", "updated_at"])
+                        UserProfile.objects.update_or_create(user=transaction.user, defaults={"plan": "free"})
+            processed += 1
+        self.message_user(request, f"Processed {processed} approved SumUp refund(s).")
 
     @admin.action(description="Mark selected refunds processed")
     def mark_processed(self, request, queryset):

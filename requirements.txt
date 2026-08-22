@@ -6,3 +6,4 @@ psycopg[binary]==3.3.4
 whitenoise==6.9.0
 django-allauth[socialaccount]==65.10.0
 sentry-sdk==2.68.0
+django-storages[s3]==1.14.6

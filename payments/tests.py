@@ -14,8 +14,8 @@ from django.urls import reverse
 from accounts.models import UserProfile
 from subscriptions.models import CustomerSubscription, DiscountCode, SubscriptionPlan
 
-from .models import Invoice, PaymentTransaction, PaymentWebhookLog
-from .services import create_stripe_checkout_session
+from .models import Invoice, PaymentTransaction, PaymentWebhookLog, Refund
+from .services import SumUpAPIError, create_stripe_checkout_session, refund_sumup_transaction
 
 
 @override_settings(
@@ -107,6 +107,34 @@ class SumUpCheckoutTests(TestCase):
     def test_non_owner_cannot_use_sumup_sandbox_override(self):
         response = self.client.post(reverse("sumup_sandbox_test", args=[self.plan.code]))
         self.assertEqual(response.status_code, 404)
+
+    @patch("payments.services.urllib.request.urlopen")
+    def test_sumup_refund_uses_verified_payment_id_and_amount(self, urlopen):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = b"{}"
+        urlopen.return_value = response
+        payment = PaymentTransaction.objects.create(
+            user=self.user, plan=self.plan, provider="sumup", amount=Decimal("4.99"),
+            currency="GBP", status="paid",
+            raw_response={"transactions": [{"id": "payment-uuid", "transaction_code": "TX-1"}]},
+        )
+
+        self.assertEqual(refund_sumup_transaction(payment, Decimal("1.25")), {})
+        request = urlopen.call_args.args[0]
+        self.assertIn("/payments/payment-uuid/refunds", request.full_url)
+        self.assertEqual(json.loads(request.data), {"amount": 1.25})
+
+    def test_sumup_refund_cannot_exceed_remaining_amount(self):
+        payment = PaymentTransaction.objects.create(
+            user=self.user, plan=self.plan, provider="sumup", amount=Decimal("4.99"),
+            currency="GBP", status="paid",
+            raw_response={"transactions": [{"id": "payment-uuid"}]},
+        )
+        Refund.objects.create(
+            transaction=payment, amount=Decimal("4.00"), reason="Partial refund", status="processed",
+        )
+        with self.assertRaisesMessage(SumUpAPIError, "remaining refundable"):
+            refund_sumup_transaction(payment, Decimal("1.00"))
 
 
 @override_settings(SECURE_SSL_REDIRECT=False)

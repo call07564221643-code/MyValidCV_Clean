@@ -5,6 +5,7 @@ import time
 import urllib.error
 import urllib.request
 from urllib.parse import urlencode
+from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 
@@ -80,6 +81,32 @@ def retrieve_sumup_checkout(checkout_id):
     if not checkout_id:
         raise SumUpAPIError("Missing SumUp checkout ID.")
     return _sumup_request(f"/v0.1/checkouts/{checkout_id}")
+
+
+def refund_sumup_transaction(transaction, amount):
+    """Issue an owner-approved partial or full refund against a verified payment."""
+    if transaction.provider != "sumup" or transaction.status not in ("paid", "refunded"):
+        raise SumUpAPIError("Only confirmed SumUp payments can be refunded.")
+    try:
+        refund_amount = Decimal(str(amount)).quantize(Decimal("0.01"))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise SumUpAPIError("Refund amount is invalid.") from exc
+    already_refunded = sum(
+        (item.amount for item in transaction.refunds.filter(status="processed")), Decimal("0.00")
+    )
+    refundable = transaction.amount - already_refunded
+    if refund_amount <= 0 or refund_amount > refundable:
+        raise SumUpAPIError("Refund amount exceeds the remaining refundable payment amount.")
+
+    transactions = (transaction.raw_response or {}).get("transactions") or []
+    payment_id = transactions[-1].get("id", "") if transactions else ""
+    if not payment_id:
+        raise SumUpAPIError("The verified SumUp payment ID is unavailable; reconcile this payment in SumUp first.")
+    path = (
+        f"/v1.0/merchants/{settings.SUMUP_MERCHANT_CODE}"
+        f"/payments/{payment_id}/refunds"
+    )
+    return _sumup_request(path, method="POST", payload={"amount": float(refund_amount)})
 
 
 def is_stripe_configured():

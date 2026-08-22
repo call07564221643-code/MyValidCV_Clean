@@ -293,6 +293,20 @@ STORAGES = {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
+if AWS_STORAGE_BUCKET_NAME:
+    STORAGES['default'] = {
+        'BACKEND': 'storages.backends.s3.S3Storage',
+        'OPTIONS': {
+            'bucket_name': AWS_STORAGE_BUCKET_NAME,
+            'region_name': os.environ.get('AWS_S3_REGION_NAME') or None,
+            'location': 'media',
+            'default_acl': None,
+            'querystring_auth': True,
+            'file_overwrite': False,
+        },
+    }
+CV_DATABASE_FILE_FALLBACK = env_bool('CV_DATABASE_FILE_FALLBACK', not bool(AWS_STORAGE_BUCKET_NAME))
 if env_bool('TEST_USE_SQLITE', False):
     # Tests resolve source assets directly and must not depend on a previously
     # generated production manifest in STATIC_ROOT.
@@ -338,6 +352,8 @@ PAYMENT_PROVIDER = os.environ.get('PAYMENT_PROVIDER', 'stripe').lower()
 SUMUP_API_KEY = os.environ.get('SUMUP_API_KEY', '')
 SUMUP_MERCHANT_CODE = os.environ.get('SUMUP_MERCHANT_CODE', '')
 SUMUP_MODE = os.environ.get('SUMUP_MODE', 'sandbox').lower()
+# Real refunds are disabled until the owner explicitly enables this switch.
+SUMUP_REFUNDS_ENABLED = env_bool('SUMUP_REFUNDS_ENABLED', False)
 
 # Email receipts
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
