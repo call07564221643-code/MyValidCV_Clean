@@ -8,6 +8,7 @@ from django import forms
 import zipfile
 
 from .models import CV
+from .malware import MalwareDetectedError, MalwareScanError, scan_uploaded_file
 
 
 ALLOWED_DOCUMENT_EXTENSIONS = (".pdf", ".docx", ".txt")
@@ -75,6 +76,12 @@ def validate_document(uploaded_file):
                 sample.decode("latin-1")
             except UnicodeDecodeError:
                 raise forms.ValidationError("The TXT upload uses an unsupported text encoding.")
+    try:
+        scan_uploaded_file(uploaded_file)
+    except MalwareDetectedError as exc:
+        raise forms.ValidationError(str(exc)) from exc
+    except MalwareScanError as exc:
+        raise forms.ValidationError(str(exc)) from exc
     return uploaded_file
 
 

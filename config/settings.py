@@ -336,6 +336,10 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 # the per-file memory limit to temporary storage while bounding the full request.
 DATA_UPLOAD_MAX_MEMORY_SIZE = 60 * 1024 * 1024
 CV_RETENTION_DAYS = int(os.environ.get('CV_RETENTION_DAYS', '30'))
+CLAMAV_HOST = os.environ.get('CLAMAV_HOST', '')
+CLAMAV_PORT = int(os.environ.get('CLAMAV_PORT', '3310'))
+CLAMAV_TIMEOUT_SECONDS = int(os.environ.get('CLAMAV_TIMEOUT_SECONDS', '12'))
+MALWARE_SCAN_REQUIRED = env_bool('MALWARE_SCAN_REQUIRED', False)
 
 # Stripe payments
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')

@@ -1,6 +1,7 @@
 from io import BytesIO
 from types import SimpleNamespace
 import zipfile
+from unittest.mock import MagicMock, patch
 
 from docx import Document
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -20,6 +21,7 @@ from .cv_drafting import (
 )
 from .engine import ats_engine
 from .forms import MultipleFileField, validate_document
+from .malware import MalwareDetectedError, MalwareScanError, scan_uploaded_file
 from .models import (
     ATSResult,
     CV,
@@ -116,6 +118,34 @@ class UploadAndUrlSecurityTests(SimpleTestCase):
         upload = SimpleUploadedFile("candidate.txt", b"text\x00binary")
         with self.assertRaisesMessage(Exception, "binary data"):
             validate_document(upload)
+
+    @override_settings(CLAMAV_HOST="scanner.internal", MALWARE_SCAN_REQUIRED=True)
+    @patch("ats.malware.socket.create_connection")
+    def test_private_scanner_accepts_clean_document(self, create_connection):
+        connection = MagicMock()
+        connection.recv.return_value = b"stream: OK\0"
+        create_connection.return_value.__enter__.return_value = connection
+        upload = SimpleUploadedFile("candidate.txt", b"Experienced accountant")
+
+        self.assertEqual(scan_uploaded_file(upload), "clean")
+        self.assertEqual(upload.tell(), 0)
+
+    @override_settings(CLAMAV_HOST="scanner.internal", MALWARE_SCAN_REQUIRED=True)
+    @patch("ats.malware.socket.create_connection")
+    def test_private_scanner_rejects_detected_content(self, create_connection):
+        connection = MagicMock()
+        connection.recv.return_value = b"stream: Eicar-Signature FOUND\0"
+        create_connection.return_value.__enter__.return_value = connection
+        upload = SimpleUploadedFile("candidate.txt", b"test content")
+
+        with self.assertRaises(MalwareDetectedError):
+            scan_uploaded_file(upload)
+
+    @override_settings(CLAMAV_HOST="", MALWARE_SCAN_REQUIRED=True)
+    def test_required_scanner_fails_closed_when_unconfigured(self):
+        upload = SimpleUploadedFile("candidate.txt", b"test content")
+        with self.assertRaises(MalwareScanError):
+            scan_uploaded_file(upload)
 
 
 class EnterpriseWorkspaceTests(TestCase):

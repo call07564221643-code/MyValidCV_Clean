@@ -148,6 +148,8 @@ def website_health(request):
         "email_configured": bool(getattr(settings, "EMAIL_HOST", "") and getattr(settings, "EMAIL_HOST_USER", "")),
         "sentry_configured": bool(getattr(settings, "SENTRY_DSN", "")),
         "durable_media_configured": settings.STORAGES["default"]["BACKEND"] != "django.core.files.storage.FileSystemStorage",
+        "malware_scanner_configured": bool(getattr(settings, "CLAMAV_HOST", "")),
+        "malware_scan_required": bool(getattr(settings, "MALWARE_SCAN_REQUIRED", False)),
     }
 
     finance_assumption = FinancialAssumption.current()
@@ -286,6 +288,13 @@ def website_health(request):
             "Uploads use durable object storage." if provider_readiness["durable_media_configured"] else "Uploads use Heroku local media with PostgreSQL byte fallback.",
             "Move CV files to private object storage before scaling; retain the 30-day purge policy.",
             "System",
+        ),
+        _check(
+            "Private malware scanning",
+            "ok" if provider_readiness["malware_scanner_configured"] and provider_readiness["malware_scan_required"] else "warning",
+            "Private malware scanning is active and required." if provider_readiness["malware_scanner_configured"] and provider_readiness["malware_scan_required"] else "Structural upload checks are active; private antivirus is not yet enforced.",
+            "Configure CLAMAV_HOST, test the private scanner, then set MALWARE_SCAN_REQUIRED=True.",
+            "Security",
         ),
         _check(
             "Transactional email",

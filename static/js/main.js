@@ -576,3 +576,42 @@ function getAssistantAnswer(question) {
 
 window.FormHandler = FormHandler;
 window.Utils = Utils;
+document.addEventListener('DOMContentLoaded', function () {
+    const overlay = document.getElementById('mvcvProcessing');
+    if (!overlay) return;
+    const message = document.getElementById('mvcvProcessingMessage');
+    const bar = document.getElementById('mvcvProcessingBar');
+    const stepList = document.getElementById('mvcvProcessingSteps');
+
+    document.querySelectorAll('form[enctype="multipart/form-data"]').forEach(function (form) {
+        form.addEventListener('submit', function () {
+            const hasFile = Array.from(form.querySelectorAll('input[type="file"]')).some(function (input) {
+                return input.files && input.files.length;
+            });
+            const isValidation = form.id === 'validationForm';
+            if (!hasFile && !isValidation) return;
+            const steps = hasFile
+                ? ['Uploading your document', 'Security-scanning your file', 'Reading your CV', 'Comparing it with the job', 'Preparing your report']
+                : ['Reading your saved CV', 'Comparing it with the job', 'Preparing your report'];
+            stepList.replaceChildren.apply(stepList, steps.map(function (label) {
+                const item = document.createElement('li');
+                item.textContent = label;
+                return item;
+            }));
+            overlay.hidden = false;
+            let current = 0;
+            function update() {
+                const items = stepList.querySelectorAll('li');
+                items.forEach(function (item, index) {
+                    item.classList.toggle('complete', index < current);
+                    item.classList.toggle('active', index === current);
+                });
+                message.textContent = steps[current] + '\u2026';
+                bar.style.width = Math.min(92, 12 + ((current + 1) / steps.length) * 78) + '%';
+                if (current < steps.length - 1) current += 1;
+            }
+            update();
+            window.setInterval(update, 2200);
+        });
+    });
+});

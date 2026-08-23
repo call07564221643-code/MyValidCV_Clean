@@ -528,6 +528,17 @@
 
     {% include "includes/footer.html" %}
 
+    <div class="mvcv-processing" id="mvcvProcessing" hidden aria-live="polite" aria-busy="true">
+        <div class="mvcv-processing-card" role="status">
+            <div class="mvcv-processing-shield" aria-hidden="true">&#10003;</div>
+            <h2>Preparing your secure report</h2>
+            <p id="mvcvProcessingMessage">Uploading your document securely&hellip;</p>
+            <div class="mvcv-processing-track"><span id="mvcvProcessingBar"></span></div>
+            <ol class="mvcv-processing-steps" id="mvcvProcessingSteps"></ol>
+            <small>Please keep this page open. No further action is required.</small>
+        </div>
+    </div>
+
     <aside class="mvcv-assistant" aria-label="MyValidCV assistant" data-assistant>
         <button class="mvcv-assistant-button" type="button" aria-expanded="false" data-assistant-toggle>
             <span class="mvcv-assistant-dot"></span>
