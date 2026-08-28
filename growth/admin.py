@@ -4,10 +4,39 @@ from django.utils import timezone
 from governance.forms import OptimisticLockAdminForm
 
 from .models import (
-    AccessVoucher, AffiliateAgreementAcceptance, AnalyticsEvent, BulkPurchase, CampaignApproval,
+    AccessVoucher, AffiliateAgreementAcceptance, AffiliateApplication, AnalyticsEvent, BulkPurchase, CampaignApproval,
     CommissionEntry, ConsentRecord, MarketingCampaign, PartnerProfile,
     ProviderConnection, ReferralAttribution, ReferralPartner, VoucherRedemption,
 )
+
+
+@admin.register(AffiliateApplication)
+class AffiliateApplicationAdmin(admin.ModelAdmin):
+    list_display = ("legal_name", "applicant_type", "country", "audience_size", "status", "meeting_status", "created_at")
+    list_filter = ("status", "meeting_status", "applicant_type", "country")
+    search_fields = ("legal_name", "user__email", "website", "public_profiles")
+    readonly_fields = ("user", "created_at", "updated_at", "decided_at")
+    actions = ("mark_under_review", "request_meeting", "approve_after_meeting", "decline")
+
+    @admin.action(description="Mark selected applications as under review")
+    def mark_under_review(self, request, queryset):
+        queryset.filter(status="submitted").update(status="review", reviewed_by=request.user)
+
+    @admin.action(description="Request an online meeting")
+    def request_meeting(self, request, queryset):
+        queryset.exclude(status__in={"approved", "declined", "withdrawn"}).update(
+            status="meeting_requested", meeting_status="requested", reviewed_by=request.user,
+        )
+
+    @admin.action(description="Approve selected applications after completed meeting")
+    def approve_after_meeting(self, request, queryset):
+        eligible = queryset.filter(meeting_status="completed").exclude(status__in={"declined", "withdrawn"})
+        updated = eligible.update(status="approved", reviewed_by=request.user, decided_at=timezone.now())
+        self.message_user(request, f"Approved {updated} application(s). Applications without a completed meeting were unchanged.")
+
+    @admin.action(description="Decline selected applications")
+    def decline(self, request, queryset):
+        queryset.exclude(status="approved").update(status="declined", reviewed_by=request.user, decided_at=timezone.now())
 
 
 @admin.register(PartnerProfile)

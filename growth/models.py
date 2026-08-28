@@ -176,6 +176,62 @@ class AffiliateAgreementAcceptance(models.Model):
         return f"{self.partner} · {self.terms_version}"
 
 
+class AffiliateApplication(models.Model):
+    TYPE_CHOICES = [
+        ("creator", "Content creator"), ("publisher", "Publisher or website"),
+        ("career_adviser", "Career adviser"), ("agency", "Agency"),
+        ("university", "University or college"), ("job_fair", "Job fair or event"),
+        ("charity", "Charity or career service"), ("public_sector", "Public-sector service"),
+        ("other", "Other"),
+    ]
+    STATUS_CHOICES = [
+        ("submitted", "Submitted"), ("review", "Under review"),
+        ("meeting_requested", "Meeting requested"), ("meeting_scheduled", "Meeting scheduled"),
+        ("changes", "Changes requested"), ("approved", "Approved"),
+        ("declined", "Declined"), ("withdrawn", "Withdrawn"),
+    ]
+    MEETING_CHOICES = [
+        ("not_scheduled", "Not scheduled"), ("requested", "Requested"),
+        ("scheduled", "Scheduled"), ("completed", "Completed"),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="affiliate_applications")
+    legal_name = models.CharField(max_length=180)
+    applicant_type = models.CharField(max_length=30, choices=TYPE_CHOICES)
+    country = models.CharField(max_length=2)
+    website = models.URLField(blank=True)
+    public_profiles = models.TextField(blank=True, help_text="One public profile URL per line.")
+    audience_size = models.PositiveIntegerField(default=0)
+    audience_countries = models.CharField(max_length=240)
+    engagement_evidence = models.TextField()
+    audience_description = models.TextField()
+    proposed_channels = models.JSONField(default=list)
+    promotion_plan = models.TextField()
+    previous_experience = models.TextField(blank=True)
+    genuine_audience_confirmed = models.BooleanField(default=False)
+    compliance_confirmed = models.BooleanField(default=False)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="submitted", db_index=True)
+    meeting_status = models.CharField(max_length=20, choices=MEETING_CHOICES, default="not_scheduled")
+    meeting_scheduled_at = models.DateTimeField(null=True, blank=True)
+    meeting_url = models.URLField(blank=True)
+    meeting_notes = models.TextField(blank=True)
+    owner_notes = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="affiliate_applications_reviewed",
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        permissions = [("review_affiliate_application", "Can review affiliate applications")]
+
+    def __str__(self):
+        return f"{self.legal_name} · {self.get_status_display()}"
+
+
 class ReferralAttribution(models.Model):
     partner = models.ForeignKey(ReferralPartner, null=True, blank=True, on_delete=models.SET_NULL, related_name="attributions")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="referral_attributions")

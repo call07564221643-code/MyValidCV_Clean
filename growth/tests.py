@@ -13,10 +13,57 @@ from payments.models import PaymentTransaction, Refund
 from payments.views import activate_paid_transaction
 
 from .models import (
-    AccessVoucher, AffiliateAgreementAcceptance, BulkPurchase, CommissionEntry, PartnerProfile,
+    AccessVoucher, AffiliateAgreementAcceptance, AffiliateApplication, BulkPurchase, CommissionEntry, PartnerProfile,
     ProviderConnection, ReferralAttribution, ReferralPartner, VoucherRedemption,
 )
 from .services import ReferralError, VoucherError, capture_referral_code, redeem_access_voucher
+
+
+class AffiliateApplicationTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("affiliate", "affiliate@example.com", "password")
+
+    def test_public_guide_explains_controlled_journey(self):
+        response = self.client.get(reverse("affiliate_guide"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Recommend responsibly")
+        self.assertContains(response, "affiliate-journey-handdrawn.png")
+        self.assertContains(response, "20% of the first eligible retained payment")
+
+    def test_application_requires_login(self):
+        response = self.client.get(reverse("affiliate_apply"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("login"), response.url)
+
+    def test_submission_is_pending_and_does_not_create_partner(self):
+        self.client.force_login(self.user)
+        response = self.client.post(reverse("affiliate_apply"), {
+            "legal_name": "Example Creator Ltd", "applicant_type": "creator", "country": "gb",
+            "website": "https://example.com", "public_profiles": "https://linkedin.com/in/example",
+            "audience_size": 1200, "audience_countries": "United Kingdom and France",
+            "engagement_evidence": "Regular relevant comments and monthly analytics.",
+            "audience_description": "Early-career finance professionals.",
+            "proposed_channels": ["linkedin", "email"],
+            "promotion_plan": "Publish practical CV education with clear affiliate disclosure.",
+            "previous_experience": "Career education newsletter.",
+            "genuine_audience_confirmed": "on", "compliance_confirmed": "on",
+        })
+        self.assertRedirects(response, reverse("affiliate_guide"))
+        application = AffiliateApplication.objects.get(user=self.user)
+        self.assertEqual(application.status, "submitted")
+        self.assertEqual(application.country, "GB")
+        self.assertFalse(ReferralPartner.objects.exists())
+
+    def test_duplicate_active_application_is_blocked(self):
+        AffiliateApplication.objects.create(
+            user=self.user, legal_name="Example", applicant_type="creator", country="GB",
+            audience_countries="GB", engagement_evidence="Evidence", audience_description="Audience",
+            promotion_plan="Plan", genuine_audience_confirmed=True, compliance_confirmed=True,
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("affiliate_apply"))
+        self.assertRedirects(response, reverse("affiliate_guide"))
+        self.assertEqual(AffiliateApplication.objects.count(), 1)
 
 
 class PartnerAccessTests(TestCase):

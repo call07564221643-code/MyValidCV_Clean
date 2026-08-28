@@ -15,7 +15,7 @@ from subscriptions.services import get_entitlements
 from core.models import ExperienceFeedback
 from governance.models import AuditEvent, ManagementAssignment, Organisation
 from growth.models import (
-    AnalyticsEvent, BulkPurchase, CommissionEntry, ConsentRecord, MarketingCampaign,
+    AffiliateApplication, AnalyticsEvent, BulkPurchase, CommissionEntry, ConsentRecord, MarketingCampaign,
     PartnerProfile, ProviderConnection, ReferralPartner,
 )
 from payments.models import PaymentTransaction, PaymentWebhookLog, Refund
@@ -313,6 +313,9 @@ def owner_console(request):
     low_feedback = ExperienceFeedback.objects.filter(rating__lte=2, created_at__gte=since_7d).count()
     campaigns_waiting = MarketingCampaign.objects.filter(status="review").count()
     providers_attention = ProviderConnection.objects.exclude(status="connected").count()
+    affiliate_applications = AffiliateApplication.objects.filter(
+        status__in=["submitted", "review", "meeting_requested", "meeting_scheduled", "changes"],
+    ).count()
     attention_items = [
         {"label": "Payments awaiting attention", "count": pending_payments + failed_payments, "url": "admin:payments_paymenttransaction_changelist"},
         {"label": "Webhook errors", "count": webhook_errors, "url": "admin:payments_paymentwebhooklog_changelist"},
@@ -320,6 +323,7 @@ def owner_console(request):
         {"label": "Low customer ratings", "count": low_feedback, "url": "management_feedback"},
         {"label": "Campaign approvals", "count": campaigns_waiting, "url": "admin:growth_marketingcampaign_changelist"},
         {"label": "Provider setup checks", "count": providers_attention, "url": "admin:growth_providerconnection_changelist"},
+        {"label": "Affiliate applications", "count": affiliate_applications, "url": "admin:growth_affiliateapplication_changelist"},
     ]
 
     context = {

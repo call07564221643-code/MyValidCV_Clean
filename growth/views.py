@@ -5,12 +5,50 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from governance.models import AuditEvent, OrganisationMembership
-from .models import AffiliateAgreementAcceptance, ReferralPartner
+from .forms import AffiliateApplicationForm
+from .models import AffiliateAgreementAcceptance, AffiliateApplication, ReferralPartner
 
 
 AFFILIATE_CHANNELS = {
     "website", "blog", "email", "linkedin", "youtube", "facebook", "instagram", "tiktok", "events",
 }
+
+ACTIVE_APPLICATION_STATUSES = {
+    "submitted", "review", "meeting_requested", "meeting_scheduled", "changes", "approved",
+}
+
+
+def affiliate_guide(request):
+    application = None
+    if request.user.is_authenticated:
+        application = AffiliateApplication.objects.filter(user=request.user).first()
+    return render(request, "growth/affiliate_guide.html", {"application": application})
+
+
+@login_required(login_url="login")
+def affiliate_apply(request):
+    existing = AffiliateApplication.objects.filter(
+        user=request.user, status__in=ACTIVE_APPLICATION_STATUSES,
+    ).first()
+    if existing:
+        messages.info(request, "Your affiliate application is already in progress.")
+        return redirect("affiliate_guide")
+    form = AffiliateApplicationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        application = form.save(commit=False)
+        application.user = request.user
+        application.save()
+        forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
+        ip_address = forwarded.split(",")[0].strip() or request.META.get("REMOTE_ADDR")
+        AuditEvent.objects.create(
+            actor=request.user, action="affiliate.application_submitted",
+            target_type="AffiliateApplication", target_id=str(application.pk),
+            summary=f"Affiliate application submitted by {application.legal_name}.",
+            ip_address=ip_address,
+        )
+        messages.success(request, "Application received. It is pending owner review; no referral code is active yet.")
+        return redirect("affiliate_guide")
+    return render(request, "growth/affiliate_apply.html", {"form": form})
 
 
 @login_required(login_url="login")

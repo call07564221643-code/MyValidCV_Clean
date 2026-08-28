@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Affiliate Programme | MyValidCV{% endblock %}
+{% block meta_description %}Apply to become a MyValidCV affiliate. See the review process, eligibility rules, commission journey and advertising standards.{% endblock %}
+{% block content %}
+<main class="container py-5" style="max-width: 1080px">
+  <section class="text-center mb-5">
+    <span class="badge text-bg-primary mb-3">MyValidCV Affiliate Programme</span>
+    <h1 class="display-5 fw-bold">Recommend responsibly. Earn transparently.</h1>
+    <p class="lead text-body-secondary mx-auto" style="max-width:760px">For creators, career professionals, organisations and events that can introduce relevant audiences to MyValidCV.</p>
+    {% if application %}
+      <div class="alert alert-info text-start mx-auto" style="max-width:760px">
+        <strong>Your application: {{ application.get_status_display }}</strong><br>
+        Meeting: {{ application.get_meeting_status_display }}.
+        {% if application.meeting_scheduled_at %} Scheduled for {{ application.meeting_scheduled_at|date:"j M Y, H:i T" }}.{% endif %}
+        {% if application.meeting_url %}<a class="alert-link" href="{{ application.meeting_url }}" rel="noopener noreferrer">Open meeting link</a>.{% endif %}
+        {% if application.status == 'approved' %}Approval does not activate earnings until the agreement is accepted and the owner activates a referral code.{% endif %}
+      </div>
+    {% else %}
+      <a class="btn btn-primary btn-lg" href="{% url 'affiliate_apply' %}">Apply to become an affiliate</a>
+    {% endif %}
+  </section>
+
+  <section class="card border-0 shadow-sm mb-5 overflow-hidden">
+    <img src="{% static 'images/affiliate-journey-handdrawn.png' %}" class="img-fluid" alt="Hand-drawn eight-step MyValidCV affiliate journey from application to earning commission" loading="lazy">
+  </section>
+
+  <section class="row g-4 mb-5">
+    <div class="col-md-4"><div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h4">Clear economics</h2><p>Standard offer: 20% of the first eligible retained payment. Attribution lasts 30 days, followed by a 30-day validation hold and a £25 minimum payout.</p></div></div></div>
+    <div class="col-md-4"><div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h4">Quality before size</h2><p>Audience relevance, content quality, genuine engagement and compliance matter more than follower count alone.</p></div></div></div>
+    <div class="col-md-4"><div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h4">Controlled activation</h2><p>Application, owner review, online meeting and agreement come before any referral code can earn commission.</p></div></div></div>
+  </section>
+
+  <section class="mb-5">
+    <h2>How approval works</h2>
+    <ol class="list-group list-group-numbered shadow-sm">
+      <li class="list-group-item"><strong>Apply.</strong> Tell us who you are, where your audience is and how you intend to promote.</li>
+      <li class="list-group-item"><strong>Owner review.</strong> We assess relevance (30%), quality (20%), engagement (20%), compliance (20%) and audience size (10%).</li>
+      <li class="list-group-item"><strong>Online meeting.</strong> We confirm audience fit, approved channels, disclosures, brand rules and realistic expectations.</li>
+      <li class="list-group-item"><strong>Decision and agreement.</strong> Approval may include conditions. You then accept the current agreement and privacy terms.</li>
+      <li class="list-group-item"><strong>Activation.</strong> The owner creates and activates your unique referral code; approval alone does not activate it.</li>
+      <li class="list-group-item"><strong>Promote and earn.</strong> Valid conversions are reported, held for refunds and paid after the threshold is met.</li>
+    </ol>
+  </section>
+
+  <section class="row g-4 mb-5">
+    <div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h4">What we ask for</h2><ul><li>Legal name, country and applicant type</li><li>Website and public social profiles</li><li>Audience size, geography and engagement evidence</li><li>Audience description and planned channels</li><li>Promotion plan and relevant experience</li><li>Confirmation of genuine audience and compliant advertising</li></ul></div></div></div>
+    <div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h4">Non-negotiable rules</h2><ul><li>Clearly label affiliate advertising</li><li>No spam, fake engagement or misleading claims</li><li>No guaranteed job, interview or ATS outcome claims</li><li>No bidding on protected brand terms without permission</li><li>No self-referrals, cookie manipulation or unauthorised discounts</li><li>Respect privacy and applicable marketing law</li></ul></div></div></div>
+  </section>
+
+  <section class="bg-body-tertiary rounded-4 p-4 p-md-5 mb-4">
+    <h2>Before you apply</h2>
+    <p>You do not need a large following. You do need a relevant, authentic audience and a credible plan. Commission applies only to eligible, successfully paid and retained transactions. Refunds, chargebacks, fraud and cancelled payments can reverse commission.</p>
+    <p class="small text-body-secondary">Programme approval is discretionary. Commercial terms may be confirmed in your agreement. This page is an operational summary and does not replace the signed agreement or applicable law.</p>
+    {% if not application %}<a class="btn btn-primary" href="{% url 'affiliate_apply' %}">Start your application</a>{% endif %}
+    <a class="btn btn-outline-secondary" href="{% url 'privacy_policy' %}">Read Privacy Policy</a>
+  </section>
+</main>
+{% endblock %}
