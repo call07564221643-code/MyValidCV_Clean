@@ -1,8 +1,10 @@
 from datetime import date
+from decimal import Decimal
+from django.contrib.auth import get_user_model
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count, Q, Sum
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_http_methods
@@ -13,9 +15,10 @@ from subscriptions.services import get_entitlements
 from core.models import ExperienceFeedback
 from governance.models import AuditEvent, ManagementAssignment, Organisation
 from growth.models import (
-    BulkPurchase, CommissionEntry, ConsentRecord, MarketingCampaign,
+    AnalyticsEvent, BulkPurchase, CommissionEntry, ConsentRecord, MarketingCampaign,
     PartnerProfile, ProviderConnection, ReferralPartner,
 )
+from payments.models import PaymentTransaction, PaymentWebhookLog, Refund
 
 
 def owner_required(user):
@@ -293,6 +296,32 @@ def owner_console(request):
         },
     ]
 
+    now = timezone.now()
+    since_24h = now - timezone.timedelta(hours=24)
+    since_7d = now - timezone.timedelta(days=7)
+    production_payments = PaymentTransaction.objects.exclude(user__profile__is_test_data=True)
+    paid_7d = production_payments.filter(status="paid", updated_at__gte=since_7d)
+    revenue_7d = paid_7d.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+    pending_payments = production_payments.filter(
+        status__in=["draft", "pending"], created_at__lt=now - timezone.timedelta(minutes=20),
+    ).count()
+    failed_payments = production_payments.filter(status="failed", updated_at__gte=since_24h).count()
+    webhook_errors = PaymentWebhookLog.objects.filter(
+        Q(is_processed=False) | ~Q(error=""), created_at__gte=since_24h,
+    ).count()
+    refund_requests = Refund.objects.filter(status__in=["requested", "approved"]).count()
+    low_feedback = ExperienceFeedback.objects.filter(rating__lte=2, created_at__gte=since_7d).count()
+    campaigns_waiting = MarketingCampaign.objects.filter(status="review").count()
+    providers_attention = ProviderConnection.objects.exclude(status="connected").count()
+    attention_items = [
+        {"label": "Payments awaiting attention", "count": pending_payments + failed_payments, "url": "admin:payments_paymenttransaction_changelist"},
+        {"label": "Webhook errors", "count": webhook_errors, "url": "admin:payments_paymentwebhooklog_changelist"},
+        {"label": "Refund decisions", "count": refund_requests, "url": "admin:payments_refund_changelist"},
+        {"label": "Low customer ratings", "count": low_feedback, "url": "management_feedback"},
+        {"label": "Campaign approvals", "count": campaigns_waiting, "url": "admin:growth_marketingcampaign_changelist"},
+        {"label": "Provider setup checks", "count": providers_attention, "url": "admin:growth_providerconnection_changelist"},
+    ]
+
     context = {
         "summary": {
             "active_managers": ManagementAssignment.objects.filter(is_active=True).count(),
@@ -301,6 +330,18 @@ def owner_console(request):
             "providers_ready": ProviderConnection.objects.filter(status="connected").count(),
         },
         "management_cards": management_cards,
+        "daily_brief": {
+            "generated_at": timezone.localtime(now),
+            "new_users_7d": get_user_model().objects.exclude(profile__is_test_data=True).filter(date_joined__gte=since_7d).count(),
+            "analyses_24h": ATSResult.objects.exclude(user__profile__is_test_data=True).filter(created_at__gte=since_24h).count(),
+            "enterprise_candidates_24h": EnterpriseCandidateResult.objects.exclude(batch__user__profile__is_test_data=True).filter(created_at__gte=since_24h).count(),
+            "paid_orders_7d": paid_7d.count(),
+            "revenue_7d": revenue_7d,
+            "support_signals_24h": ExperienceFeedback.objects.filter(created_at__gte=since_24h).count(),
+            "marketing_events_7d": AnalyticsEvent.objects.filter(occurred_at__gte=since_7d).count(),
+            "attention_total": sum(item["count"] for item in attention_items),
+            "attention_items": attention_items,
+        },
     }
     return render(request, "dashboard/owner_console.html", context)
 

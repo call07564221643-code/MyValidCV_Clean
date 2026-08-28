@@ -9,14 +9,14 @@ from django.utils import timezone
 from governance.models import Organisation, OrganisationMembership
 from subscriptions.models import SubscriptionPlan
 
-from payments.models import PaymentTransaction
+from payments.models import PaymentTransaction, Refund
 from payments.views import activate_paid_transaction
 
 from .models import (
-    AccessVoucher, BulkPurchase, CommissionEntry, PartnerProfile,
+    AccessVoucher, AffiliateAgreementAcceptance, BulkPurchase, CommissionEntry, PartnerProfile,
     ProviderConnection, ReferralAttribution, ReferralPartner, VoucherRedemption,
 )
-from .services import VoucherError, redeem_access_voucher
+from .services import ReferralError, VoucherError, capture_referral_code, redeem_access_voucher
 
 
 class PartnerAccessTests(TestCase):
@@ -82,6 +82,12 @@ class PartnerAccessTests(TestCase):
         partner = ReferralPartner.objects.create(
             organisation=self.organisation, referral_code="example-university", approved_at=timezone.now(),
         )
+        affiliate_owner = User.objects.create_user("affiliate-owner", "owner@example.edu", "password")
+        OrganisationMembership.objects.create(organisation=self.organisation, user=affiliate_owner, role="owner")
+        AffiliateAgreementAcceptance.objects.create(
+            partner=partner, accepted_by=affiliate_owner, terms_version=partner.terms_version,
+            legal_name="Example University", country="GB", approved_channels=["website"],
+        )
         ReferralAttribution.objects.create(partner=partner, user=self.user, source="linkedin")
         payment = PaymentTransaction.objects.create(
             user=self.user, plan=self.plan, amount="9.00", status="pending",
@@ -90,4 +96,69 @@ class PartnerAccessTests(TestCase):
         activate_paid_transaction(payment)
         commission = CommissionEntry.objects.get(partner=partner, transaction=payment)
         self.assertEqual(commission.amount, Decimal("0.90"))
+        self.assertEqual(commission.commissionable_amount, Decimal("9.00"))
+        self.assertEqual(commission.commission_rate, Decimal("10.00"))
+        self.assertGreater(commission.matures_at, timezone.now())
         self.assertEqual(CommissionEntry.objects.count(), 1)
+
+        Refund.objects.create(transaction=payment, amount="9.00", reason="Customer request", status="processed")
+        commission.refresh_from_db()
+        self.assertEqual(commission.status, "reversed")
+
+    def test_checkout_referral_code_requires_approved_current_agreement(self):
+        PartnerProfile.objects.create(
+            organisation=self.organisation, stage="active", commission_type="percent", commission_value="20.00",
+        )
+        partner = ReferralPartner.objects.create(
+            organisation=self.organisation, referral_code="creator-code", approved_at=timezone.now(),
+        )
+        with self.assertRaises(ReferralError):
+            capture_referral_code(code=partner.referral_code, user=self.user)
+        affiliate_owner = User.objects.create_user("creator-owner", "creator@example.com", "password")
+        AffiliateAgreementAcceptance.objects.create(
+            partner=partner, accepted_by=affiliate_owner, terms_version=partner.terms_version,
+            legal_name="Creator Ltd", country="GB", approved_channels=["youtube"],
+        )
+        attribution = capture_referral_code(code=partner.referral_code, user=self.user)
+        self.assertEqual(attribution.consent_source, "customer_entered_code")
+        self.assertGreater(attribution.expires_at, timezone.now())
+
+    def test_partner_owner_accepts_versioned_agreement(self):
+        PartnerProfile.objects.create(
+            organisation=self.organisation, stage="active", commission_type="percent", commission_value="20.00",
+        )
+        partner = ReferralPartner.objects.create(
+            organisation=self.organisation, referral_code="agreement-code", approved_at=timezone.now(),
+        )
+        affiliate_owner = User.objects.create_user("agreement-owner", "agreement@example.edu", "password")
+        OrganisationMembership.objects.create(organisation=self.organisation, user=affiliate_owner, role="owner")
+        self.client.force_login(affiliate_owner)
+        response = self.client.post(reverse("accept_affiliate_agreement", args=[partner.id]), {
+            "legal_name": "Example University", "country": "gb",
+            "channels": ["website", "linkedin"], "accept_terms": "yes",
+        })
+        self.assertRedirects(response, reverse("partner_dashboard"))
+        acceptance = AffiliateAgreementAcceptance.objects.get(partner=partner)
+        self.assertEqual(acceptance.country, "GB")
+        self.assertEqual(acceptance.terms_version, "affiliate-v1")
+
+    def test_affiliate_link_requires_separate_referral_consent(self):
+        PartnerProfile.objects.create(
+            organisation=self.organisation, stage="active", commission_type="percent", commission_value="20.00",
+        )
+        partner = ReferralPartner.objects.create(
+            organisation=self.organisation, referral_code="consent-code", approved_at=timezone.now(),
+        )
+        affiliate_owner = User.objects.create_user("consent-owner", "consent@example.edu", "password")
+        AffiliateAgreementAcceptance.objects.create(
+            partner=partner, accepted_by=affiliate_owner, terms_version=partner.terms_version,
+            legal_name="Example University", country="GB", approved_channels=["website"],
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("home") + "?ref=consent-code")
+        self.assertContains(response, "Allow referral tracking")
+        self.assertFalse(ReferralAttribution.objects.filter(user=self.user).exists())
+        self.client.post(reverse("referral_consent"), {"choice": "granted", "next": reverse("home")}, follow=True)
+        attribution = ReferralAttribution.objects.get(user=self.user)
+        self.assertEqual(attribution.partner, partner)
+        self.assertEqual(attribution.consent_source, "affiliate_consent")

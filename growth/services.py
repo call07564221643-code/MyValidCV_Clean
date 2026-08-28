@@ -2,16 +2,43 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from accounts.models import UserProfile
 from subscriptions.models import CustomerSubscription
 
-from .models import AccessVoucher, CommissionEntry, ReferralAttribution, VoucherRedemption
+from .models import AccessVoucher, CommissionEntry, ReferralAttribution, ReferralPartner, VoucherRedemption
 
 
 class VoucherError(ValueError):
     pass
+
+
+class ReferralError(ValueError):
+    pass
+
+
+def capture_referral_code(*, code, user, source="checkout_code"):
+    """Attach an approved referral to a customer without relying on marketing cookies."""
+    partner = ReferralPartner.objects.select_related(
+        "organisation", "organisation__partner_profile",
+    ).filter(referral_code__iexact=(code or "").strip()).first()
+    if not partner or not partner.is_eligible():
+        raise ReferralError("This referral code is invalid or is not currently active.")
+    if (
+        not partner.self_referrals_allowed
+        and partner.organisation.memberships.filter(user=user, is_active=True).exists()
+    ):
+        raise ReferralError("A partner cannot use its own referral code.")
+    existing = ReferralAttribution.objects.filter(user=user, converted_at__isnull=True).first()
+    if existing:
+        return existing
+    return ReferralAttribution.objects.create(
+        partner=partner, user=user, source=source,
+        expires_at=timezone.now() + timedelta(days=partner.cookie_days),
+        consent_source="customer_entered_code" if source == "checkout_code" else "analytics_consent",
+    )
 
 
 @transaction.atomic
@@ -61,13 +88,18 @@ def redeem_access_voucher(*, code, user):
 
 def record_paid_referral_conversion(transaction):
     """Create one commission after verified payment; never infer consent or self-referrals."""
+    now = timezone.now()
     attribution = ReferralAttribution.objects.filter(
         user=transaction.user, partner__is_active=True, converted_at__isnull=True,
-    ).select_related("partner__organisation__partner_profile").order_by("first_seen_at").first()
+    ).filter(Q(expires_at__isnull=True) | Q(expires_at__gte=now)).select_related(
+        "partner__organisation__partner_profile"
+    ).order_by("first_seen_at").first()
     if not attribution:
         return None
     partner = attribution.partner
-    attribution.converted_at = timezone.now()
+    if not partner.is_eligible(now):
+        return None
+    attribution.converted_at = now
     attribution.conversion_reference = str(transaction.checkout_reference)
     attribution.save(update_fields=["converted_at", "conversion_reference"])
     if (
@@ -79,11 +111,25 @@ def record_paid_referral_conversion(transaction):
     if not profile or profile.commission_type == "none" or profile.commission_value <= 0:
         return None
     if profile.commission_type == "fixed":
-        amount = profile.commission_value
+        amount = min(profile.commission_value, transaction.amount)
+        rate = Decimal("0.00")
     else:
         amount = (transaction.amount * profile.commission_value / Decimal("100")).quantize(Decimal("0.01"))
+        rate = profile.commission_value
     commission, _created = CommissionEntry.objects.get_or_create(
         partner=partner, transaction=transaction,
-        defaults={"attribution": attribution, "amount": amount, "currency": transaction.currency},
+        defaults={
+            "attribution": attribution, "amount": amount,
+            "commissionable_amount": transaction.amount, "commission_rate": rate,
+            "currency": transaction.currency,
+            "matures_at": now + timedelta(days=partner.commission_hold_days),
+        },
     )
     return commission
+
+
+def reverse_referral_commission(transaction, reason="Customer payment refunded"):
+    """Reverse unpaid commission when the underlying revenue is no longer retained."""
+    return CommissionEntry.objects.filter(
+        transaction=transaction, status__in=["pending", "approved", "payable", "paid"],
+    ).update(status="reversed", reversal_reason=reason[:255])

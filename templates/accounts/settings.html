@@ -41,6 +41,11 @@
                         <p class="small text-body-secondary">Current choice: {{ analytics_consent|default:"not selected"|capfirst }}. You can change or withdraw it at any time. <a href="{% url 'privacy_policy' %}">Read the Privacy Policy</a>.</p>
                         <div class="d-flex gap-2"><form method="post" action="{% url 'analytics_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="granted"><input type="hidden" name="next" value="{% url 'account_settings' %}"><button class="btn btn-primary btn-sm" type="submit">Allow analytics</button></form><form method="post" action="{% url 'analytics_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="declined"><input type="hidden" name="next" value="{% url 'account_settings' %}"><button class="btn btn-outline-secondary btn-sm" type="submit">Withdraw analytics consent</button></form></div>
                     </div>
+                    <div class="border-top mt-4 pt-4">
+                        <h2 class="h6">Affiliate referral preference</h2>
+                        <p class="small text-body-secondary">Current choice: {{ referral_consent|default:"not selected"|capfirst }}. This controls optional affiliate-link attribution only. You can always enter a referral code manually at checkout.</p>
+                        <div class="d-flex gap-2"><form method="post" action="{% url 'referral_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="granted"><input type="hidden" name="next" value="{% url 'account_settings' %}"><button class="btn btn-primary btn-sm" type="submit">Allow referral tracking</button></form><form method="post" action="{% url 'referral_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="declined"><input type="hidden" name="next" value="{% url 'account_settings' %}"><button class="btn btn-outline-secondary btn-sm" type="submit">Withdraw referral consent</button></form></div>
+                    </div>
                 </div>
             </div>
         </div>

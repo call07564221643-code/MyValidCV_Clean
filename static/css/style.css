@@ -2231,6 +2231,32 @@ h1, h2, h3, h4, h5, h6 {
     background: #eef3ff;
 }
 
+.mvcv-assistant-privacy {
+    color: #475569;
+    font-size: 0.76rem;
+    line-height: 1.4;
+    margin: 0.8rem 0 0;
+}
+
+.mvcv-assistant-support {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem;
+    margin-top: 0.65rem;
+}
+
+.mvcv-assistant-support a {
+    color: #1f3374;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.mvcv-assistant-form button:disabled,
+.mvcv-assistant-prompts button:disabled {
+    cursor: wait;
+    opacity: 0.55;
+}
+
 .mvcv-assistant-form {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;

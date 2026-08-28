@@ -324,6 +324,7 @@
                                     {% csrf_token %}
                                     {% if plan.price > 0 %}
                                         <input type="text" name="discount_code" class="form-control discount-slot" placeholder="Discount code, optional">
+                                        <input type="text" name="referral_code" class="form-control mt-2" placeholder="Referral code, optional" aria-label="Referral code">
                                     {% else %}
                                         <div class="discount-slot" aria-hidden="true"></div>
                                     {% endif %}

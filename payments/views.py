@@ -73,6 +73,14 @@ def start_sumup_checkout(request, plan_code):
             messages.error(request, "This discount code is not valid.")
             return redirect("pricing")
         amount = discount.apply_to(amount)
+    referral_code = request.POST.get("referral_code", "").strip()
+    if referral_code:
+        from growth.services import ReferralError, capture_referral_code
+        try:
+            capture_referral_code(code=referral_code, user=request.user)
+        except ReferralError as exc:
+            messages.error(request, str(exc))
+            return redirect("pricing")
 
     payment = PaymentTransaction.objects.create(
         user=request.user, plan=plan, discount_code=discount, amount=amount,
@@ -244,6 +252,14 @@ def start_stripe_checkout(request, plan_code):
             messages.error(request, "This discount code is not valid.")
             return redirect("pricing")
         amount = discount.apply_to(amount)
+    referral_code = request.POST.get("referral_code", "").strip()
+    if referral_code:
+        from growth.services import ReferralError, capture_referral_code
+        try:
+            capture_referral_code(code=referral_code, user=request.user)
+        except ReferralError as exc:
+            messages.error(request, str(exc))
+            return redirect("pricing")
 
     transaction = PaymentTransaction.objects.create(
         user=request.user,

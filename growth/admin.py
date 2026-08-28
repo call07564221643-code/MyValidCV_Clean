@@ -1,8 +1,10 @@
 from django.contrib import admin
+from django.db.models import Sum
+from django.utils import timezone
 from governance.forms import OptimisticLockAdminForm
 
 from .models import (
-    AccessVoucher, AnalyticsEvent, BulkPurchase, CampaignApproval,
+    AccessVoucher, AffiliateAgreementAcceptance, AnalyticsEvent, BulkPurchase, CampaignApproval,
     CommissionEntry, ConsentRecord, MarketingCampaign, PartnerProfile,
     ProviderConnection, ReferralAttribution, ReferralPartner, VoucherRedemption,
 )
@@ -54,10 +56,23 @@ class VoucherRedemptionAdmin(admin.ModelAdmin):
 
 @admin.register(ReferralPartner)
 class ReferralPartnerAdmin(admin.ModelAdmin):
-    list_display = ("referral_code", "organisation", "is_active", "cookie_days", "approved_at")
+    list_display = ("referral_code", "organisation", "is_active", "cookie_days", "commission_hold_days", "minimum_payout", "approved_at")
     list_filter = ("is_active",)
     search_fields = ("referral_code", "organisation__name")
     autocomplete_fields = ("organisation",)
+
+
+@admin.register(AffiliateAgreementAcceptance)
+class AffiliateAgreementAcceptanceAdmin(admin.ModelAdmin):
+    list_display = ("partner", "terms_version", "legal_name", "country", "accepted_by", "accepted_at")
+    search_fields = ("partner__referral_code", "partner__organisation__name", "legal_name", "accepted_by__email")
+    readonly_fields = tuple(field.name for field in AffiliateAgreementAcceptance._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(ReferralAttribution)
@@ -70,10 +85,34 @@ class ReferralAttributionAdmin(admin.ModelAdmin):
 
 @admin.register(CommissionEntry)
 class CommissionEntryAdmin(admin.ModelAdmin):
-    list_display = ("partner", "amount", "currency", "status", "approved_by", "created_at", "paid_at")
+    list_display = ("partner", "amount", "currency", "status", "matures_at", "approved_by", "created_at", "paid_at")
     list_filter = ("status", "currency", "created_at")
     search_fields = ("partner__referral_code", "transaction__checkout_reference")
     autocomplete_fields = ("partner", "attribution", "transaction", "approved_by")
+    readonly_fields = (
+        "status", "approved_by", "commissionable_amount", "commission_rate",
+        "matures_at", "reversal_reason", "created_at", "paid_at",
+    )
+    actions = ("approve_commissions", "release_mature_commissions", "record_external_payout")
+
+    @admin.action(description="Approve selected valid commissions")
+    def approve_commissions(self, request, queryset):
+        queryset.filter(status="pending").update(status="approved", approved_by=request.user)
+
+    @admin.action(description="Release approved commissions whose hold period has ended")
+    def release_mature_commissions(self, request, queryset):
+        queryset.filter(status="approved", matures_at__lte=timezone.now()).update(status="payable")
+
+    @admin.action(description="Record selected payable commissions as paid after external payout")
+    def record_external_payout(self, request, queryset):
+        recorded = 0
+        for partner_id, currency in queryset.values_list("partner_id", "currency").distinct():
+            partner_entries = queryset.filter(partner_id=partner_id, currency=currency, status="payable")
+            total = partner_entries.aggregate(total=Sum("amount"))["total"] or 0
+            partner = ReferralPartner.objects.get(pk=partner_id)
+            if total >= partner.minimum_payout:
+                recorded += partner_entries.update(status="paid", paid_at=timezone.now())
+        self.message_user(request, f"Recorded {recorded} commission entries as externally paid. Below-threshold groups were left payable.")
 
 
 @admin.register(ConsentRecord)

@@ -10,6 +10,8 @@ def platform_integrations(request):
         "google_analytics_id": settings.GOOGLE_ANALYTICS_ID,
         "google_site_verification": settings.GOOGLE_SITE_VERIFICATION,
         "analytics_consent": request.COOKIES.get("mvcv_analytics_consent", ""),
+        "referral_consent": request.COOKIES.get("mvcv_referral_consent", ""),
+        "referral_consent_pending": bool(request.session.get("mvcv_referral")),
         "has_partner_workspace": has_partner_workspace,
         "seo_robots": "index, follow" if request.path in {"/", "/pricing/", "/privacy-policy/"} else "noindex, nofollow",
     }

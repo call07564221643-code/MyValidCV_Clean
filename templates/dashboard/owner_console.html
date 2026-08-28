@@ -112,6 +112,76 @@
         margin-top: auto;
     }
 
+    .owner-brief-head {
+        align-items: flex-start;
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+    }
+
+    .owner-brief h2 {
+        color: #0f172a;
+        font-size: 1.45rem;
+        margin: 0.2rem 0;
+    }
+
+    .owner-brief p,
+    .owner-brief small { color: #64748b; }
+
+    .owner-brief-status {
+        border-radius: 14px;
+        min-width: 112px;
+        padding: 0.65rem 0.8rem;
+        text-align: center;
+    }
+
+    .owner-brief-status.needs-attention { background: #fff7ed; color: #9a3412; }
+    .owner-brief-status.clear { background: #ecfdf5; color: #166534; }
+    .owner-brief-status strong,
+    .owner-brief-status span { display: block; }
+    .owner-brief-status strong { font-size: 1.5rem; line-height: 1; }
+    .owner-brief-status span { font-size: 0.72rem; margin-top: 0.25rem; }
+
+    .owner-brief-metrics {
+        display: grid;
+        gap: 0.65rem;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        margin: 1rem 0;
+    }
+
+    .owner-brief-metrics div {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.7rem;
+    }
+
+    .owner-brief-metrics span,
+    .owner-brief-metrics strong { display: block; }
+    .owner-brief-metrics span { color: #64748b; font-size: 0.7rem; }
+    .owner-brief-metrics strong { color: #0f172a; font-size: 1.1rem; margin-top: 0.25rem; }
+
+    .owner-attention-list {
+        display: grid;
+        gap: 0.5rem;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-bottom: 0.8rem;
+    }
+
+    .owner-attention-item {
+        align-items: center;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        color: #475569;
+        display: flex;
+        font-size: 0.78rem;
+        justify-content: space-between;
+        padding: 0.55rem 0.65rem;
+        text-decoration: none;
+    }
+
+    .owner-attention-item.open { border-color: #fed7aa; color: #9a3412; }
+
     .owner-table-wrap {
         overflow-x: auto;
     }
@@ -131,9 +201,17 @@
     }
 
     html[data-bs-theme="dark"] .owner-hero h1,
+    html[data-bs-theme="dark"] .owner-brief h2,
+    html[data-bs-theme="dark"] .owner-brief-metrics strong,
     html[data-bs-theme="dark"] .owner-action h2,
     html[data-bs-theme="dark"] .owner-metric strong {
         color: #f8fafc;
+    }
+
+    html[data-bs-theme="dark"] .owner-brief-metrics div,
+    html[data-bs-theme="dark"] .owner-attention-item {
+        background: #0f172a;
+        border-color: #273449;
     }
 
     html[data-bs-theme="dark"] .owner-hero p,
@@ -174,6 +252,8 @@
         .owner-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+
+        .owner-brief-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
 
     @media (max-width: 575px) {
@@ -185,6 +265,11 @@
         .owner-grid {
             grid-template-columns: 1fr;
         }
+
+        .owner-brief-head { flex-direction: column; }
+        .owner-brief-status { width: 100%; }
+        .owner-brief-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .owner-attention-list { grid-template-columns: 1fr; }
     }
 </style>
 {% endblock %}
@@ -206,6 +291,35 @@
             <div class="owner-card owner-card-pad owner-metric"><span>Active partners</span><strong>{{ summary.active_partners }}</strong></div>
             <div class="owner-card owner-card-pad owner-metric"><span>Connected providers</span><strong>{{ summary.providers_ready }}</strong></div>
         </div>
+
+        <section class="owner-card owner-card-pad owner-brief mb-4" aria-labelledby="dailyBriefTitle">
+            <div class="owner-brief-head">
+                <div>
+                    <span class="owner-kicker">Exception-led operating view</span>
+                    <h2 id="dailyBriefTitle">Owner Daily Brief</h2>
+                    <p>Review only what needs attention; routine activity remains automated.</p>
+                </div>
+                <div class="owner-brief-status {% if daily_brief.attention_total %}needs-attention{% else %}clear{% endif %}">
+                    <strong>{{ daily_brief.attention_total }}</strong><span>items to review</span>
+                </div>
+            </div>
+            <div class="owner-brief-metrics">
+                <div><span>New users · 7 days</span><strong>{{ daily_brief.new_users_7d }}</strong></div>
+                <div><span>CV analyses · 24 hours</span><strong>{{ daily_brief.analyses_24h }}</strong></div>
+                <div><span>Enterprise candidates · 24 hours</span><strong>{{ daily_brief.enterprise_candidates_24h }}</strong></div>
+                <div><span>Paid orders · 7 days</span><strong>{{ daily_brief.paid_orders_7d }}</strong></div>
+                <div><span>Revenue · 7 days</span><strong>GBP {{ daily_brief.revenue_7d|floatformat:2 }}</strong></div>
+                <div><span>Marketing events · 7 days</span><strong>{{ daily_brief.marketing_events_7d }}</strong></div>
+            </div>
+            <div class="owner-attention-list">
+                {% for item in daily_brief.attention_items %}
+                    <a href="{% url item.url %}" class="owner-attention-item {% if item.count %}open{% endif %}">
+                        <span>{{ item.label }}</span><strong>{{ item.count }}</strong>
+                    </a>
+                {% endfor %}
+            </div>
+            <small>Updated {{ daily_brief.generated_at|date:"j M Y, H:i" }}. Test accounts are excluded from customer and payment figures.</small>
+        </section>
 
         <div class="owner-grid mb-4">
             {% for card in management_cards %}

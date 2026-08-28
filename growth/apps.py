@@ -6,3 +6,5 @@ class GrowthConfig(AppConfig):
     name = "growth"
     verbose_name = "Partners and growth"
 
+    def ready(self):
+        from . import signals  # noqa: F401

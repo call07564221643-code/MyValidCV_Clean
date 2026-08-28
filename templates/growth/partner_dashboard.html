@@ -9,6 +9,30 @@
     <article class="card border-0 shadow-sm mb-4"><div class="card-body p-4">
         <div class="d-flex justify-content-between gap-3 flex-wrap"><div><h2 class="h4 mb-1">{{ item.organisation.name }}</h2><span class="badge bg-primary">{{ item.membership.get_role_display }}</span></div><span class="text-body-secondary">{{ item.organisation.get_organisation_type_display }}</span></div>
         <div class="row g-3 my-2"><div class="col-6 col-md-3"><strong class="d-block fs-3">{{ item.purchases|length }}</strong><small>Bulk purchases</small></div><div class="col-6 col-md-3"><strong class="d-block fs-3">{{ item.voucher_count }}</strong><small>Voucher campaigns</small></div><div class="col-6 col-md-3"><strong class="d-block fs-3">{{ item.redemptions }}</strong><small>Redemptions</small></div><div class="col-6 col-md-3"><strong class="d-block fs-3">{{ item.attribution_count }}</strong><small>Attributed users</small></div></div>
+        {% if item.referral %}
+        <section class="border rounded-3 p-3 my-3" aria-label="Affiliate programme">
+            <div class="d-flex justify-content-between gap-3 flex-wrap">
+                <div><h3 class="h5">Affiliate referral programme</h3><p class="mb-1">Referral link: <strong>https://www.myvalidcv.com/?ref={{ item.referral.referral_code }}</strong></p><small>Commission is held for {{ item.referral.commission_hold_days }} days. Minimum payout: GBP {{ item.referral.minimum_payout }}.</small></div>
+                <div><span class="badge {% if item.referral.is_active and item.agreement_current %}text-bg-success{% else %}text-bg-warning{% endif %}">{% if item.referral.is_active and item.agreement_current %}Agreement recorded{% else %}Setup incomplete{% endif %}</span><p class="mt-2 mb-0">Pending: GBP {{ item.commission_pending|default:0 }} · Paid: GBP {{ item.commission_total|default:0 }}</p></div>
+            </div>
+            {% if not item.agreement_current and item.membership.role == "owner" or not item.agreement_current and item.membership.role == "manager" %}
+            <details class="mt-3"><summary class="fw-bold">Review and accept Affiliate Programme Agreement {{ item.referral.terms_version }}</summary>
+                <div class="small text-body-secondary mt-3">
+                    <p>The affiliate may promote MyValidCV only through declared channels and must clearly label compensated content as advertising or affiliate content. The affiliate must not make employment guarantees, use spam, impersonate MyValidCV, bid on protected brand terms, create false accounts, self-refer, or process personal data without a lawful basis.</p>
+                    <p>Commission applies only to eligible, verified and retained transactions. Refunds, chargebacks, fraud, taxes and invalid transactions do not earn commission. MyValidCV may suspend tracking, reverse commission or terminate participation for breach. Payouts are subject to the stated hold period and minimum threshold.</p>
+                </div>
+                <form method="post" action="{% url 'accept_affiliate_agreement' item.referral.id %}" class="row g-2">
+                    {% csrf_token %}
+                    <div class="col-md-7"><label class="form-label">Legal or trading name</label><input class="form-control" name="legal_name" maxlength="180" required></div>
+                    <div class="col-md-2"><label class="form-label">Country code</label><input class="form-control" name="country" maxlength="2" placeholder="GB" required></div>
+                    <div class="col-12"><span class="d-block fw-bold mb-1">Approved channels</span>{% for value,label in affiliate_channels %}<label class="me-3"><input type="checkbox" name="channels" value="{{ value }}"> {{ label }}</label>{% endfor %}</div>
+                    <div class="col-12"><label><input type="checkbox" name="accept_terms" value="yes" required> I am authorised to accept this agreement and will follow advertising, privacy and anti-spam requirements.</label></div>
+                    <div class="col-12"><button class="btn btn-primary btn-sm" type="submit">Accept agreement</button></div>
+                </form>
+            </details>
+            {% endif %}
+        </section>
+        {% endif %}
         {% if item.active_vouchers %}<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Access code</th><th>Plan</th><th>Used</th><th>Valid until</th></tr></thead><tbody>{% for voucher in item.active_vouchers %}<tr><td><strong>{{ voucher.code }}</strong></td><td>{{ voucher.plan.name }}</td><td>{{ voucher.redemptions }} / {{ voucher.max_redemptions }}</td><td>{{ voucher.valid_until|date:"d M Y"|default:"No fixed expiry" }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
     </div></article>
     {% empty %}<div class="alert alert-info">No active partner organisation is linked to your account.</div>{% endfor %}

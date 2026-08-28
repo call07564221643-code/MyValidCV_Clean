@@ -137,11 +137,43 @@ class ReferralPartner(models.Model):
     is_active = models.BooleanField(default=True)
     cookie_days = models.PositiveIntegerField(default=30)
     self_referrals_allowed = models.BooleanField(default=False)
+    terms_version = models.CharField(max_length=40, default="affiliate-v1")
+    commission_hold_days = models.PositiveIntegerField(default=30)
+    minimum_payout = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("25.00"))
     approved_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.referral_code
+
+    def is_eligible(self, at=None):
+        at = at or timezone.now()
+        profile = getattr(self.organisation, "partner_profile", None)
+        return bool(
+            self.is_active and self.approved_at and self.organisation.status == "active"
+            and profile and profile.stage == "active"
+            and (not profile.agreement_starts_at or profile.agreement_starts_at <= at.date())
+            and (not profile.agreement_ends_at or profile.agreement_ends_at >= at.date())
+            and self.agreement_acceptances.filter(terms_version=self.terms_version).exists()
+        )
+
+
+class AffiliateAgreementAcceptance(models.Model):
+    partner = models.ForeignKey(ReferralPartner, on_delete=models.PROTECT, related_name="agreement_acceptances")
+    accepted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    terms_version = models.CharField(max_length=40)
+    legal_name = models.CharField(max_length=180)
+    country = models.CharField(max_length=2, help_text="ISO two-letter country code.")
+    approved_channels = models.JSONField(default=list, blank=True)
+    acceptance_ip = models.GenericIPAddressField(null=True, blank=True)
+    accepted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-accepted_at"]
+        constraints = [models.UniqueConstraint(fields=["partner", "terms_version"], name="unique_partner_terms_acceptance")]
+
+    def __str__(self):
+        return f"{self.partner} · {self.terms_version}"
 
 
 class ReferralAttribution(models.Model):
@@ -153,6 +185,8 @@ class ReferralAttribution(models.Model):
     medium = models.CharField(max_length=120, blank=True)
     campaign = models.CharField(max_length=180, blank=True)
     first_seen_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    consent_source = models.CharField(max_length=30, default="affiliate_consent")
     converted_at = models.DateTimeField(null=True, blank=True)
     conversion_reference = models.CharField(max_length=120, blank=True)
 
@@ -170,11 +204,15 @@ class CommissionEntry(models.Model):
     attribution = models.ForeignKey(ReferralAttribution, null=True, blank=True, on_delete=models.SET_NULL)
     transaction = models.ForeignKey(PaymentTransaction, null=True, blank=True, on_delete=models.SET_NULL)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    commissionable_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    commission_rate = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0.00"))
     currency = models.CharField(max_length=3, default="GBP")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True)
     approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
+    matures_at = models.DateTimeField(null=True, blank=True, db_index=True)
     paid_at = models.DateTimeField(null=True, blank=True)
+    reversal_reason = models.CharField(max_length=255, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -192,7 +230,7 @@ class ConsentRecord(models.Model):
     PURPOSE_CHOICES = [
         ("social_login", "Social login"), ("marketing", "Marketing communications"),
         ("analytics", "Analytics"), ("partner_reporting", "Partner reporting"),
-        ("advertising", "Advertising audiences"),
+        ("advertising", "Advertising audiences"), ("affiliate_tracking", "Affiliate referral tracking"),
     ]
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="consent_records")
     purpose = models.CharField(max_length=30, choices=PURPOSE_CHOICES, db_index=True)

@@ -539,51 +539,25 @@
         </div>
     </div>
 
-    <aside class="mvcv-assistant" aria-label="MyValidCV assistant" data-assistant>
-        <button class="mvcv-assistant-button" type="button" aria-expanded="false" data-assistant-toggle>
-            <span class="mvcv-assistant-dot"></span>
-            Ask Maya
-        </button>
-        <section class="mvcv-assistant-panel" data-assistant-panel>
-            <header class="mvcv-assistant-header">
-                <div>
-                    <strong>Maya</strong>
-                    <span>MyValidCV customer service</span>
-                </div>
-                <button type="button" aria-label="Close assistant" data-assistant-close>&times;</button>
-            </header>
-            <div class="mvcv-assistant-body" data-assistant-body>
-                <div class="mvcv-assistant-message bot">
-                    Hi! I’m Maya. What are you working on today—your CV, an ATS report, or choosing the right plan?
-                </div>
-                <div class="mvcv-assistant-prompts" aria-label="Suggested questions">
-                    <button type="button" data-assistant-prompt="How does MyValidCV work?">How it works</button>
-                    <button type="button" data-assistant-prompt="What does the ATS report show?">Report meaning</button>
-                    <button type="button" data-assistant-prompt="What does the Truth Gate mean?">Truth Gate</button>
-                    <button type="button" data-assistant-prompt="Which plan should I choose?">Choose plan</button>
-                    <button type="button" data-assistant-prompt="How do payments and refunds work?">Payments/refunds</button>
-                    <button type="button" data-assistant-prompt="Are there discounts?">Discounts</button>
-                </div>
-                {% include "includes/feedback_rating.html" with feedback_feature="maya" feedback_compact=True %}
-            </div>
-            <form class="mvcv-assistant-form" data-assistant-form>
-                {% csrf_token %}
-                <input type="text" data-assistant-input placeholder="Ask about CV validation, plans, reports..." aria-label="Ask Maya">
-                <button type="submit">Send</button>
-            </form>
-        </section>
-    </aside>
     {% endblock %}
+
+    {% include "includes/maya_assistant.html" %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="{% static 'js/main.js' %}" defer></script>
 
     {% block extra_js %}{% endblock %}
-    {% if not analytics_consent %}
-    <aside class="position-fixed bottom-0 start-0 end-0 p-3" style="z-index:1080" aria-label="Analytics preference">
-        <div class="container"><div class="card border-0 shadow-lg"><div class="card-body d-flex gap-3 align-items-center justify-content-between flex-wrap">
+    {% if not analytics_consent or referral_consent_pending and not referral_consent %}
+    <aside class="position-fixed bottom-0 start-0 end-0 p-3" style="z-index:1080" aria-label="Privacy preferences">
+        <div class="container"><div class="card border-0 shadow-lg"><div class="card-body">
+            {% if not analytics_consent %}<div class="d-flex gap-3 align-items-center justify-content-between flex-wrap">
             <p class="mb-0 small">Choose whether MyValidCV may use privacy-conscious analytics to improve the service. Essential account functions do not depend on this choice. <a href="{% url 'privacy_policy' %}">Privacy Policy</a></p>
             <div class="d-flex gap-2"><form method="post" action="{% url 'analytics_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="declined"><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-sm btn-outline-secondary" type="submit">Decline</button></form><form method="post" action="{% url 'analytics_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="granted"><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-sm btn-primary" type="submit">Allow analytics</button></form></div>
+            </div>{% endif %}
+            {% if referral_consent_pending and not referral_consent %}<div class="d-flex gap-3 align-items-center justify-content-between flex-wrap {% if not analytics_consent %}border-top mt-3 pt-3{% endif %}">
+                <p class="mb-0 small">This visit used an affiliate link. Allow optional referral attribution, or decline and enter a referral code manually during checkout. Service access does not depend on this choice.</p>
+                <div class="d-flex gap-2"><form method="post" action="{% url 'referral_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="declined"><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-sm btn-outline-secondary" type="submit">Decline referral tracking</button></form><form method="post" action="{% url 'referral_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="granted"><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-sm btn-primary" type="submit">Allow referral tracking</button></form></div>
+            </div>{% endif %}
         </div></div></div>
     </aside>
     {% endif %}

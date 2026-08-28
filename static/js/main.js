@@ -494,10 +494,12 @@ function setupSiteAssistant() {
     const close = assistant.querySelector('[data-assistant-close]');
     const form = assistant.querySelector('[data-assistant-form]');
     const input = assistant.querySelector('[data-assistant-input]');
+    const send = assistant.querySelector('[data-assistant-send]');
     const body = assistant.querySelector('[data-assistant-body]');
     const prompts = assistant.querySelectorAll('[data-assistant-prompt]');
     const csrfToken = form.querySelector('[name="csrfmiddlewaretoken"]')?.value || '';
     const history = [];
+    let isResponding = false;
 
     const addMessage = (text, sender = 'bot') => {
         const message = document.createElement('div');
@@ -510,6 +512,8 @@ function setupSiteAssistant() {
     };
 
     const respond = async (question) => {
+        if (isResponding) return;
+        isResponding = true;
         addMessage(question, 'user');
         let answer = '';
         const typing = document.createElement('div');
@@ -519,6 +523,8 @@ function setupSiteAssistant() {
         body.appendChild(typing);
         body.scrollTop = body.scrollHeight;
         input.disabled = true;
+        send.disabled = true;
+        prompts.forEach((button) => { button.disabled = true; });
         try {
             const response = await fetch('/assistant/', {
                 method: 'POST',
@@ -528,15 +534,16 @@ function setupSiteAssistant() {
                 },
                 body: JSON.stringify({question, history: history.slice(0, -1)})
             });
-            if (response.ok) {
-                const data = await response.json();
-                answer = data.answer || '';
-            }
+            const data = await response.json().catch(() => ({}));
+            answer = data.answer || '';
         } catch (error) {
             answer = '';
         } finally {
             typing.remove();
             input.disabled = false;
+            send.disabled = false;
+            prompts.forEach((button) => { button.disabled = false; });
+            isResponding = false;
             input.focus();
         }
         window.setTimeout(() => addMessage(answer || getAssistantAnswer(question), 'bot'), 180);

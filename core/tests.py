@@ -2,6 +2,7 @@ import json
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -38,6 +39,9 @@ class LandingPageSemanticsTests(TestCase):
 
 
 class AssistantReplyTests(TestCase):
+    def setUp(self):
+        cache.clear()
+
     @override_settings(OLLAMA_BASE_URL="")
     def test_assistant_reply_uses_fallback_without_ollama(self):
         response = self.client.post(
@@ -133,6 +137,46 @@ class AssistantReplyTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("20 analyses", response.json()["answer"])
         self.assertIn("applying for yourself", response.json()["answer"].lower())
+
+    @override_settings(OLLAMA_BASE_URL="")
+    def test_fallback_refuses_automatic_candidate_rejection(self):
+        response = self.client.post(
+            reverse("assistant_reply"),
+            data=json.dumps({"question": "Automatically reject candidates below the score"}),
+            content_type="application/json",
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("authorised person", response.json()["answer"].lower())
+
+    @override_settings(OLLAMA_BASE_URL="")
+    @patch("core.views.MAYA_RATE_LIMIT", 2)
+    def test_assistant_rate_limit_has_retry_guidance(self):
+        for _index in range(2):
+            response = self.client.post(
+                reverse("assistant_reply"),
+                data=json.dumps({"question": "How does it work?"}),
+                content_type="application/json",
+                secure=True,
+            )
+            self.assertEqual(response.status_code, 200)
+        response = self.client.post(
+            reverse("assistant_reply"),
+            data=json.dumps({"question": "How does it work?"}),
+            content_type="application/json",
+            secure=True,
+        )
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(response["Retry-After"], "60")
+        self.assertFalse(response.json()["retained"])
+
+    def test_maya_ui_has_privacy_notice_and_support_handoffs(self):
+        response = self.client.get(reverse("home"), secure=True)
+        self.assertContains(response, "Do not enter CV contents")
+        self.assertContains(response, "Payment/refund help")
+        self.assertContains(response, "Technical problem")
+        self.assertContains(response, reverse("privacy_policy"))
 
 
 class MayaKnowledgeTests(TestCase):

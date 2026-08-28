@@ -1,0 +1,41 @@
+<aside class="mvcv-assistant" aria-label="MyValidCV assistant" data-assistant>
+    <button class="mvcv-assistant-button" type="button" aria-expanded="false" data-assistant-toggle>
+        <span class="mvcv-assistant-dot"></span>
+        Ask Maya
+    </button>
+    <section class="mvcv-assistant-panel" data-assistant-panel>
+        <header class="mvcv-assistant-header">
+            <div>
+                <strong>Maya</strong>
+                <span>MyValidCV customer service</span>
+            </div>
+            <button type="button" aria-label="Close assistant" data-assistant-close>&times;</button>
+        </header>
+        <div class="mvcv-assistant-body" data-assistant-body>
+            <div class="mvcv-assistant-message bot">
+                Hi! I’m Maya. What are you working on today—your CV, an ATS report, or choosing the right plan?
+            </div>
+            <div class="mvcv-assistant-prompts" aria-label="Suggested questions">
+                <button type="button" data-assistant-prompt="How does MyValidCV work?">How it works</button>
+                <button type="button" data-assistant-prompt="What does the ATS report show?">Report meaning</button>
+                <button type="button" data-assistant-prompt="What does the Truth Gate mean?">Truth Gate</button>
+                <button type="button" data-assistant-prompt="Which plan should I choose?">Choose plan</button>
+                <button type="button" data-assistant-prompt="How do payments and refunds work?">Payments/refunds</button>
+                <button type="button" data-assistant-prompt="Are there discounts?">Discounts</button>
+            </div>
+            <p class="mvcv-assistant-privacy">Maya provides general guidance. Do not enter CV contents, passwords, payment details or sensitive personal information.</p>
+            <nav class="mvcv-assistant-support" aria-label="Customer support options">
+                <a href="mailto:support@myvalidcv.com?subject=Payment%20or%20refund%20support">Payment/refund help</a>
+                <a href="mailto:support@myvalidcv.com?subject=Technical%20support">Technical problem</a>
+                <a href="{% url 'privacy_policy' %}">Privacy/data requests</a>
+                <a href="mailto:support@myvalidcv.com?subject=MyValidCV%20support">Contact support</a>
+            </nav>
+            {% include "includes/feedback_rating.html" with feedback_feature="maya" feedback_compact=True %}
+        </div>
+        <form class="mvcv-assistant-form" data-assistant-form>
+            {% csrf_token %}
+            <input type="text" data-assistant-input placeholder="Ask about CV validation, plans, reports..." aria-label="Ask Maya">
+            <button type="submit" data-assistant-send>Send</button>
+        </form>
+    </section>
+</aside>
