@@ -36,6 +36,7 @@ from .scoring import (
     _calculate_confidence,
     _detect_mandatory_qualifications,
     _extract_requirement_terms,
+    _extract_truth_gate_terms,
     _has_requirement_evidence,
     calculate_score_details,
     validate_job_description,
@@ -634,6 +635,16 @@ class CoverLetterTests(SimpleTestCase):
 
 
 class ATSV2Tests(TestCase):
+    def test_truth_gate_excludes_pasted_headings_and_general_notes(self):
+        terms = _extract_truth_gate_terms(
+            ["python", "django", "notes", "benefits", "application", "overview"],
+            ["python", "django"],
+            [],
+            [],
+        )
+
+        self.assertEqual(terms, ["python", "django"])
+
     def test_generic_advert_grammar_is_not_promoted_to_requirements(self):
         terms = _extract_requirement_terms(
             (
@@ -714,7 +725,7 @@ class ATSV2Tests(TestCase):
         django_evidence = next(item for item in details["evidence_map"] if item["term"] == "django")
         self.assertEqual(django_evidence["status"], "mentioned")
         self.assertEqual(django_evidence["strength"], "keyword only")
-        self.assertEqual(details["model_version"], "2.1")
+        self.assertEqual(details["model_version"], "2.2")
         self.assertIn("evidence", details["score_components"])
         self.assertIn("format", details["score_components"])
 
@@ -823,9 +834,14 @@ class ATSV2Tests(TestCase):
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {
-            "ok": True, "action": "confirmed", "answered": 1, "total": 1, "completion": 100,
-        })
+        payload = response.json()
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["action"], "confirmed")
+        self.assertEqual(payload["answered"], 1)
+        self.assertEqual(payload["total"], 1)
+        self.assertEqual(payload["completion"], 100)
+        self.assertEqual(payload["confirmed"], 1)
+        self.assertEqual(payload["confirmed_percentage"], 100)
         result.refresh_from_db()
         self.assertEqual(result.metrics["candidate_confirmations"]["django"], "confirmed")
 

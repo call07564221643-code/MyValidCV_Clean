@@ -1292,9 +1292,7 @@ def result_detail(request, result_id):
                 return JsonResponse({
                     "ok": True,
                     "action": action,
-                    "answered": summary["answered"],
-                    "total": summary["total"],
-                    "completion": summary["completion"],
+                    **summary,
                 })
             messages.success(request, f"Your evidence status for “{requirement}” was recorded.")
         return redirect(truth_gate_url)

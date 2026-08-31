@@ -2303,6 +2303,10 @@
                         Critical gap: {{ match_intelligence.missing_mandatory|slice:":3"|join:", " }}
                     </div>
                 {% endif %}
+                <div class="brief-alert mt-3">
+                    <strong>Location can be an advantage.</strong>
+                    A practical commute, suitable working pattern, or confirmed relocation plan can reduce availability concerns when candidates are otherwise similarly matched. Distance is not inferred or added to this CV score; confirm the job location before applying.
+                </div>
             </div>
         </div>
 
@@ -2354,6 +2358,7 @@
                     <span class="truth-gate-kicker">Evidence decision studio</span>
                     <h3 class="truth-gate-title">Truth Gate</h3>
                     <p class="truth-gate-description">Make one honest evidence decision at a time. Your answers shape the recommended next action and interview preparation.</p>
+                    <p class="truth-gate-description mb-0"><strong>How it works:</strong> this is not a copy of the advert. MyValidCV selects up to 12 high-confidence skills, qualifications or mandatory requirements. Section headings, benefits, application instructions and general notes are excluded. Answer only from evidence you could explain to an employer.</p>
                 </div>
                 <div class="truth-progress" aria-label="{{ truth_gate_summary.completion }} percent of Truth Gate complete">
                     <div class="truth-progress-label">
@@ -2416,34 +2421,34 @@
                     <button type="button" class="btn btn-primary btn-sm" data-truth-next>Next &rarr;</button>
                 </div>
             {% endif %}
-            <div class="truth-summary truth-summary-{{ truth_gate_summary.tone }}" aria-live="polite">
+            <div class="truth-summary truth-summary-{{ truth_gate_summary.tone }}" aria-live="polite" data-truth-summary>
                 <div class="truth-summary-stat">
-                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.completion }}; --ring-color: {% if truth_gate_summary.completion > 50 %}#73d179{% else %}#a6a4a4{% endif %}">
-                        <strong>{{ truth_gate_summary.answered }}</strong>
+                    <div class="truth-ring" data-truth-stat="answered" style="--ring-value: {{ truth_gate_summary.completion }}; --ring-color: {% if truth_gate_summary.completion > 50 %}#73d179{% else %}#a6a4a4{% endif %}">
+                        <strong data-truth-stat-value>{{ truth_gate_summary.answered }}</strong>
                     </div>
-                    <span>Answered · {% if truth_gate_summary.completion > 50 %}On track{% else %}Review incomplete{% endif %}</span>
+                    <span data-truth-stat-label>Answered · {% if truth_gate_summary.completion > 50 %}On track{% else %}Review incomplete{% endif %}</span>
                 </div>
                 <div class="truth-summary-stat">
-                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.confirmed_percentage }}; --ring-color: {% if truth_gate_summary.confirmed_percentage > 50 %}#73d179{% else %}#fa3737{% endif %}">
-                        <strong>{{ truth_gate_summary.confirmed }}</strong>
+                    <div class="truth-ring" data-truth-stat="confirmed" style="--ring-value: {{ truth_gate_summary.confirmed_percentage }}; --ring-color: {% if truth_gate_summary.confirmed_percentage > 50 %}#73d179{% else %}#fa3737{% endif %}">
+                        <strong data-truth-stat-value>{{ truth_gate_summary.confirmed }}</strong>
                     </div>
-                    <span>Confirmed · {% if truth_gate_summary.confirmed_percentage > 50 %}Above minimum{% else %}Needs attention{% endif %}</span>
+                    <span data-truth-stat-label>Confirmed · {% if truth_gate_summary.confirmed_percentage > 50 %}Above minimum{% else %}Needs attention{% endif %}</span>
                 </div>
                 <div class="truth-summary-stat">
-                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.training_percentage }}; --ring-color: #a6a4a4">
-                        <strong>{{ truth_gate_summary.training }}</strong>
+                    <div class="truth-ring" data-truth-stat="training" style="--ring-value: {{ truth_gate_summary.training_percentage }}; --ring-color: #a6a4a4">
+                        <strong data-truth-stat-value>{{ truth_gate_summary.training }}</strong>
                     </div>
-                    <span>In training · Information</span>
+                    <span data-truth-stat-label>In training · Information</span>
                 </div>
                 <div class="truth-summary-stat">
-                    <div class="truth-ring" style="--ring-value: {{ truth_gate_summary.gap_percentage }}; --ring-color: {% if truth_gate_summary.gap_percentage > 50 %}#fa3737{% else %}#73d179{% endif %}">
-                        <strong>{{ truth_gate_summary.not_have }}</strong>
+                    <div class="truth-ring" data-truth-stat="not_have" style="--ring-value: {{ truth_gate_summary.gap_percentage }}; --ring-color: {% if truth_gate_summary.gap_percentage > 50 %}#fa3737{% else %}#73d179{% endif %}">
+                        <strong data-truth-stat-value>{{ truth_gate_summary.not_have }}</strong>
                     </div>
-                    <span>Evidence gaps · {% if truth_gate_summary.gap_percentage > 50 %}Needs attention{% else %}Within minimum{% endif %}</span>
+                    <span data-truth-stat-label>Evidence gaps · {% if truth_gate_summary.gap_percentage > 50 %}Needs attention{% else %}Within minimum{% endif %}</span>
                 </div>
                 <div class="truth-next-action">
-                    <strong>{% if truth_gate_summary.complete %}Your next action{% else %}Complete your review{% endif %}</strong>
-                    <p>{{ truth_gate_summary.next_action }}</p>
+                    <strong data-truth-next-heading>{% if truth_gate_summary.complete %}Your next action{% else %}Complete your review{% endif %}</strong>
+                    <p data-truth-next-action>{{ truth_gate_summary.next_action }}</p>
                     {% if truth_gate_summary.complete and interview_plan.tailored %}
                         <button type="button" class="btn btn-light btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#interviewStudio">
                             Continue to interview preparation
@@ -2940,6 +2945,42 @@
                     confirmation.innerHTML = `<strong>Your response</strong>${labels[payload.action]}`;
                     panel.querySelector('[data-truth-progress-text]').textContent = `${payload.answered}/${payload.total}`;
                     panel.querySelector('[data-truth-progress]').style.width = `${payload.completion}%`;
+                    const statConfig = {
+                        answered: {
+                            value: payload.answered,
+                            percentage: payload.completion,
+                            color: payload.completion > 50 ? '#73d179' : '#a6a4a4',
+                            label: `Answered · ${payload.completion > 50 ? 'On track' : 'Review incomplete'}`,
+                        },
+                        confirmed: {
+                            value: payload.confirmed,
+                            percentage: payload.confirmed_percentage,
+                            color: payload.confirmed_percentage > 50 ? '#73d179' : '#fa3737',
+                            label: `Confirmed · ${payload.confirmed_percentage > 50 ? 'Above minimum' : 'Needs attention'}`,
+                        },
+                        training: {
+                            value: payload.training,
+                            percentage: payload.training_percentage,
+                            color: '#a6a4a4',
+                            label: 'In training · Information',
+                        },
+                        not_have: {
+                            value: payload.not_have,
+                            percentage: payload.gap_percentage,
+                            color: payload.gap_percentage > 50 ? '#fa3737' : '#73d179',
+                            label: `Evidence gaps · ${payload.gap_percentage > 50 ? 'Needs attention' : 'Within minimum'}`,
+                        },
+                    };
+                    Object.entries(statConfig).forEach(([name, stat]) => {
+                        const ring = panel.querySelector(`[data-truth-stat="${name}"]`);
+                        if (!ring) return;
+                        ring.style.setProperty('--ring-value', stat.percentage);
+                        ring.style.setProperty('--ring-color', stat.color);
+                        ring.querySelector('[data-truth-stat-value]').textContent = stat.value;
+                        ring.closest('.truth-summary-stat').querySelector('[data-truth-stat-label]').textContent = stat.label;
+                    });
+                    panel.querySelector('[data-truth-next-heading]').textContent = payload.complete ? 'Your next action' : 'Complete your review';
+                    panel.querySelector('[data-truth-next-action]').textContent = payload.next_action;
                     if (activeIndex < cards.length - 1) showCard(activeIndex + 1, true);
                 } catch (error) {
                     window.alert(error.message);

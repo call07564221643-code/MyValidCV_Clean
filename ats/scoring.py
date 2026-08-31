@@ -8,7 +8,7 @@ from .models import Qualification, RoleTemplate, Skill
 
 logger = logging.getLogger(__name__)
 
-ATS_MODEL_VERSION = "2.1"
+ATS_MODEL_VERSION = "2.2"
 
 
 BASE_SKILLS = [
@@ -154,9 +154,15 @@ def calculate_score_details(cv_text, job_description, job_title=""):
         ],
         taxonomy["mandatory_terms"],
     )
+    truth_gate_terms = _extract_truth_gate_terms(
+        requirement_terms,
+        known_terms,
+        taxonomy["mandatory_terms"],
+        qualification_terms,
+    )
     evidence_map = _build_evidence_map(
         cv_text,
-        requirement_terms,
+        truth_gate_terms,
         taxonomy["mandatory_terms"],
         qualification_terms,
         job_lower,
@@ -401,6 +407,24 @@ def _extract_requirement_terms(job_text, job_title="", known_terms=None):
     terms.extend(_important_words(source_text))
     terms.extend(_extract_relevant_keywords(job_text, limit=18))
     return _unique_keep_order(terms)[:32]
+
+
+def _extract_truth_gate_terms(requirement_terms, known_terms, mandatory_terms, qualification_terms):
+    """Limit candidate questions to curated, requirement-level concepts.
+
+    Broad advert keywords can inform the match calculation, but headings,
+    benefits, notes and application instructions must not become evidence
+    questions merely because they were pasted with the advert.
+    """
+    trusted_terms = {
+        str(term).strip().lower()
+        for term in [*(known_terms or []), *(mandatory_terms or []), *(qualification_terms or [])]
+        if str(term).strip()
+    }
+    return _unique_keep_order(
+        term for term in (requirement_terms or [])
+        if str(term).strip().lower() in trusted_terms
+    )[:12]
 
 
 def _extract_relevant_keywords(text, limit=20):
