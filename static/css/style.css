@@ -2139,7 +2139,7 @@ h1, h2, h3, h4, h5, h6 {
     position: absolute;
     right: 0;
     bottom: 3.9rem;
-    width: min(380px, calc(100vw - 2rem));
+    width: min(430px, calc(100vw - 2rem));
     overflow: hidden;
     border: 1px solid #dce4f2;
     border-radius: 20px;
@@ -2171,6 +2171,20 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.82rem;
 }
 
+.mvcv-assistant-header span i {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 0.25rem;
+    border-radius: 999px;
+    background: #7ee2b8;
+}
+
+.mvcv-assistant-header-actions {
+    display: flex;
+    gap: 0.35rem;
+}
+
 .mvcv-assistant-header button {
     border: 0;
     background: rgba(255, 255, 255, 0.14);
@@ -2187,6 +2201,24 @@ h1, h2, h3, h4, h5, h6 {
     overflow: auto;
     padding: 0.9rem;
     background: #f8fafc;
+}
+
+.mvcv-assistant-messages {
+    max-height: 255px;
+    overflow-y: auto;
+    padding-right: 0.2rem;
+    scroll-behavior: smooth;
+}
+
+.mvcv-assistant-route {
+    border-top: 1px solid #e2e8f0;
+    margin-top: 0.35rem;
+    padding-top: 0.75rem;
+}
+
+.mvcv-assistant-route > strong {
+    color: #334155;
+    font-size: 0.78rem;
 }
 
 .mvcv-assistant-message {
@@ -2207,6 +2239,10 @@ h1, h2, h3, h4, h5, h6 {
     background: var(--mvcv-brand-primary, #1f3374);
     color: var(--mvcv-brand-on-primary, #ffffff);
     margin-left: 2.4rem;
+}
+
+.mvcv-assistant-message.bot + .mvcv-assistant-message.bot {
+    margin-top: -0.25rem;
 }
 
 .mvcv-assistant-prompts {
@@ -2669,6 +2705,17 @@ html[data-bs-theme="dark"] .mvcv-assistant-form input {
     .mvcv-assistant {
         right: 0.75rem;
         bottom: 0.75rem;
+    }
+
+    .mvcv-assistant-panel {
+        position: fixed;
+        inset: 0.75rem 0.75rem 4.6rem;
+        width: auto;
+        max-height: none;
+    }
+
+    .mvcv-assistant-body {
+        max-height: calc(100vh - 12.5rem);
     }
 }
 

@@ -3,25 +3,31 @@
         <span class="mvcv-assistant-dot"></span>
         Ask Maya
     </button>
-    <section class="mvcv-assistant-panel" data-assistant-panel>
+    <section class="mvcv-assistant-panel" data-assistant-panel aria-label="Chat with Maya">
         <header class="mvcv-assistant-header">
             <div>
                 <strong>Maya</strong>
-                <span>MyValidCV customer service</span>
+                <span><i aria-hidden="true"></i> MyValidCV product adviser</span>
             </div>
-            <button type="button" aria-label="Close assistant" data-assistant-close>&times;</button>
+            <div class="mvcv-assistant-header-actions">
+                <button type="button" aria-label="Start a new conversation" title="New conversation" data-assistant-reset>&#8635;</button>
+                <button type="button" aria-label="Close assistant" data-assistant-close>&times;</button>
+            </div>
         </header>
         <div class="mvcv-assistant-body" data-assistant-body>
-            <div class="mvcv-assistant-message bot">
-                Hi! I’m Maya. What are you working on today—your CV, an ATS report, or choosing the right plan?
+            <div class="mvcv-assistant-messages" data-assistant-messages aria-live="polite">
+                <div class="mvcv-assistant-message bot">
+                    Hi, I&rsquo;m Maya. I can guide you through MyValidCV as a job seeker or hiring team. Choose a route below, or ask me a question.
+                </div>
             </div>
-            <div class="mvcv-assistant-prompts" aria-label="Suggested questions">
-                <button type="button" data-assistant-prompt="How does MyValidCV work?">How it works</button>
-                <button type="button" data-assistant-prompt="What does the ATS report show?">Report meaning</button>
-                <button type="button" data-assistant-prompt="What does the Truth Gate mean?">Truth Gate</button>
-                <button type="button" data-assistant-prompt="Which plan should I choose?">Choose plan</button>
-                <button type="button" data-assistant-prompt="How do payments and refunds work?">Payments/refunds</button>
-                <button type="button" data-assistant-prompt="Are there discounts?">Discounts</button>
+            <div class="mvcv-assistant-route">
+                <strong>What do you need help with?</strong>
+                <div class="mvcv-assistant-prompts" data-assistant-prompts aria-label="Suggested questions">
+                    <button type="button" data-assistant-prompt="I am applying for jobs. How do I start?">I&rsquo;m a job seeker</button>
+                    <button type="button" data-assistant-prompt="I represent a hiring team. How does Enterprise work?">I&rsquo;m hiring</button>
+                    <button type="button" data-assistant-prompt="What does my ATS score mean?">Understand a report</button>
+                    <button type="button" data-assistant-prompt="Which MyValidCV plan should I choose?">Compare plans</button>
+                </div>
             </div>
             <p class="mvcv-assistant-privacy">Maya provides general guidance. Do not enter CV contents, passwords, payment details or sensitive personal information.</p>
             <nav class="mvcv-assistant-support" aria-label="Customer support options">
@@ -34,7 +40,7 @@
         </div>
         <form class="mvcv-assistant-form" data-assistant-form>
             {% csrf_token %}
-            <input type="text" data-assistant-input placeholder="Ask about CV validation, plans, reports..." aria-label="Ask Maya">
+            <input type="text" maxlength="1200" autocomplete="off" data-assistant-input placeholder="Ask Maya about MyValidCV&hellip;" aria-label="Ask Maya">
             <button type="submit" data-assistant-send>Send</button>
         </form>
     </section>

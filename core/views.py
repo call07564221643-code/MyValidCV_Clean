@@ -22,7 +22,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.models import UserProfile
 from ats.models import ATSResult, ApplicationReminder, CV, GeneratedCV
-from core.maya_knowledge import knowledge_context, select_knowledge
+from core.maya_knowledge import knowledge_context, primary_knowledge, select_knowledge
 from core.models import ExperienceFeedback
 from subscriptions.services import get_entitlements
 
@@ -233,25 +233,9 @@ def fallback_assistant_answer(question, history=None, is_authenticated=False):
         )
     if "discount" in q or "offer" in q or "coupon" in q:
         return "I can’t see an active public offer from here. Any official discount will appear on the Plans page or come directly from support. Would you like help comparing the plans instead?"
-    if "refund" in q or "cancel" in q or "terms" in q or "privacy" in q:
-        return "That depends on your plan, usage and timing. Check the Terms or Privacy link in the footer, then email support@myvalidcv.com if it concerns your account. Don’t share payment details in this chat."
-    if "payment" in q or "pay" in q or "card" in q or "receipt" in q:
-        return "Choose the plan you want and complete the secure checkout. Once payment is confirmed, your account access updates automatically. The payment provider handles the card details, not Maya."
-    if "enterprise" in contextual_q or "bulk" in contextual_q:
-        return "Enterprise is designed for teams comparing several CVs with one role. It produces a concise ranked review and highlights evidence gaps, but a person must still review every candidate before any decision. Are you screening for one role or several?"
-    if "plan" in contextual_q or "price" in contextual_q or "plus" in contextual_q or "free" in contextual_q:
-        account_note = "Since you’re signed in, your account page shows your current allowance. " if is_authenticated else ""
-        return (
-            f"{account_note}Free is best for trying the analysis, Plus adds 20 analyses and editable CV and cover-letter drafts, "
-            "and Enterprise is for advisory bulk comparison. The Plans page has the current prices. Are you applying for yourself or reviewing candidates?"
-        )
-    if "report" in contextual_q or "ats" in contextual_q or "score" in contextual_q or "truth gate" in contextual_q:
-        return "Think of the ATS result as a document check, not a prediction. It shows how well your CV evidences this particular job, then the Truth Gate separates proven strengths from claims you still need to confirm. Which part of your report is unclear?"
-    if any(term in contextual_q for term in ("cv", "cover", "rewrite", "draft", "bullet", "summary")):
-        return "Yes—I can help you use the evidence already in your CV more effectively for the role. MyValidCV can propose a summary, experience bullets and a cover letter, but you should verify every fact before downloading. Are you working on the summary, experience section or cover letter?"
-    if any(term in contextual_q for term in ("how", "work", "start", "upload", "validate")):
-        return "Start by uploading your CV and adding the job advert you want to target. Run the validation, review the evidence gaps, then improve only the wording your CV can genuinely support. Do you already have the job advert?"
-    return "I can help with CV validation, ATS results, document drafts, plans, payments or Enterprise screening. Tell me what you’re trying to do, and I’ll point you to the next step."
+    topic = primary_knowledge(contextual_q)
+    account_note = "Your Account page shows your live allowance. " if is_authenticated and topic["topic"] == "plans" else ""
+    return f"{account_note}{topic['answer']}"
 
 
 def build_user_context(request):
@@ -338,6 +322,7 @@ def assistant_reply(request):
     if len(question) > 1200:
         return JsonResponse({"answer": "Please shorten your question to 1,200 characters or fewer."}, status=400)
     selected_topics = select_knowledge(question)
+    primary_topic = selected_topics[0]
     try:
         answer = call_ollama(
             question,
@@ -364,6 +349,7 @@ def assistant_reply(request):
         ),
         "source": source,
         "topics": [item["topic"] for item in selected_topics],
+        "suggestions": primary_topic.get("followups", [])[:3],
         "retained": False,
     })
 

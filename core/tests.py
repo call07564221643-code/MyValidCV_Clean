@@ -54,7 +54,8 @@ class AssistantReplyTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["source"], "fallback")
         self.assertIn("truth gate", response.json()["answer"].lower())
-        self.assertIn("ats_v2", response.json()["topics"])
+        self.assertIn("score", response.json()["topics"])
+        self.assertTrue(response.json()["suggestions"])
         self.assertFalse(response.json()["retained"])
 
     @override_settings(OLLAMA_BASE_URL="https://ollama.example", OLLAMA_MODEL="test-model", OLLAMA_API_KEY="secret")
@@ -135,8 +136,8 @@ class AssistantReplyTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("20 analyses", response.json()["answer"])
-        self.assertIn("applying for yourself", response.json()["answer"].lower())
+        self.assertIn("twenty role checks", response.json()["answer"])
+        self.assertIn("plus_plan", response.json()["topics"])
 
     @override_settings(OLLAMA_BASE_URL="")
     def test_fallback_refuses_automatic_candidate_rejection(self):
@@ -177,17 +178,19 @@ class AssistantReplyTests(TestCase):
         self.assertContains(response, "Payment/refund help")
         self.assertContains(response, "Technical problem")
         self.assertContains(response, reverse("privacy_policy"))
+        self.assertContains(response, "MyValidCV product adviser")
+        self.assertContains(response, "data-assistant-reset")
 
 
 class MayaKnowledgeTests(TestCase):
-    def test_truth_gate_question_selects_ats_v2_knowledge(self):
+    def test_truth_gate_question_selects_specific_knowledge(self):
         topics = select_knowledge("What does the Truth Gate mean?")
-        self.assertEqual(topics[0]["topic"], "ats_v2")
+        self.assertEqual(topics[0]["topic"], "truth_gate")
         self.assertIn("not hiring probability", knowledge_context("Explain my ATS score"))
 
     def test_unknown_question_still_receives_service_and_limit_context(self):
         context = knowledge_context("Can you explain this?")
-        self.assertIn("[service]", context)
+        self.assertIn("[getting_started]", context)
         self.assertIn("[limitations]", context)
 
     def test_history_is_bounded_and_rejects_system_messages(self):

@@ -492,11 +492,12 @@ function setupSiteAssistant() {
 
     const toggle = assistant.querySelector('[data-assistant-toggle]');
     const close = assistant.querySelector('[data-assistant-close]');
+    const reset = assistant.querySelector('[data-assistant-reset]');
     const form = assistant.querySelector('[data-assistant-form]');
     const input = assistant.querySelector('[data-assistant-input]');
     const send = assistant.querySelector('[data-assistant-send]');
-    const body = assistant.querySelector('[data-assistant-body]');
-    const prompts = assistant.querySelectorAll('[data-assistant-prompt]');
+    const messages = assistant.querySelector('[data-assistant-messages]');
+    const promptContainer = assistant.querySelector('[data-assistant-prompts]');
     const csrfToken = form.querySelector('[name="csrfmiddlewaretoken"]')?.value || '';
     const history = [];
     let isResponding = false;
@@ -505,10 +506,27 @@ function setupSiteAssistant() {
         const message = document.createElement('div');
         message.className = `mvcv-assistant-message ${sender}`;
         message.textContent = text;
-        body.appendChild(message);
-        body.scrollTop = body.scrollHeight;
+        messages.appendChild(message);
+        messages.scrollTop = messages.scrollHeight;
         history.push({role: sender === 'user' ? 'user' : 'assistant', content: text});
         if (history.length > 8) history.splice(0, history.length - 8);
+    };
+
+    const setPromptsDisabled = (disabled) => {
+        assistant.querySelectorAll('[data-assistant-prompt]').forEach((button) => {
+            button.disabled = disabled;
+        });
+    };
+
+    const renderSuggestions = (suggestions = []) => {
+        if (!promptContainer || !suggestions.length) return;
+        promptContainer.replaceChildren(...suggestions.slice(0, 3).map((suggestion) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.assistantPrompt = suggestion;
+            button.textContent = suggestion;
+            return button;
+        }));
     };
 
     const respond = async (question) => {
@@ -520,11 +538,11 @@ function setupSiteAssistant() {
         typing.className = 'mvcv-assistant-message bot';
         typing.textContent = 'Maya is thinking…';
         typing.setAttribute('aria-live', 'polite');
-        body.appendChild(typing);
-        body.scrollTop = body.scrollHeight;
+        messages.appendChild(typing);
+        messages.scrollTop = messages.scrollHeight;
         input.disabled = true;
         send.disabled = true;
-        prompts.forEach((button) => { button.disabled = true; });
+        setPromptsDisabled(true);
         try {
             const response = await fetch('/assistant/', {
                 method: 'POST',
@@ -536,13 +554,14 @@ function setupSiteAssistant() {
             });
             const data = await response.json().catch(() => ({}));
             answer = data.answer || '';
+            renderSuggestions(data.suggestions || []);
         } catch (error) {
             answer = '';
         } finally {
             typing.remove();
             input.disabled = false;
             send.disabled = false;
-            prompts.forEach((button) => { button.disabled = false; });
+            setPromptsDisabled(false);
             isResponding = false;
             input.focus();
         }
@@ -560,8 +579,21 @@ function setupSiteAssistant() {
         toggle.setAttribute('aria-expanded', 'false');
     });
 
-    prompts.forEach((button) => {
-        button.addEventListener('click', () => respond(button.dataset.assistantPrompt));
+    promptContainer.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-assistant-prompt]');
+        if (button) respond(button.dataset.assistantPrompt);
+    });
+
+    reset.addEventListener('click', () => {
+        history.splice(0, history.length);
+        messages.innerHTML = '<div class="mvcv-assistant-message bot">New conversation started. Are you applying for yourself or reviewing candidates?</div>';
+        renderSuggestions(['I am applying for jobs', 'I represent a hiring team', 'Compare the plans']);
+        input.value = '';
+        input.focus();
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && assistant.classList.contains('open')) close.click();
     });
 
     form.addEventListener('submit', (event) => {
