@@ -2,20 +2,61 @@
 
 {% block title %}Secure Checkout - MyValidCV{% endblock %}
 
+{% block extra_css %}
+<style>
+    .checkout-shell {
+        min-height: calc(100vh - 84px);
+        padding: 3rem 0;
+        color: #17233f;
+        background:
+            radial-gradient(circle at 18% 4%, rgba(245, 158, 11, 0.24), transparent 32%),
+            linear-gradient(180deg, #fffdf5 0%, #eff7ff 100%);
+    }
+    .checkout-card {
+        background: #ffffff !important;
+        border: 1px solid rgba(245, 158, 11, 0.38) !important;
+        border-top: 6px solid #f59e0b !important;
+        color: #17233f !important;
+        box-shadow: 0 24px 70px rgba(23, 35, 63, 0.13) !important;
+    }
+    .checkout-badge {
+        background: #fff3c4;
+        color: #7c4a03;
+    }
+    .checkout-summary {
+        background: #fff9df !important;
+        border-color: #f6cf65 !important;
+        color: #17233f;
+    }
+    .checkout-card .form-label { color: #17233f; font-weight: 650; }
+    .checkout-card .form-control {
+        background: #ffffff;
+        border-color: #cbd5e1;
+        color: #17233f;
+    }
+    .checkout-card .form-control:focus {
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 0.2rem rgba(245, 158, 11, 0.2);
+    }
+    .checkout-card .text-muted { color: #64748b !important; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container my-5">
+<div class="checkout-shell">
+<div class="container">
     <div class="row justify-content-center">
         <div class="col-lg-6">
-            <div class="card border-0 shadow-sm">
+            <div class="card checkout-card">
                 <div class="card-body p-4 p-lg-5">
-                    <span class="badge bg-primary mb-2">Secure checkout</span>
+                    <span class="badge checkout-badge mb-2">Secure checkout</span>
                     <h1 class="h3 fw-bold">Pay for {{ transaction.plan.name }}</h1>
                     <p class="text-muted">
                         Enter your card details below. Demo checkout accepts test card
                         <strong>4242 4242 4242 4242</strong>.
                     </p>
 
-                    <div class="border rounded-3 p-3 mb-4 bg-light">
+                    <div class="checkout-summary border rounded-3 p-3 mb-4">
                         <div class="d-flex justify-content-between mb-2">
                             <span>Plan</span>
                             <strong>{{ transaction.plan.name }}</strong>
@@ -65,5 +106,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 {% endblock %}
