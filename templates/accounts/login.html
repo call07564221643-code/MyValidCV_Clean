@@ -7,7 +7,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/mvcv-wireframe.css' %}">
 <style>
-    /* Authentication pages intentionally use a focused, logo-free form layout. */
+    /* Authentication pages intentionally use a focused form layout. */
     body > .navbar {
         display: none;
     }
@@ -49,6 +49,27 @@
         font-size: 1.55rem;
         letter-spacing: -0.035em;
         font-weight: 400;
+    }
+
+    .auth-brand {
+        display: inline-flex;
+        align-items: center;
+        margin: 0 0 0.7rem;
+        color: #1f3374;
+        font-size: 1.65rem;
+        font-weight: 800;
+        letter-spacing: -0.045em;
+        line-height: 1;
+        text-decoration: none;
+    }
+
+    .auth-brand span {
+        color: #9fb8ff;
+    }
+
+    .auth-brand:hover,
+    .auth-brand:focus-visible {
+        color: #1f3374;
     }
 
     .auth-card > p {
@@ -189,7 +210,11 @@
     <div class="auth-frame">
         <div class="auth-panel">
             <div class="auth-card">
-                <h2>{% block auth_heading %}Log in{% endblock %}</h2>
+                {% if request.resolver_match.url_name == 'login' or request.resolver_match.url_name == 'account_login' %}
+                    <a class="auth-brand" href="{% url 'home' %}" aria-label="MyValidCV home">MyValid<span>CV</span></a>
+                {% else %}
+                    <h2>{% block auth_heading %}Log in{% endblock %}</h2>
+                {% endif %}
                 <p>{% block auth_intro %}Use your username or email, or continue with Google or LinkedIn.{% endblock %}</p>
 
                 <form method="post" class="auth-form" novalidate>
