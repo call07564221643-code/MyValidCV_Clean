@@ -210,7 +210,7 @@
     <div class="auth-frame">
         <div class="auth-panel">
             <div class="auth-card">
-                {% if request.resolver_match.url_name == 'login' or request.resolver_match.url_name == 'account_login' %}
+                {% if request.resolver_match.url_name == 'login' or request.resolver_match.url_name == 'account_login' or request.resolver_match.url_name == 'register' or request.resolver_match.url_name == 'account_signup' %}
                     <a class="auth-brand" href="{% url 'home' %}" aria-label="MyValidCV home">MyValid<span>CV</span></a>
                 {% else %}
                     <h2>{% block auth_heading %}Log in{% endblock %}</h2>
