@@ -210,11 +210,8 @@
     <div class="auth-frame">
         <div class="auth-panel">
             <div class="auth-card">
-                {% if request.resolver_match.url_name == 'login' or request.resolver_match.url_name == 'account_login' or request.resolver_match.url_name == 'register' or request.resolver_match.url_name == 'account_signup' %}
-                    <a class="auth-brand" href="{% url 'home' %}" aria-label="MyValidCV home">MyValid<span>CV</span></a>
-                {% else %}
-                    <h2>{% block auth_heading %}Log in{% endblock %}</h2>
-                {% endif %}
+                {# Shared brand header for both the login and signup forms. #}
+                <a class="auth-brand" href="{% url 'home' %}" aria-label="MyValidCV home">MyValid<span>CV</span></a>
                 <p>{% block auth_intro %}Use your username or email, or continue with Google or LinkedIn.{% endblock %}</p>
 
                 <form method="post" class="auth-form" novalidate>
