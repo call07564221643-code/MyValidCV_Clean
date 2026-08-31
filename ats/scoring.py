@@ -8,7 +8,7 @@ from .models import Qualification, RoleTemplate, Skill
 
 logger = logging.getLogger(__name__)
 
-ATS_MODEL_VERSION = "2.2"
+ATS_MODEL_VERSION = "2.3"
 
 
 BASE_SKILLS = [
@@ -174,6 +174,7 @@ def calculate_score_details(cv_text, job_description, job_title=""):
         int(((len(evidenced) + (len(mentioned) * 0.45)) / max(len(evidence_map), 1)) * 100),
     )
     format_score, format_checks = _calculate_format_score(cv_text)
+    experience_alignment = _build_experience_alignment(cv_text, job_description)
 
     if not jd_skills and requirement_terms:
         skills_score = requirement_score
@@ -272,6 +273,7 @@ def calculate_score_details(cv_text, job_description, job_title=""):
         "requirement_groups": requirement_groups,
         "evidence_map": evidence_map,
         "format_checks": format_checks,
+        "experience_alignment": experience_alignment,
         "confidence": {
             "score": confidence_score,
             "label": confidence_label,
@@ -644,6 +646,34 @@ def _calculate_format_score(cv_text):
     }
     score = int((sum(checks.values()) / len(checks)) * 100)
     return score, checks
+
+
+def _extract_explicit_experience_years(text):
+    """Return explicit years-of-experience claims without guessing from dates."""
+    matches = re.findall(
+        r"\b(\d{1,2})(?:\s*[-–]\s*\d{1,2})?\+?\s+years?(?:\s+of)?\s+(?:relevant\s+)?experience\b",
+        (text or "").lower(),
+    )
+    return max((int(value) for value in matches), default=0)
+
+
+def _build_experience_alignment(cv_text, job_text):
+    """Compare explicit duration claims while keeping ambiguous dates for human review."""
+    required_years = _extract_explicit_experience_years(job_text)
+    evidenced_years = _extract_explicit_experience_years(cv_text)
+    if not required_years:
+        status = "not_specified"
+    elif not evidenced_years:
+        status = "review_required"
+    elif evidenced_years >= required_years:
+        status = "aligned"
+    else:
+        status = "gap"
+    return {
+        "required_years": required_years,
+        "evidenced_years": evidenced_years,
+        "status": status,
+    }
 
 
 def _calculate_confidence(cv_text, job_text, requirements, evidence_map, detected_role):

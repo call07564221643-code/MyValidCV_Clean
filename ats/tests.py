@@ -33,6 +33,7 @@ from .models import (
 )
 from .scoring import (
     _build_evidence_map,
+    _build_experience_alignment,
     _calculate_confidence,
     _detect_mandatory_qualifications,
     _extract_requirement_terms,
@@ -725,7 +726,7 @@ class ATSV2Tests(TestCase):
         django_evidence = next(item for item in details["evidence_map"] if item["term"] == "django")
         self.assertEqual(django_evidence["status"], "mentioned")
         self.assertEqual(django_evidence["strength"], "keyword only")
-        self.assertEqual(details["model_version"], "2.2")
+        self.assertEqual(details["model_version"], "2.3")
         self.assertIn("evidence", details["score_components"])
         self.assertIn("format", details["score_components"])
 
@@ -847,6 +848,19 @@ class ATSV2Tests(TestCase):
 
 
 class TruthGateGuidanceTests(SimpleTestCase):
+    def test_explicit_experience_duration_is_reported_without_date_guessing(self):
+        aligned = _build_experience_alignment(
+            "Data analyst with 5 years of relevant experience.",
+            "Applicants must have 3+ years of experience.",
+        )
+        review_required = _build_experience_alignment(
+            "Data Analyst, 2019 to 2024.",
+            "Applicants must have 3 years of experience.",
+        )
+
+        self.assertEqual(aligned, {"required_years": 3, "evidenced_years": 5, "status": "aligned"})
+        self.assertEqual(review_required["status"], "review_required")
+
     def test_requirement_labels_are_human_readable(self):
         self.assertEqual(humanize_requirement_term("skillsproficiency"), "Skills proficiency")
         self.assertEqual(humanize_requirement_term("project_management"), "Project management")

@@ -1171,6 +1171,7 @@ def analyse_cv(request):
                 "requirement_groups": details.get("requirement_groups", {}),
                 "evidence_map": details.get("evidence_map", []),
                 "format_checks": details.get("format_checks", {}),
+                "experience_alignment": details.get("experience_alignment", {}),
                 "confidence": details.get("confidence", {}),
                 "model_version": details.get("model_version", ATS_MODEL_VERSION),
             }
@@ -1251,6 +1252,7 @@ def result_detail(request, result_id):
             "requirement_groups": current_details.get("requirement_groups", {}),
             "evidence_map": current_details.get("evidence_map", []),
             "format_checks": current_details.get("format_checks", {}),
+            "experience_alignment": current_details.get("experience_alignment", {}),
             "confidence": current_details.get("confidence", {}),
             "model_version": ATS_MODEL_VERSION,
             "historic_score": True,

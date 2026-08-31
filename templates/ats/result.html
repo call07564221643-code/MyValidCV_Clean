@@ -2307,6 +2307,19 @@
                     <strong>Location can be an advantage.</strong>
                     A practical commute, suitable working pattern, or confirmed relocation plan can reduce availability concerns when candidates are otherwise similarly matched. Distance is not inferred or added to this CV score; confirm the job location before applying.
                 </div>
+                {% if ats_v2.experience_alignment.required_years %}
+                    <div class="brief-alert mt-3">
+                        <strong>Experience duration:</strong>
+                        the advert explicitly asks for {{ ats_v2.experience_alignment.required_years }} year{{ ats_v2.experience_alignment.required_years|pluralize }}.
+                        {% if ats_v2.experience_alignment.status == "aligned" %}
+                            The CV explicitly states {{ ats_v2.experience_alignment.evidenced_years }} year{{ ats_v2.experience_alignment.evidenced_years|pluralize }} of experience; verify the dates and relevance.
+                        {% elif ats_v2.experience_alignment.status == "gap" %}
+                            The CV explicitly states {{ ats_v2.experience_alignment.evidenced_years }} year{{ ats_v2.experience_alignment.evidenced_years|pluralize }}; review whether other relevant experience is evidenced.
+                        {% else %}
+                            No reliable duration claim was detected, so employment dates and relevance need human review.
+                        {% endif %}
+                    </div>
+                {% endif %}
             </div>
         </div>
 
