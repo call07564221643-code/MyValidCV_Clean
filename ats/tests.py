@@ -149,6 +149,22 @@ class UploadAndUrlSecurityTests(SimpleTestCase):
         with self.assertRaises(MalwareScanError):
             scan_uploaded_file(upload)
 
+    @override_settings(CLAMAV_HOST="scanner.invalid", MALWARE_SCAN_REQUIRED=False)
+    @patch("ats.malware.socket.create_connection", side_effect=OSError("unavailable"))
+    def test_optional_unavailable_scanner_does_not_block_document(self, _create_connection):
+        upload = SimpleUploadedFile("candidate.pdf", b"%PDF-1.7\nplain safe content")
+
+        self.assertEqual(validate_document(upload), upload)
+        self.assertEqual(upload.tell(), 0)
+
+    @override_settings(CLAMAV_HOST="scanner.invalid", MALWARE_SCAN_REQUIRED=True)
+    @patch("ats.malware.socket.create_connection", side_effect=OSError("unavailable"))
+    def test_required_unavailable_scanner_blocks_document(self, _create_connection):
+        upload = SimpleUploadedFile("job-advert.pdf", b"%PDF-1.7\nplain safe content")
+
+        with self.assertRaisesMessage(Exception, "security scanning is temporarily unavailable"):
+            validate_document(upload)
+
 
 class EnterpriseWorkspaceTests(TestCase):
     def setUp(self):
