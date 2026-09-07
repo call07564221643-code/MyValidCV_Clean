@@ -484,4 +484,66 @@
         }
     })();
 </script>
+<script>
+    (function () {
+        'use strict';
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('resume') !== '1' || sessionStorage.getItem('mvcv-resume-submitted') === '1') return;
+
+        function openDraftDB() {
+            return new Promise(function (resolve, reject) {
+                const request = indexedDB.open('myvalidcv-drafts', 1);
+                request.onupgradeneeded = function () { request.result.createObjectStore('drafts'); };
+                request.onsuccess = function () { resolve(request.result); };
+                request.onerror = function () { reject(request.error); };
+            });
+        }
+
+        function assignFile(input, file) {
+            if (!input || !file) return;
+            const transfer = new DataTransfer();
+            transfer.items.add(file);
+            input.files = transfer.files;
+        }
+
+        async function restorePendingValidation() {
+            try {
+                const db = await openDraftDB();
+                const draft = await new Promise(function (resolve, reject) {
+                    const tx = db.transaction('drafts', 'readonly');
+                    const request = tx.objectStore('drafts').get('pending-validation');
+                    request.onsuccess = function () { resolve(request.result); };
+                    request.onerror = function () { reject(request.error); };
+                });
+                db.close();
+                if (!draft || Date.now() - draft.created_at > 60 * 60 * 1000) return;
+
+                const source = ['text', 'url', 'file'].includes(draft.source) ? draft.source : 'text';
+                const sourceTab = document.querySelector('.validate-source-tab[data-source="' + source + '"]');
+                if (sourceTab) sourceTab.click();
+                const text = document.getElementById('id_job_description');
+                const url = document.getElementById('id_job_url');
+                if (text) text.value = draft.job_description || '';
+                if (url) url.value = draft.job_url || '';
+                assignFile(document.getElementById('id_cv_file'), draft.cv_file);
+                assignFile(document.getElementById('id_job_file'), draft.job_file);
+
+                const form = document.getElementById('validationForm');
+                if (form && (draft.cv_file || document.getElementById('id_cv').value)) {
+                    sessionStorage.setItem('mvcv-resume-submitted', '1');
+                    form.requestSubmit();
+                }
+            } catch (error) {
+                const form = document.getElementById('validationForm');
+                if (form) {
+                    const notice = document.createElement('div');
+                    notice.className = 'alert alert-warning m-3';
+                    notice.textContent = 'We could not restore your prepared validation. Please add the files again.';
+                    form.prepend(notice);
+                }
+            }
+        }
+        restorePendingValidation();
+    }());
+</script>
 {% endblock %}

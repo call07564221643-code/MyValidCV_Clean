@@ -60,9 +60,9 @@ class CustomerNavigationTests(TestCase):
         self.assertContains(response, 'Enter your company name')
         self.assertContains(response, 'Enter your position')
 
-    def test_landing_page_has_start_now_and_no_enterprise_link(self):
+    def test_landing_page_has_validation_action_and_no_enterprise_link(self):
         response = self.client.get(reverse('home'))
-        self.assertContains(response, 'Start Now')
+        self.assertContains(response, 'Validate my CV')
         self.assertNotContains(response, '>Enterprise<', html=False)
 
     def test_free_dashboard_does_not_show_bulk_analysis(self):

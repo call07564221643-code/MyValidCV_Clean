@@ -24,18 +24,17 @@ from .views import _safe_history, fallback_assistant_answer
 
 @override_settings(SECURE_SSL_REDIRECT=False)
 class LandingPageSemanticsTests(TestCase):
-    def test_landing_page_has_valid_heading_and_preview_semantics(self):
+    def test_landing_page_is_an_action_first_validation_engine(self):
         response = self.client.get(reverse("home"))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content.count(b"<h1"), 1)
-        self.assertContains(response, '<h2 class="visually-hidden">MyValidCV features</h2>', html=True)
-        self.assertContains(response, "<h3>AI CV Analysis for Job Applications</h3>", html=True)
-        self.assertContains(response, "<h2>Your data is secure and private</h2>", html=True)
-        self.assertContains(
-            response,
-            '<div class="landing-preview-wrap" role="region" aria-label="Example CV analysis preview">',
-        )
+        self.assertContains(response, "CV validation engine")
+        self.assertContains(response, "Validate my CV")
+        self.assertContains(response, 'name="cv_file"')
+        self.assertContains(response, 'name="job_description"')
+        self.assertContains(response, 'id="engineGuide"')
+        self.assertContains(response, 'id="authDialog"')
 
 
 class AssistantReplyTests(TestCase):
