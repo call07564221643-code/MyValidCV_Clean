@@ -623,7 +623,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const stepList = document.getElementById('mvcvProcessingSteps');
 
     document.querySelectorAll('form[enctype="multipart/form-data"]').forEach(function (form) {
-        form.addEventListener('submit', function () {
+        form.addEventListener('submit', function (event) {
+            if (event.defaultPrevented || form.dataset.processing === 'off') return;
             const hasFile = Array.from(form.querySelectorAll('input[type="file"]')).some(function (input) {
                 return input.files && input.files.length;
             });
