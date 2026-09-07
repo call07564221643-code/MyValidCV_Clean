@@ -45,6 +45,12 @@
         font-size: 0.84rem;
     }
 
+    .pricing-details { max-width: 760px; margin: 1.5rem auto 0; border: 1px solid #e2e8f0; border-radius: 14px; background: rgba(255, 255, 255, 0.82); }
+    .pricing-details summary { padding: 1rem 1.15rem; color: #334155; cursor: pointer; font-weight: 750; }
+    .pricing-details div { padding: 0 1.15rem 1rem; color: #64748b; font-size: 0.86rem; line-height: 1.6; }
+    .pricing-details p { margin: 0 0 0.55rem; }
+    .pricing-details p:last-child { margin-bottom: 0; }
+
     .plan-value {
         margin: -0.7rem 0 1rem;
         color: #4f46e5;
@@ -220,23 +226,20 @@
 <section class="plans-shell">
     <div class="container">
         <div class="plans-hero">
-            <h1>Clear evidence for your next application or hire.</h1>
-            <p>Affordable CV-to-job checks for individuals and focused applicant screening for hiring teams—without paying for an oversized recruitment suite.</p>
+            <h1>Choose the right level of CV validation.</h1>
+            <p>Start free, unlock tailored application documents with Plus, or compare and rank applicants with Enterprise.</p>
             <div class="pricing-assurance" aria-label="Pricing information">
-                <span>Prices charged in GBP</span>
-                <span>30-day paid access</span>
-                <span>Renew only when you choose</span>
-                <span>No MyValidCV setup fee</span>
+                <span>Prices in GBP</span>
+                {% if payment_provider == "sumup" %}<span>30 days of access</span><span>No automatic renewal</span>{% else %}<span>Monthly billing</span><span>Renews monthly</span>{% endif %}
+                <span>No setup fee</span>
             </div>
-            <p class="small mt-2">Introductory pricing for early MyValidCV customers. Any future pricing change will be communicated in advance.</p>
             {% if sumup_sandbox %}<div class="alert alert-warning mt-3" role="alert">SumUp sandbox mode is active. Test payments do not transfer real funds.</div>{% endif %}
-            {% if payment_provider == "sumup" %}<p class="small mt-2">International card providers may convert the GBP charge into your local currency. Any conversion fee is set by your card provider.</p>{% endif %}
         </div>
 
         <div class="row g-4 align-items-stretch">
             {% for plan in plans %}
                 <div class="col-lg-4">
-                    <article class="plan-card {% if plan.code == 'plus' %}featured{% endif %}">
+                    <article class="plan-card {% if plan.code == 'plus' %}featured{% endif %}"{% if plan.code == "enterprise" %} id="enterprise-plan"{% endif %}>
                         <div class="plan-body">
                             {% if plan.code == "free" %}
                                 <span class="plan-badge">Free plan</span>
@@ -254,13 +257,13 @@
 
                             <div class="plan-price">
                                 {% if plan.price == 0 %}
-                                    £0 <small>/month</small>
+                                    £0 <small>free</small>
                                 {% else %}
-                                    £{{ plan.price }} <small>/{{ plan.billing_interval }}</small>
+                                    £{{ plan.price }} <small>/{% if payment_provider == "sumup" %}30 days{% else %}{{ plan.billing_interval }}{% endif %}</small>
                                 {% endif %}
                             </div>
                             {% if plan.price > 0 %}
-                                <p class="launch-price-label">Launch price · 30 days of access</p>
+                                <p class="launch-price-label">Introductory price{% if payment_provider == "sumup" %} · 30 days of access{% endif %}</p>
                             {% endif %}
                             {% if plan.code == "plus" %}
                                 <p class="plan-value">About 25p per role check when all 20 checks are used.</p>
@@ -324,6 +327,15 @@
                 </div>
             {% endfor %}
         </div>
+
+        <details class="pricing-details">
+            <summary>Billing and currency</summary>
+            <div>
+                <p>Plus and Enterprise currently use introductory pricing. We will communicate any future pricing change in advance.</p>
+                {% if payment_provider == "sumup" %}<p>Paid access lasts for 30 days and does not renew automatically. Renew only when you choose.</p>{% else %}<p>Paid plans renew each month until cancelled.</p>{% endif %}
+                <p>Charges are made in GBP. If your card uses another currency, your provider may apply its own exchange rate or conversion fee.</p>
+            </div>
+        </details>
 
         <aside class="card border-0 shadow-sm mt-5">
             <div class="card-body p-4 d-md-flex align-items-center justify-content-between gap-4">

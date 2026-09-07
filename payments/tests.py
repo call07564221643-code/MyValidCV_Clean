@@ -18,6 +18,29 @@ from .models import Invoice, PaymentTransaction, PaymentWebhookLog, Refund
 from .services import SumUpAPIError, create_stripe_checkout_session, refund_sumup_transaction
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
+class PricingMessageTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        SubscriptionPlan.objects.create(
+            code="plus", name="Plus", price=Decimal("4.99"), currency="GBP",
+        )
+
+    @override_settings(PAYMENT_PROVIDER="stripe")
+    def test_stripe_pricing_describes_recurring_billing(self):
+        response = self.client.get(reverse("pricing"))
+        self.assertContains(response, "Monthly billing")
+        self.assertContains(response, "Renews monthly")
+        self.assertNotContains(response, "No automatic renewal")
+
+    @override_settings(PAYMENT_PROVIDER="sumup", SUMUP_MODE="live")
+    def test_sumup_pricing_describes_fixed_access(self):
+        response = self.client.get(reverse("pricing"))
+        self.assertContains(response, "30 days of access")
+        self.assertContains(response, "No automatic renewal")
+        self.assertNotContains(response, "Renews monthly")
+
+
 @override_settings(
     SECURE_SSL_REDIRECT=False,
     PAYMENT_PROVIDER="sumup",

@@ -60,10 +60,11 @@ class CustomerNavigationTests(TestCase):
         self.assertContains(response, 'Enter your company name')
         self.assertContains(response, 'Enter your position')
 
-    def test_landing_page_has_validation_action_and_no_enterprise_link(self):
+    def test_landing_page_keeps_validation_primary_with_enterprise_route(self):
         response = self.client.get(reverse('home'))
         self.assertContains(response, 'Validate my CV')
-        self.assertNotContains(response, '>Enterprise<', html=False)
+        self.assertContains(response, 'Compare and rank applicants with Enterprise')
+        self.assertContains(response, f'{reverse("pricing")}#enterprise-plan')
 
     def test_authenticated_landing_submission_can_show_real_processing_state(self):
         self.client.force_login(self.user)

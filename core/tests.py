@@ -29,7 +29,7 @@ class LandingPageSemanticsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content.count(b"<h1"), 1)
-        self.assertContains(response, "CV validation engine")
+        self.assertContains(response, "CV-to-job checker")
         self.assertContains(response, "Validate my CV")
         self.assertContains(response, 'name="cv_file"')
         self.assertContains(response, 'name="job_description"')
