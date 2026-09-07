@@ -65,6 +65,11 @@ class CustomerNavigationTests(TestCase):
         self.assertContains(response, 'Validate my CV')
         self.assertNotContains(response, '>Enterprise<', html=False)
 
+    def test_authenticated_landing_submission_can_show_real_processing_state(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('home'))
+        self.assertContains(response, 'data-processing="on"')
+
     def test_free_dashboard_does_not_show_bulk_analysis(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse('dashboard'))

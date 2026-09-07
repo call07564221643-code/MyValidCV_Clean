@@ -35,6 +35,7 @@ class LandingPageSemanticsTests(TestCase):
         self.assertContains(response, 'name="job_description"')
         self.assertContains(response, 'id="engineGuide"')
         self.assertContains(response, 'id="authDialog"')
+        self.assertContains(response, 'data-processing="off"')
 
 
 class AssistantReplyTests(TestCase):
