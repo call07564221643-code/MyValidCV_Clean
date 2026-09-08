@@ -21,7 +21,7 @@
             <a href="{% url 'home' %}#security" data-footer-info="security">Security</a>
             <a href="{% url 'home' %}#how-it-works" data-footer-info="how-it-works">How it works</a>
             <a href="{% url 'affiliate_guide' %}">Become an Affiliate</a>
-            <a href="mailto:support@myvalidcv.com">Contact support</a>
+            <a href="mailto:support@myvalidcv.com" data-footer-info="contact">Contact support</a>
         </nav>
     </div>
     <div class="container site-footer-bottom">
@@ -64,6 +64,27 @@
                 <li><span>3</span><div><strong>Validate and improve</strong><p>Review the match, ATS signals, evidence gaps and priority improvements.</p></div></li>
             </ol>
             <a class="footer-info-action" href="{% url 'home' %}">Start a free validation</a>
+        </section>
+        <section class="footer-info-panel" id="contact" data-footer-panel="contact" hidden>
+            <span class="footer-info-kicker">Human support</span>
+            <h2 id="footerInfoContactTitle">How can we help?</h2>
+            <p>Choose the quickest route below. Please do not send passwords, full payment-card details or unnecessary CV information.</p>
+            <div class="footer-contact-table" role="list" aria-label="Support contact options">
+                <article role="listitem">
+                    <div><strong>Account or technical help</strong><span>Login, uploads, reports or unexpected errors</span></div>
+                    <a href="mailto:support@myvalidcv.com?subject=MyValidCV%20support%20request">Email support</a>
+                </article>
+                <article role="listitem">
+                    <div><strong>Payment help</strong><span>Include your account email and transaction reference only</span></div>
+                    <a href="mailto:support@myvalidcv.com?subject=MyValidCV%20payment%20support">Payment support</a>
+                </article>
+                <article role="listitem">
+                    <div><strong>Enterprise enquiries</strong><span>Tell us your hiring volume and intended workflow</span></div>
+                    <a href="mailto:support@myvalidcv.com?subject=MyValidCV%20Enterprise%20enquiry">Enterprise contact</a>
+                </article>
+            </div>
+            <button class="footer-info-action" type="button" data-copy-support-email>Copy support email</button>
+            <span class="footer-copy-status" data-copy-support-status role="status" aria-live="polite"></span>
         </section>
     </div>
 </dialog>

@@ -662,6 +662,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!dialog || typeof dialog.showModal !== 'function') return;
     const panels = Array.from(dialog.querySelectorAll('[data-footer-panel]'));
     const closeButton = dialog.querySelector('[data-footer-info-close]');
+    const copySupportButton = dialog.querySelector('[data-copy-support-email]');
+    const copySupportStatus = dialog.querySelector('[data-copy-support-status]');
     let closing = false;
 
     function closeDialog() {
@@ -698,4 +700,15 @@ document.addEventListener('DOMContentLoaded', function () {
         event.preventDefault();
         closeDialog();
     });
+
+    if (copySupportButton) {
+        copySupportButton.addEventListener('click', async function () {
+            try {
+                await navigator.clipboard.writeText('support@myvalidcv.com');
+                copySupportStatus.textContent = 'Email copied.';
+            } catch (error) {
+                copySupportStatus.textContent = 'Email: support@myvalidcv.com';
+            }
+        });
+    }
 });

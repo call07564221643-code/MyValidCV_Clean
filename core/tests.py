@@ -44,10 +44,13 @@ class LandingPageSemanticsTests(TestCase):
         self.assertContains(response, 'data-footer-info="features"')
         self.assertContains(response, 'data-footer-info="security"')
         self.assertContains(response, 'data-footer-info="how-it-works"')
+        self.assertContains(response, 'data-footer-info="contact"')
         self.assertContains(response, 'id="footerInfoDialog"')
         self.assertContains(response, 'data-footer-panel="features"')
         self.assertContains(response, 'data-footer-panel="security"')
         self.assertContains(response, 'data-footer-panel="how-it-works"')
+        self.assertContains(response, 'data-footer-panel="contact"')
+        self.assertContains(response, 'data-copy-support-email')
 
 
 class AssistantReplyTests(TestCase):
