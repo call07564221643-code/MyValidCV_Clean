@@ -37,6 +37,10 @@ class LandingPageSemanticsTests(TestCase):
         self.assertContains(response, 'id="authDialog"')
         self.assertContains(response, 'data-processing="off"')
         self.assertContains(response, 'id="replayGuide"')
+        self.assertContains(response, 'data-guide-step="0"')
+        self.assertContains(response, 'data-guide-step="1"')
+        self.assertContains(response, 'data-guide-step="2"')
+        self.assertContains(response, 'aria-current="step"')
 
     def test_footer_information_links_have_accessible_panels(self):
         response = self.client.get(reverse("home"))
