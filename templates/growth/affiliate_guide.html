@@ -11,6 +11,7 @@
     {% if application %}
       <div class="alert alert-info text-start mx-auto" style="max-width:760px">
         <strong>Your application: {{ application.get_status_display }}</strong><br>
+        <a class="alert-link" href="{% url 'affiliate_application_status' %}">Open your application status and next steps</a><br>
         Meeting: {{ application.get_meeting_status_display }}.
         {% if application.meeting_scheduled_at %} Scheduled for {{ application.meeting_scheduled_at|date:"j M Y, H:i T" }}.{% endif %}
         {% if application.meeting_url %}<a class="alert-link" href="{{ application.meeting_url }}" rel="noopener noreferrer">Open meeting link</a>.{% endif %}

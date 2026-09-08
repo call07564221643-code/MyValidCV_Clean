@@ -12,10 +12,10 @@ from .models import (
 
 @admin.register(AffiliateApplication)
 class AffiliateApplicationAdmin(admin.ModelAdmin):
-    list_display = ("legal_name", "applicant_type", "country", "audience_size", "status", "meeting_status", "created_at")
+    list_display = ("legal_name", "applicant_type", "country", "audience_size", "suitability_score", "status", "meeting_status", "created_at")
     list_filter = ("status", "meeting_status", "applicant_type", "country")
     search_fields = ("legal_name", "user__email", "website", "public_profiles")
-    readonly_fields = ("user", "created_at", "updated_at", "decided_at")
+    readonly_fields = ("user", "suitability_score", "score_breakdown", "risk_flags", "created_at", "updated_at", "decided_at")
     actions = ("mark_under_review", "request_meeting", "approve_after_meeting", "decline")
 
     @admin.action(description="Mark selected applications as under review")

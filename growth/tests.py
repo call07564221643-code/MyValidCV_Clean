@@ -41,17 +41,21 @@ class AffiliateApplicationTests(TestCase):
             "legal_name": "Example Creator Ltd", "applicant_type": "creator", "country": "gb",
             "website": "https://example.com", "public_profiles": "https://linkedin.com/in/example",
             "audience_size": 1200, "audience_countries": "United Kingdom and France",
-            "engagement_evidence": "Regular relevant comments and monthly analytics.",
-            "audience_description": "Early-career finance professionals.",
+            "engagement_evidence": "Across the last three months our posts receive regular relevant comments shares saves and direct questions. Monthly analytics show consistent engagement from genuine career-focused readers seeking practical employment and CV guidance.",
+            "audience_description": "Our audience consists mainly of early-career finance professionals and final-year students in the United Kingdom. They follow us for practical career education application guidance interview preparation and explanations of finance roles. They regularly ask how to tailor their CV evidence to specific vacancies and would benefit from a transparent validation tool.",
             "proposed_channels": ["linkedin", "email"],
-            "promotion_plan": "Publish practical CV education with clear affiliate disclosure.",
+            "primary_channel": "linkedin", "linkedin_url": "https://linkedin.com/in/example",
+            "linkedin_audience": 1200, "email_url": "https://example.com/newsletter", "email_audience": 600,
+            "promotion_plan": "We will publish practical CV education twice each month and demonstrate how applicants can compare evidence with a real role. Every promotional post will begin with a clear affiliate advertising disclosure. We will use educational examples avoid employment guarantees answer questions responsibly and review performance monthly before increasing publication frequency.",
             "previous_experience": "Career education newsletter.",
             "genuine_audience_confirmed": "on", "compliance_confirmed": "on",
         })
-        self.assertRedirects(response, reverse("affiliate_guide"))
+        self.assertRedirects(response, reverse("affiliate_application_status"))
         application = AffiliateApplication.objects.get(user=self.user)
         self.assertEqual(application.status, "submitted")
         self.assertEqual(application.country, "GB")
+        self.assertEqual(application.channel_details["linkedin"]["audience"], 1200)
+        self.assertGreaterEqual(application.suitability_score, 65)
         self.assertFalse(ReferralPartner.objects.exists())
 
     def test_duplicate_active_application_is_blocked(self):
@@ -62,8 +66,41 @@ class AffiliateApplicationTests(TestCase):
         )
         self.client.force_login(self.user)
         response = self.client.get(reverse("affiliate_apply"))
-        self.assertRedirects(response, reverse("affiliate_guide"))
+        self.assertRedirects(response, reverse("affiliate_application_status"))
         self.assertEqual(AffiliateApplication.objects.count(), 1)
+
+    def test_selected_social_channel_requires_public_url(self):
+        self.client.force_login(self.user)
+        response = self.client.post(reverse("affiliate_apply"), {
+            "legal_name": "Creator", "applicant_type": "creator", "country": "GB",
+            "audience_size": 1000, "audience_countries": "United Kingdom",
+            "engagement_evidence": "Genuine engagement evidence covering recent posts comments shares saves replies clicks views and a consistent three month reporting period for this application review.",
+            "audience_description": "A relevant audience of students graduates jobseekers and career changers who regularly request practical guidance about CV evidence job descriptions applications recruitment processes and responsible use of career technology in the United Kingdom and Europe.",
+            "proposed_channels": ["tiktok"], "primary_channel": "tiktok",
+            "promotion_plan": "We will publish responsible educational videos that explain CV evidence and role matching. Every commercial video will clearly disclose the affiliate relationship before the recommendation. We will avoid employment guarantees misleading scores spam self referrals and any claims that the service replaces professional advice.",
+            "genuine_audience_confirmed": "on", "compliance_confirmed": "on",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Enter the public URL for your selected tiktok channel")
+
+    def test_status_centre_shows_reference_and_next_steps(self):
+        application = AffiliateApplication.objects.create(
+            user=self.user, legal_name="Example", applicant_type="creator", country="GB",
+            audience_countries="GB", engagement_evidence="Evidence", audience_description="Audience",
+            promotion_plan="Plan", genuine_audience_confirmed=True, compliance_confirmed=True,
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("affiliate_application_status"))
+        self.assertContains(response, f"MVCV-AFF-{application.pk:06d}")
+        self.assertContains(response, "What happens next")
+
+    def test_owner_affiliate_dashboard_is_permission_protected(self):
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.get(reverse("affiliate_owner_dashboard")).status_code, 403)
+        self.user.is_superuser = True
+        self.user.is_staff = True
+        self.user.save(update_fields=["is_superuser", "is_staff"])
+        self.assertEqual(self.client.get(reverse("affiliate_owner_dashboard")).status_code, 200)
 
 
 class PartnerAccessTests(TestCase):

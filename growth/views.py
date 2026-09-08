@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum
+from django.db import models
+from django.db.models import Count, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -32,11 +33,12 @@ def affiliate_apply(request):
     ).first()
     if existing:
         messages.info(request, "Your affiliate application is already in progress.")
-        return redirect("affiliate_guide")
+        return redirect("affiliate_application_status")
     form = AffiliateApplicationForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         application = form.save(commit=False)
         application.user = request.user
+        application.calculate_suitability()
         application.save()
         forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
         ip_address = forwarded.split(",")[0].strip() or request.META.get("REMOTE_ADDR")
@@ -47,8 +49,44 @@ def affiliate_apply(request):
             ip_address=ip_address,
         )
         messages.success(request, "Application received. It is pending owner review; no referral code is active yet.")
-        return redirect("affiliate_guide")
+        return redirect("affiliate_application_status")
     return render(request, "growth/affiliate_apply.html", {"form": form})
+
+
+@login_required(login_url="login")
+def affiliate_application_status(request):
+    application = AffiliateApplication.objects.filter(user=request.user).order_by("-created_at").first()
+    if not application:
+        return redirect("affiliate_apply")
+    stages = ["submitted", "review", "meeting_requested", "meeting_scheduled", "approved"]
+    current_step = stages.index(application.status) + 1 if application.status in stages else 1
+    return render(request, "growth/affiliate_application_status.html", {
+        "application": application, "current_step": current_step,
+    })
+
+
+@login_required(login_url="login")
+def affiliate_owner_dashboard(request):
+    if not (request.user.is_superuser or request.user.has_perm("growth.review_affiliate_application")):
+        return render(request, "dashboard/owner_forbidden.html", status=403)
+    applications = AffiliateApplication.objects.select_related("user", "reviewed_by").order_by(
+        "-suitability_score", "created_at",
+    )
+    selected_status = request.GET.get("status", "").strip()
+    if selected_status:
+        applications = applications.filter(status=selected_status)
+    partners = ReferralPartner.objects.select_related(
+        "organisation", "organisation__partner_profile",
+    ).annotate(
+        uses=Count("attributions", distinct=True),
+        conversions=Count("attributions", filter=models.Q(attributions__converted_at__isnull=False), distinct=True),
+        gross_revenue=Sum("commissions__commissionable_amount"),
+        commission_generated=Sum("commissions__amount"),
+    ).order_by("-gross_revenue")
+    return render(request, "growth/affiliate_owner_dashboard.html", {
+        "applications": applications, "partners": partners,
+        "status_choices": AffiliateApplication.STATUS_CHOICES, "selected_status": selected_status,
+    })
 
 
 @login_required(login_url="login")

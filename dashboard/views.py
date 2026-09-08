@@ -323,7 +323,7 @@ def owner_console(request):
         {"label": "Low customer ratings", "count": low_feedback, "url": "management_feedback"},
         {"label": "Campaign approvals", "count": campaigns_waiting, "url": "admin:growth_marketingcampaign_changelist"},
         {"label": "Provider setup checks", "count": providers_attention, "url": "admin:growth_providerconnection_changelist"},
-        {"label": "Affiliate applications", "count": affiliate_applications, "url": "admin:growth_affiliateapplication_changelist"},
+        {"label": "Affiliate applications", "count": affiliate_applications, "url": "affiliate_owner_dashboard"},
     ]
 
     context = {

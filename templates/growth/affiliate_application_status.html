@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Affiliate Application Status | MyValidCV{% endblock %}
+{% block content %}
+<main class="container py-5" style="max-width:960px">
+  <span class="badge text-bg-primary mb-3">Application MVCV-AFF-{{ application.pk|stringformat:"06d" }}</span>
+  <h1>Affiliate application received</h1>
+  <p class="lead text-body-secondary">Your application is recorded. Applying does not activate a referral code or create a right to commission.</p>
+  <div class="card shadow-sm border-0 mb-4"><div class="card-body p-4">
+    <div class="d-flex justify-content-between flex-wrap gap-3"><div><small>Current status</small><h2 class="h4">{{ application.get_status_display }}</h2></div><div><small>Submitted</small><p>{{ application.created_at|date:"j M Y, H:i T" }}</p></div></div>
+    <div class="progress my-4" role="progressbar" aria-valuenow="{{ current_step }}" aria-valuemin="1" aria-valuemax="5"><div class="progress-bar" style="width:{% widthratio current_step 5 100 %}%">Step {{ current_step }} of 5</div></div>
+    <ol class="row g-2 list-unstyled"><li class="col">1 Submitted</li><li class="col">2 Review</li><li class="col">3 Meeting</li><li class="col">4 Decision</li><li class="col">5 Activation</li></ol>
+  </div></div>
+  {% if application.status == "changes" %}<div class="alert alert-warning"><strong>More information is required.</strong> {{ application.owner_notes|default:"Contact support for details." }}</div>{% endif %}
+  <div class="row g-4"><div class="col-md-6"><section class="card h-100"><div class="card-body"><h2 class="h5">What happens next</h2><ul><li>Relevance, channel evidence and compliance review.</li><li>Information or meeting request if needed.</li><li>Agreement acceptance before code activation.</li></ul></div></section></div><div class="col-md-6"><section class="card h-100"><div class="card-body"><h2 class="h5">Your submission</h2><p><strong>{{ application.legal_name }}</strong><br>{{ application.get_applicant_type_display }} · {{ application.country }}</p><p>{{ application.audience_size }} stated audience · {{ application.proposed_channels|length }} channel{{ application.proposed_channels|length|pluralize }}</p><a href="mailto:support@myvalidcv.com">Contact affiliate support</a></div></section></div></div>
+</main>
+{% endblock %}

@@ -4,6 +4,8 @@
 <main class="container py-5" style="max-width: 820px">
   <a href="{% url 'affiliate_guide' %}" class="text-decoration-none">← Affiliate programme guide</a>
   <h1 class="mt-3">Affiliate application</h1>
+  <p class="text-body-secondary">Relevant specialist audiences can qualify even when they are small. Complete the guided fields below; selected channels reveal their required details.</p>
+  <div class="progress mb-3" role="progressbar" aria-label="Application details"><div class="progress-bar w-100">Application details</div></div>
   <p class="text-body-secondary">Complete this once. Your submission creates a pending application only—no referral code or commission is activated automatically.</p>
   <div class="alert alert-secondary"><strong>Prepare:</strong> public profile links, approximate audience size and countries, engagement evidence, and a short promotion plan. Never submit passwords or private account access.</div>
   <form method="post" class="card shadow-sm" novalidate>
@@ -22,8 +24,19 @@
           {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
         </div>
       {% endfor %}
-      <button class="btn btn-primary btn-lg" type="submit">Submit for owner review</button>
+      <div class="alert alert-info"><strong>Next:</strong> you will receive an application reference and status page. Submission never activates a referral code automatically.</div>
+      <button class="btn btn-primary btn-lg" type="submit">Review and submit for owner review</button>
     </div>
   </form>
 </main>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const channels = ["website","blog","email","linkedin","youtube","facebook","instagram","tiktok","events","podcast","community","direct","other"];
+  const selected = () => new Set([...document.querySelectorAll('input[name="proposed_channels"]:checked')].map(el => el.value));
+  const refresh = () => channels.forEach(key => [document.getElementById(`id_${key}_url`), document.getElementById(`id_${key}_audience`)].forEach(el => { if (el && el.closest(".mb-4")) el.closest(".mb-4").hidden = !selected().has(key); }));
+  document.querySelectorAll('input[name="proposed_channels"]').forEach(el => el.addEventListener("change", refresh));
+  ["audience_description","engagement_evidence","promotion_plan","previous_experience"].forEach(name => { const el=document.getElementById(`id_${name}`); if(!el)return; const c=document.createElement("div"); c.className="form-text text-end"; const u=()=>c.textContent=`${el.value.trim()?el.value.trim().split(/\s+/).length:0} words`; el.insertAdjacentElement("afterend",c); el.addEventListener("input",u); u(); });
+  refresh();
+});
+</script>
 {% endblock %}

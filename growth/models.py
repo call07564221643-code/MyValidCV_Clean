@@ -206,10 +206,14 @@ class AffiliateApplication(models.Model):
     engagement_evidence = models.TextField()
     audience_description = models.TextField()
     proposed_channels = models.JSONField(default=list)
+    channel_details = models.JSONField(default=dict, blank=True)
     promotion_plan = models.TextField()
     previous_experience = models.TextField(blank=True)
     genuine_audience_confirmed = models.BooleanField(default=False)
     compliance_confirmed = models.BooleanField(default=False)
+    suitability_score = models.PositiveSmallIntegerField(default=0)
+    score_breakdown = models.JSONField(default=dict, blank=True)
+    risk_flags = models.JSONField(default=list, blank=True)
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="submitted", db_index=True)
     meeting_status = models.CharField(max_length=20, choices=MEETING_CHOICES, default="not_scheduled")
     meeting_scheduled_at = models.DateTimeField(null=True, blank=True)
@@ -230,6 +234,28 @@ class AffiliateApplication(models.Model):
 
     def __str__(self):
         return f"{self.legal_name} · {self.get_status_display()}"
+
+
+    def calculate_suitability(self):
+        """Explainable triage score that informs, but never replaces, owner review."""
+        channels = self.channel_details or {}
+        audience = max(0, self.audience_size or 0)
+        self.score_breakdown = {
+            "audience_relevance": 25 if len((self.audience_description or "").split()) >= 40 else 15,
+            "content_quality": 15 if self.website or self.public_profiles or channels else 7,
+            "genuine_engagement": 15 if len((self.engagement_evidence or "").split()) >= 20 else 7,
+            "promotion_plan": 15 if len((self.promotion_plan or "").split()) >= 50 else 8,
+            "compliance": 15 if self.genuine_audience_confirmed and self.compliance_confirmed else 0,
+            "channel_verifiability": min(10, sum(2 for item in channels.values() if item.get("url"))),
+            "audience_size": 5 if audience >= 1000 else (3 if audience >= 500 else 1),
+        }
+        self.risk_flags = []
+        if not any(item.get("url") for item in channels.values()):
+            self.risk_flags.append("No public channel URL supplied")
+        if audience and not (self.engagement_evidence or "").strip():
+            self.risk_flags.append("Audience stated without engagement evidence")
+        self.suitability_score = min(100, sum(self.score_breakdown.values()))
+        return self.suitability_score
 
 
 class ReferralAttribution(models.Model):
