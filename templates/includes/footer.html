@@ -7,7 +7,7 @@
         </section>
         <nav class="site-footer-nav" aria-label="Product navigation">
             <h2>Product</h2>
-            <a href="{% url 'home' %}#features">Features</a>
+            <a href="{% url 'home' %}#features" data-footer-info="features">Features</a>
             <a href="{% url 'pricing' %}">Plans</a>
             {% if user.is_authenticated %}
                 <a href="{% url 'dashboard' %}">Reports</a>
@@ -18,8 +18,8 @@
         <nav class="site-footer-nav" aria-label="Information navigation">
             <h2>Information</h2>
             <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
-            <a href="{% url 'home' %}#security">Security</a>
-            <a href="{% url 'home' %}#features">How it works</a>
+            <a href="{% url 'home' %}#security" data-footer-info="security">Security</a>
+            <a href="{% url 'home' %}#how-it-works" data-footer-info="how-it-works">How it works</a>
             <a href="{% url 'affiliate_guide' %}">Become an Affiliate</a>
             <a href="mailto:support@myvalidcv.com">Contact support</a>
         </nav>
@@ -29,3 +29,41 @@
         <p>Results are guidance and do not guarantee interviews or employment.</p>
     </div>
 </footer>
+
+<dialog class="footer-info-dialog" id="footerInfoDialog" aria-labelledby="footerInfoFeaturesTitle">
+    <div class="footer-info-shell">
+        <button class="footer-info-close" type="button" data-footer-info-close aria-label="Close information panel">&times;</button>
+        <section class="footer-info-panel" id="features" data-footer-panel="features" hidden>
+            <span class="footer-info-kicker">Product</span>
+            <h2 id="footerInfoFeaturesTitle">Features that lead to a clearer application</h2>
+            <p>MyValidCV compares your CV with a specific job and turns the result into practical next actions.</p>
+            <div class="footer-info-grid">
+                <article><strong>CV-to-job match</strong><span>See your compatibility score, matched strengths and missing requirements.</span></article>
+                <article><strong>ATS and evidence checks</strong><span>Understand what the CV shows clearly and where truthful proof is still needed.</span></article>
+                <article><strong>Application support</strong><span>Plus includes a tailored CV and cover letter; Enterprise adds ranked applicant screening.</span></article>
+            </div>
+            <a class="footer-info-action" href="{% url 'pricing' %}">Compare Free, Plus and Enterprise</a>
+        </section>
+        <section class="footer-info-panel" id="security" data-footer-panel="security" hidden>
+            <span class="footer-info-kicker">Privacy and control</span>
+            <h2 id="footerInfoSecurityTitle">Your CV is handled for the service you request</h2>
+            <p>Your document is not analysed from the landing page until you choose to validate. An account is then required to run the check and access the report securely.</p>
+            <div class="footer-info-grid">
+                <article><strong>Controlled processing</strong><span>The validation starts only after you provide the CV, job information and select Validate.</span></article>
+                <article><strong>Limited retention</strong><span>Saved CV files are retained for no longer than 30 days and can be removed from your account.</span></article>
+                <article><strong>No invented evidence</strong><span>Recommendations are designed to improve truthful presentation—not manufacture experience.</span></article>
+            </div>
+            <a class="footer-info-action" href="{% url 'privacy_policy' %}">Read the full Privacy Policy</a>
+        </section>
+        <section class="footer-info-panel" id="how-it-works" data-footer-panel="how-it-works" hidden>
+            <span class="footer-info-kicker">A focused three-step journey</span>
+            <h2 id="footerInfoHowTitle">How MyValidCV works</h2>
+            <ol class="footer-info-steps">
+                <li><span>1</span><div><strong>Add your CV</strong><p>Upload a PDF, DOCX or TXT file, or choose a saved CV.</p></div></li>
+                <li><span>2</span><div><strong>Add the job</strong><p>Paste the description, enter the vacancy URL or upload the advert.</p></div></li>
+                <li><span>3</span><div><strong>Validate and improve</strong><p>Review the match, ATS signals, evidence gaps and priority improvements.</p></div></li>
+            </ol>
+            <a class="footer-info-action" href="{% url 'home' %}">Start a free validation</a>
+        </section>
+    </div>
+</dialog>

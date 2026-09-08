@@ -233,6 +233,50 @@
             text-decoration: underline;
         }
 
+        .footer-info-dialog {
+            width: min(720px, calc(100vw - 2rem));
+            max-height: min(82vh, 760px);
+            padding: 0;
+            border: 1px solid var(--mvcv-card-border);
+            border-radius: 22px;
+            background: var(--mvcv-card-bg);
+            color: var(--mvcv-body-text);
+            box-shadow: 0 30px 90px rgba(15, 23, 42, 0.3);
+            opacity: 0;
+            transform: translateY(18px) scale(0.98);
+        }
+
+        .footer-info-dialog[open] {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            animation: footer-panel-in 220ms ease-out;
+        }
+
+        .footer-info-dialog.is-closing { animation: footer-panel-out 180ms ease-in forwards; }
+        .footer-info-dialog::backdrop { background: rgba(15, 23, 42, 0.58); backdrop-filter: blur(4px); animation: footer-backdrop-in 220ms ease-out; }
+        .footer-info-dialog.is-closing::backdrop { animation: footer-backdrop-out 180ms ease-in forwards; }
+        .footer-info-shell { position: relative; overflow: auto; max-height: min(82vh, 760px); padding: clamp(1.35rem, 4vw, 2.25rem); }
+        .footer-info-close { position: absolute; top: 0.85rem; right: 0.85rem; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 1px solid var(--mvcv-card-border); border-radius: 50%; background: var(--mvcv-input-bg); color: var(--mvcv-body-text); font-size: 1.45rem; line-height: 1; }
+        .footer-info-panel { padding-right: 2.25rem; }
+        .footer-info-kicker { color: var(--mvcv-brand-primary); font-size: 0.74rem; font-weight: 850; letter-spacing: 0.1em; text-transform: uppercase; }
+        .footer-info-panel h2 { margin: 0.5rem 0 0.7rem; font-size: clamp(1.45rem, 4vw, 2.15rem); font-weight: 800; letter-spacing: -0.04em; }
+        .footer-info-panel > p { margin: 0; color: var(--mvcv-muted); line-height: 1.65; }
+        .footer-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin: 1.25rem 0; }
+        .footer-info-grid article { padding: 1rem; border: 1px solid var(--mvcv-card-border); border-radius: 14px; background: var(--mvcv-input-bg); }
+        .footer-info-grid strong, .footer-info-grid span { display: block; }
+        .footer-info-grid strong { margin-bottom: 0.35rem; color: var(--mvcv-body-text); font-size: 0.88rem; }
+        .footer-info-grid span { color: var(--mvcv-muted); font-size: 0.78rem; line-height: 1.55; }
+        .footer-info-action { display: inline-flex; align-items: center; min-height: 42px; padding: 0.65rem 1rem; border-radius: 11px; background: var(--mvcv-brand-primary); color: var(--mvcv-brand-on-primary) !important; font-size: 0.85rem; font-weight: 750; text-decoration: none; }
+        .footer-info-steps { display: grid; gap: 0.8rem; margin: 1.25rem 0; padding: 0; list-style: none; }
+        .footer-info-steps li { display: grid; grid-template-columns: 42px 1fr; gap: 0.8rem; align-items: start; }
+        .footer-info-steps li > span { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--mvcv-nav-active-bg); color: var(--mvcv-brand-primary); font-weight: 850; }
+        .footer-info-steps strong { display: block; margin-top: 0.1rem; }
+        .footer-info-steps p { margin: 0.15rem 0 0; color: var(--mvcv-muted); font-size: 0.82rem; line-height: 1.5; }
+        @keyframes footer-panel-in { from { opacity: 0; transform: translateY(18px) scale(0.98); } }
+        @keyframes footer-panel-out { to { opacity: 0; transform: translateY(14px) scale(0.985); } }
+        @keyframes footer-backdrop-in { from { background: rgba(15, 23, 42, 0); } }
+        @keyframes footer-backdrop-out { to { background: rgba(15, 23, 42, 0); } }
+
         @media (max-width: 576px) {
             .site-footer-inner {
                 grid-template-columns: 1fr;
@@ -242,6 +286,15 @@
             .site-footer-bottom {
                 flex-direction: column;
             }
+
+            .footer-info-dialog { width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); border-radius: 18px; }
+            .footer-info-shell { max-height: calc(100vh - 1rem); padding: 1.25rem; }
+            .footer-info-panel { padding-right: 1.6rem; }
+            .footer-info-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .footer-info-dialog[open], .footer-info-dialog.is-closing, .footer-info-dialog::backdrop, .footer-info-dialog.is-closing::backdrop { animation-duration: 1ms; }
         }
 
         .mvcv-theme-toggle {

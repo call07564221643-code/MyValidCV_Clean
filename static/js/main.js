@@ -655,3 +655,47 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+
+// Responsive footer information panels keep concise product guidance in context.
+document.addEventListener('DOMContentLoaded', function () {
+    const dialog = document.getElementById('footerInfoDialog');
+    if (!dialog || typeof dialog.showModal !== 'function') return;
+    const panels = Array.from(dialog.querySelectorAll('[data-footer-panel]'));
+    const closeButton = dialog.querySelector('[data-footer-info-close]');
+    let closing = false;
+
+    function closeDialog() {
+        if (!dialog.open || closing) return;
+        closing = true;
+        dialog.classList.add('is-closing');
+        window.setTimeout(function () {
+            dialog.close();
+            dialog.classList.remove('is-closing');
+            closing = false;
+        }, 180);
+    }
+
+    document.querySelectorAll('[data-footer-info]').forEach(function (link) {
+        link.addEventListener('click', function (event) {
+            const target = link.dataset.footerInfo;
+            const panel = panels.find(function (item) { return item.dataset.footerPanel === target; });
+            if (!panel) return;
+            event.preventDefault();
+            panels.forEach(function (item) { item.hidden = item !== panel; });
+            dialog.setAttribute('aria-labelledby', panel.querySelector('h2').id);
+            if (!dialog.open) dialog.showModal();
+            closeButton.focus();
+        });
+    });
+
+    closeButton.addEventListener('click', closeDialog);
+    dialog.addEventListener('click', function (event) {
+        const bounds = dialog.getBoundingClientRect();
+        const outside = event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom;
+        if (outside) closeDialog();
+    });
+    dialog.addEventListener('cancel', function (event) {
+        event.preventDefault();
+        closeDialog();
+    });
+});
