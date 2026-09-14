@@ -27,7 +27,7 @@ class AffiliateApplicationTests(TestCase):
         response = self.client.get(reverse("affiliate_guide"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Recommend responsibly")
-        self.assertContains(response, "affiliate-journey-handdrawn-transparent.png")
+        self.assertContains(response, "affiliate-journey-handdrawn.png")
         self.assertContains(response, "20% of the first eligible retained payment")
 
     def test_application_requires_login(self):
