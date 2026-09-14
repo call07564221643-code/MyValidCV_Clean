@@ -1,14 +1,18 @@
 from io import BytesIO
 from types import SimpleNamespace
+from tempfile import TemporaryDirectory
+from datetime import timedelta
 import zipfile
 from unittest.mock import MagicMock, patch
 
 from docx import Document
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core import mail
+from django.core.management import call_command
 from django.contrib.auth.models import User
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from subscriptions.models import CustomerSubscription, SubscriptionPlan
 
@@ -28,9 +32,36 @@ from .models import (
     CVBulletSuggestion,
     EnterpriseBatch,
     EnterpriseCandidateResult,
+    EnterprisePilot,
     GeneratedCV,
     JobRole,
 )
+
+
+class EnterprisePilotFlowTests(TestCase):
+    def test_three_cv_pilot_is_isolated_and_exportable(self):
+        cv_text = ("Profile\nExperienced project manager demo@example.com\nSkills\nProject delivery stakeholder communication "
+                   "risk planning governance reporting leadership budgeting scheduling quality change management "
+                   "Experience\nManaged complex projects and delivered measurable improvements for customers and teams. " * 8)
+        job_text = ("About the role: Operations Manager. Responsibilities include project delivery, stakeholder "
+                    "communication, governance, planning and reporting. The successful candidate requires leadership skills. " * 4)
+        uploads = [SimpleUploadedFile(f"candidate-{i}.txt", cv_text.encode(), content_type="text/plain") for i in range(3)]
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            response = self.client.post(reverse("enterprise_pilot"), {
+                "business_email": "buyer@example.com", "company": "Example Ltd",
+                "job_title": "Operations Manager", "job_description": job_text,
+                "mandatory_requirements": "stakeholder communication",
+                "retention_acknowledgement": "on", "cv_files": uploads,
+            })
+            self.assertEqual(response.status_code, 302)
+            pilot = EnterprisePilot.objects.get()
+            self.assertEqual(pilot.candidates.count(), 3)
+            self.assertEqual(self.client.get(response.url).status_code, 200)
+            self.assertEqual(self.client.get(reverse("enterprise_pilot_csv", args=[pilot.public_id])).status_code, 200)
+            pilot.expires_at = timezone.now() - timedelta(seconds=1)
+            pilot.save(update_fields=["expires_at"])
+            call_command("purge_expired_pilots")
+            self.assertFalse(EnterprisePilot.objects.exists())
 from .scoring import (
     _build_evidence_map,
     _build_experience_alignment,

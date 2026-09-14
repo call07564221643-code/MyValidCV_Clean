@@ -3,6 +3,9 @@ from django.views.generic import RedirectView
 from . import views
 
 urlpatterns = [
+    path("enterprise/pilot/", views.enterprise_pilot, name="enterprise_pilot"),
+    path("enterprise/pilot/<uuid:public_id>/", views.enterprise_pilot_report, name="enterprise_pilot_report"),
+    path("enterprise/pilot/<uuid:public_id>/csv/", views.enterprise_pilot_csv, name="enterprise_pilot_csv"),
     path("upload/", views.upload_cv, name="upload_cv"),
     path("cv/<uuid:public_id>/edit/", views.update_cv, name="update_cv"),
     path("cv/<uuid:public_id>/delete/", views.delete_cv, name="delete_cv"),

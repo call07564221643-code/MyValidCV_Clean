@@ -25,6 +25,7 @@ from .forms import (
     CVUpdateForm,
     CVUploadForm,
     EnterpriseBulkAnalysisForm,
+    EnterprisePilotForm,
 )
 from .models import (
     ApplicationReminder,
@@ -34,6 +35,8 @@ from .models import (
     CVStorage,
     EnterpriseBatch,
     EnterpriseCandidateResult,
+    EnterprisePilot,
+    EnterprisePilotCandidate,
     GeneratedCoverLetter,
     GeneratedCV,
     JobRole,
@@ -49,6 +52,119 @@ from subscriptions.services import get_active_subscription, get_entitlements
 APPLY_STRONG_THRESHOLD = 75
 APPLY_MINIMUM_THRESHOLD = 55
 logger = logging.getLogger(__name__)
+
+
+def delete_enterprise_pilot(pilot):
+    """Delete pilot files before cascading the short-lived database records."""
+    for candidate in pilot.candidates.all():
+        if candidate.cv_file:
+            candidate.cv_file.delete(save=False)
+    pilot.delete()
+
+
+def get_owned_pilot(request, public_id):
+    pilot = get_object_or_404(EnterprisePilot, public_id=public_id)
+    if not request.session.session_key or pilot.session_key != request.session.session_key:
+        return None
+    if pilot.expires_at <= timezone.now():
+        delete_enterprise_pilot(pilot)
+        return None
+    return pilot
+
+
+@require_http_methods(["GET", "POST"])
+def enterprise_pilot(request):
+    """Run one isolated three-CV trial with an enforced 24-hour lifetime."""
+    if not request.session.session_key:
+        request.session.create()
+    if request.method == "POST":
+        form = EnterprisePilotForm(request.POST, request.FILES)
+        if form.is_valid():
+            job_description = form.cleaned_data["job_description"]
+            valid_job, reason = validate_job_description(job_description)
+            if not valid_job:
+                form.add_error("job_description", reason)
+            else:
+                requirements = split_mandatory_requirements(form.cleaned_data.get("mandatory_requirements", ""))
+                prepared, invalid = [], []
+                for uploaded_file in form.cleaned_data["cv_files"]:
+                    cv_text = extract_uploaded_cv_text(uploaded_file)
+                    valid_cv, cv_reason = validate_cv_for_analysis(cv_text)
+                    if not valid_cv:
+                        invalid.append(f"{uploaded_file.name}: {cv_reason}")
+                        continue
+                    score, matched, missing, _recommendation = calculate_score(
+                        cv_text, job_description, form.cleaned_data["job_title"]
+                    )
+                    mandatory_matched, mandatory_missing = evaluate_mandatory_requirements(cv_text, requirements)
+                    prepared.append((uploaded_file, score, matched, missing, mandatory_matched, mandatory_missing))
+                if invalid:
+                    form.add_error("cv_files", "Some files could not be analysed. " + " ".join(invalid[:3]))
+                else:
+                    retention_hours = max(1, settings.ENTERPRISE_PILOT_RETENTION_HOURS)
+                    pilot = EnterprisePilot.objects.create(
+                        session_key=request.session.session_key,
+                        business_email=form.cleaned_data["business_email"],
+                        job_title=form.cleaned_data["job_title"],
+                        company=form.cleaned_data.get("company", ""),
+                        job_description=job_description,
+                        mandatory_requirements=form.cleaned_data.get("mandatory_requirements", ""),
+                        retention_acknowledged_at=timezone.now(),
+                        expires_at=timezone.now() + timedelta(hours=retention_hours),
+                    )
+                    ranked = sorted(prepared, key=lambda item: item[1], reverse=True)
+                    try:
+                        for index, item in enumerate(ranked, start=1):
+                            uploaded_file, score, matched, missing, mandatory_matched, mandatory_missing = item
+                            suffix = "." + uploaded_file.name.rsplit(".", 1)[-1].lower()
+                            candidate = EnterprisePilotCandidate(
+                                pilot=pilot,
+                                candidate_label=f"Applicant {index:02d}",
+                                score=score,
+                                matched_skills=", ".join(matched),
+                                missing_skills=", ".join(missing),
+                                mandatory_matched=mandatory_matched,
+                                mandatory_missing=mandatory_missing,
+                                mandatory_pass=not mandatory_missing,
+                                rank=index,
+                            )
+                            candidate.cv_file.save(f"applicant_{index:02d}{suffix}", uploaded_file, save=True)
+                    except Exception:
+                        delete_enterprise_pilot(pilot)
+                        raise
+                    request.session["enterprise_pilot_id"] = str(pilot.public_id)
+                    return redirect("enterprise_pilot_report", public_id=pilot.public_id)
+    else:
+        form = EnterprisePilotForm()
+    return render(request, "ats/enterprise_pilot.html", {"form": form})
+
+
+def enterprise_pilot_report(request, public_id):
+    pilot = get_owned_pilot(request, public_id)
+    if pilot is None:
+        return render(request, "ats/enterprise_pilot_expired.html", status=410)
+    return render(request, "ats/enterprise_pilot_report.html", {
+        "pilot": pilot,
+        "candidates": pilot.candidates.all(),
+        "remaining_seconds": max(0, int((pilot.expires_at - timezone.now()).total_seconds())),
+    })
+
+
+def enterprise_pilot_csv(request, public_id):
+    pilot = get_owned_pilot(request, public_id)
+    if pilot is None:
+        return HttpResponse("Pilot expired or unavailable.", status=410)
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="myvalidcv-pilot-report.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["Rank", "Applicant", "Alignment", "Mandatory evidence", "Matched", "Missing"])
+    for candidate in pilot.candidates.all():
+        writer.writerow([
+            candidate.rank, candidate.candidate_label, candidate.score,
+            "Passed" if candidate.mandatory_pass else "Evidence gap",
+            candidate.matched_skills, candidate.missing_skills,
+        ])
+    return response
 
 
 def extract_candidate_email(cv_text):
@@ -1608,6 +1724,9 @@ def enterprise_bulk_upload(request):
     if not user_can_use_enterprise(request.user):
         messages.error(request, "Enterprise bulk analysis is available on the Enterprise plan.")
         return redirect("dashboard")
+    if request.method == "POST" and getattr(request.user, "profile", None) and request.user.profile.is_test_data:
+        messages.info(request, "The shared demo account is read-only. Start a private pilot to upload CVs.")
+        return redirect("enterprise_pilot")
 
     if request.method == "POST":
         form = EnterpriseBulkAnalysisForm(request.POST, request.FILES)
@@ -1763,6 +1882,9 @@ def enterprise_report(request, batch_id):
 @login_required(login_url="login")
 @require_http_methods(["POST"])
 def enterprise_candidate_review(request, batch_id, candidate_id):
+    if getattr(request.user, "profile", None) and request.user.profile.is_test_data:
+        messages.info(request, "Demo reports are read-only.")
+        return redirect("enterprise_report", batch_id=batch_id)
     batch = get_object_or_404(EnterpriseBatch, id=batch_id, user=request.user)
     if not user_can_use_enterprise(request.user):
         return HttpResponse(status=403)
@@ -1783,6 +1905,9 @@ def enterprise_candidate_review(request, batch_id, candidate_id):
 @login_required(login_url="login")
 @require_http_methods(["POST"])
 def enterprise_bulk_review(request, batch_id):
+    if getattr(request.user, "profile", None) and request.user.profile.is_test_data:
+        messages.info(request, "Demo reports are read-only.")
+        return redirect("enterprise_report", batch_id=batch_id)
     batch = get_object_or_404(EnterpriseBatch, id=batch_id, user=request.user)
     if not user_can_use_enterprise(request.user):
         return HttpResponse(status=403)
@@ -1806,6 +1931,9 @@ def enterprise_bulk_review(request, batch_id):
 @login_required(login_url="login")
 @require_http_methods(["POST"])
 def enterprise_email_authorize(request, batch_id):
+    if getattr(request.user, "profile", None) and request.user.profile.is_test_data:
+        messages.info(request, "Email actions are disabled in the shared demo account.")
+        return redirect("enterprise_report", batch_id=batch_id)
     batch = get_object_or_404(EnterpriseBatch, id=batch_id, user=request.user)
     if not user_can_use_enterprise(request.user) or not request.user.email:
         messages.error(request, "Add a verified account email before enabling recruitment email.")
@@ -1827,6 +1955,9 @@ def enterprise_email_authorize(request, batch_id):
 @login_required(login_url="login")
 @require_http_methods(["POST"])
 def enterprise_candidate_email(request, batch_id, candidate_id):
+    if getattr(request.user, "profile", None) and request.user.profile.is_test_data:
+        messages.info(request, "Email sending is disabled in the shared demo account.")
+        return redirect("enterprise_report", batch_id=batch_id)
     batch = get_object_or_404(EnterpriseBatch, id=batch_id, user=request.user)
     candidate = get_object_or_404(EnterpriseCandidateResult, id=candidate_id, batch=batch)
     if not enterprise_signature_ready(request.user):

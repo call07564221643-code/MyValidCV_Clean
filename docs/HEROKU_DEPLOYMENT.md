@@ -34,6 +34,15 @@ without deleting anything with:
 python manage.py purge_expired_cvs --dry-run
 ```
 
+Configure this additional command to run hourly for temporary Enterprise pilots:
+
+```text
+python manage.py purge_expired_pilots
+```
+
+The pilot report also deletes itself when accessed after expiry, but the hourly
+scheduled command is required to enforce deletion when there is no site traffic.
+
 The retention period is controlled by `CV_RETENTION_DAYS` and defaults to 30.
 
 ## CV storage warning

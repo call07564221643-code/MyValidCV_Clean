@@ -30,6 +30,10 @@
       "description": "Rolling retention period for individual and enterprise CV files.",
       "value": "30"
     },
+    "ENTERPRISE_PILOT_RETENTION_HOURS": {
+      "description": "Maximum lifetime for temporary Enterprise pilot CVs and reports.",
+      "value": "24"
+    },
     "STRIPE_MOCK_MODE": {
       "description": "Mock checkout is local-development only and must remain false on public deployments.",
       "value": "False"

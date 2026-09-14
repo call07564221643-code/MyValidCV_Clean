@@ -60,10 +60,12 @@ class CustomerNavigationTests(TestCase):
         self.assertContains(response, 'Enter your company name')
         self.assertContains(response, 'Enter your position')
 
-    def test_landing_page_keeps_validation_primary_with_enterprise_route(self):
+    def test_landing_page_leads_with_enterprise_and_keeps_individual_validation(self):
         response = self.client.get(reverse('home'))
         self.assertContains(response, 'Validate my CV')
-        self.assertContains(response, 'Compare and rank applicants with Enterprise')
+        self.assertContains(response, 'Run a free three-CV pilot')
+        self.assertContains(response, 'Individual CV')
+        self.assertContains(response, reverse('enterprise_pilot'))
         self.assertContains(response, f'{reverse("pricing")}#enterprise-plan')
 
     def test_authenticated_landing_submission_can_show_real_processing_state(self):

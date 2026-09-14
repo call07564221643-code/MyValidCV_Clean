@@ -446,3 +446,42 @@ class EnterpriseCandidateResult(models.Model):
 
     def __str__(self):
         return f"{self.candidate_name} - {self.score}%"
+
+
+class EnterprisePilot(models.Model):
+    """Isolated, short-lived Enterprise trial owned by a browser session."""
+    public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    session_key = models.CharField(max_length=40, db_index=True)
+    business_email = models.EmailField(db_index=True)
+    job_title = models.CharField(max_length=150)
+    company = models.CharField(max_length=150, blank=True)
+    job_description = models.TextField()
+    mandatory_requirements = models.TextField(blank=True)
+    retention_acknowledged_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Pilot for {self.job_title} (expires {self.expires_at})"
+
+
+class EnterprisePilotCandidate(models.Model):
+    pilot = models.ForeignKey(EnterprisePilot, on_delete=models.CASCADE, related_name="candidates")
+    candidate_label = models.CharField(max_length=40)
+    cv_file = models.FileField(upload_to="enterprise_pilots/")
+    score = models.IntegerField(default=0)
+    matched_skills = models.TextField(blank=True)
+    missing_skills = models.TextField(blank=True)
+    mandatory_matched = models.JSONField(default=list, blank=True)
+    mandatory_missing = models.JSONField(default=list, blank=True)
+    mandatory_pass = models.BooleanField(default=True)
+    rank = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["rank", "-score"]
+
+    def __str__(self):
+        return f"{self.candidate_label} - {self.score}%"

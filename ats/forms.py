@@ -7,7 +7,7 @@ object ownership, plan entitlement, quotas and final database writes.
 from django import forms
 import zipfile
 
-from .models import CV
+from .models import CV, EnterprisePilot
 from .malware import MalwareDetectedError, MalwareScanError, scan_uploaded_file
 
 
@@ -314,3 +314,43 @@ class EnterpriseBulkAnalysisForm(forms.Form):
         if source_type == "file" and not cleaned_data.get("job_file"):
             self.add_error("job_file", "Upload the job role file.")
         return cleaned_data
+
+
+class EnterprisePilotForm(forms.Form):
+    business_email = forms.EmailField(
+        widget=forms.EmailInput(attrs={"class": "form-control", "placeholder": "Your work email"}),
+    )
+    job_title = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "e.g. Operations Manager"}),
+    )
+    company = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Company (optional)"}),
+    )
+    job_description = forms.CharField(
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 7, "placeholder": "Paste the full vacancy"}),
+    )
+    mandatory_requirements = forms.CharField(
+        required=False,
+        help_text="One objective must-have per line. Do not include protected characteristics.",
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 4, "placeholder": "One must-have per line"}),
+    )
+    cv_files = MultipleFileField(help_text="Upload one to three PDF, DOCX or TXT CVs.")
+    retention_acknowledgement = forms.BooleanField(
+        label="I understand that the CVs and pilot results will be automatically deleted after 24 hours.",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    def clean_business_email(self):
+        email = self.cleaned_data["business_email"].strip().lower()
+        if EnterprisePilot.objects.filter(business_email=email).exists():
+            raise forms.ValidationError("A free pilot has already been used with this email address.")
+        return email
+
+    def clean_cv_files(self):
+        files = self.cleaned_data["cv_files"]
+        if not 1 <= len(files) <= 3:
+            raise forms.ValidationError("Upload between one and three CVs for the free pilot.")
+        return files

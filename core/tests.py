@@ -24,12 +24,14 @@ from .views import _safe_history, fallback_assistant_answer
 
 @override_settings(SECURE_SSL_REDIRECT=False)
 class LandingPageSemanticsTests(TestCase):
-    def test_landing_page_is_an_action_first_validation_engine(self):
+    def test_landing_page_is_enterprise_first_with_individual_validation(self):
         response = self.client.get(reverse("home"))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content.count(b"<h1"), 1)
-        self.assertContains(response, "CV-to-job checker")
+        self.assertContains(response, "Enterprise applicant screening")
+        self.assertContains(response, "Run a free three-CV pilot")
+        self.assertContains(response, 'data-audience="individual"')
         self.assertContains(response, "Validate my CV")
         self.assertContains(response, 'name="cv_file"')
         self.assertContains(response, 'name="job_description"')
