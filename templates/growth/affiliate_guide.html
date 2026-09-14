@@ -2,6 +2,11 @@
 {% load static %}
 {% block title %}Affiliate Programme | MyValidCV{% endblock %}
 {% block meta_description %}Apply to become a MyValidCV affiliate. See the review process, eligibility rules, commission journey and advertising standards.{% endblock %}
+{% block extra_css %}
+<style>
+.affiliate-sketch{padding:clamp(.45rem,1.5vw,.9rem);border:1px solid rgba(225,177,0,.2);border-radius:22px;background:rgba(255,214,51,.18);box-shadow:0 18px 42px rgba(67,54,13,.13),0 3px 10px rgba(67,54,13,.08);transition:transform .25s ease,box-shadow .25s ease}.affiliate-sketch img{display:block;border-radius:15px;opacity:.94;mix-blend-mode:multiply}.affiliate-sketch:hover{transform:translateY(-3px);box-shadow:0 24px 52px rgba(67,54,13,.16),0 5px 14px rgba(67,54,13,.09)}html[data-bs-theme="dark"] .affiliate-sketch{background:rgba(255,214,51,.13);box-shadow:0 20px 48px rgba(0,0,0,.35)}@media(prefers-reduced-motion:reduce){.affiliate-sketch{transition:none}.affiliate-sketch:hover{transform:none}}
+</style>
+{% endblock %}
 {% block content %}
 <main class="container py-5" style="max-width: 1080px">
   <section class="text-center mb-5">
@@ -22,7 +27,7 @@
     {% endif %}
   </section>
 
-  <section class="card border-0 shadow-sm mb-5 overflow-hidden">
+  <section class="affiliate-sketch mb-5 overflow-hidden">
     <img src="{% static 'images/affiliate-journey-handdrawn.png' %}" class="img-fluid" alt="Hand-drawn eight-step MyValidCV affiliate journey from application to earning commission" loading="lazy">
   </section>
 
