@@ -3866,3 +3866,99 @@ html[data-bs-theme="dark"] .mvcv-ai-mode-menu {
     border-radius: 8px;
     box-shadow: var(--shadow);
 }
+
+/* Cross-product UI audit: neutral hierarchy for forms and operational pages. */
+.card {
+    border: 1px solid var(--mvcv-card-border, var(--mvcv-slate-200)) !important;
+    border-radius: 8px;
+    box-shadow: 0 2px 9px rgba(15, 23, 42, 0.045) !important;
+}
+
+.card-header,
+.card-footer {
+    background: transparent;
+    border-color: var(--mvcv-card-border, var(--mvcv-slate-200));
+}
+
+.fw-bold,
+.fw-semibold {
+    font-weight: 600 !important;
+}
+
+.display-1,
+.display-2,
+.display-3,
+.display-4,
+.display-5,
+.display-6 {
+    font-weight: 600 !important;
+    letter-spacing: -0.032em;
+}
+
+.display-4 { font-size: clamp(2rem, 5vw, 3.25rem); }
+.display-5 { font-size: clamp(1.85rem, 4.5vw, 2.8rem); }
+.display-6 { font-size: clamp(1.65rem, 4vw, 2.35rem); }
+
+.badge {
+    border-radius: 5px;
+    font-weight: 550;
+    letter-spacing: 0;
+    padding: 0.35em 0.58em;
+}
+
+.text-uppercase {
+    letter-spacing: 0.065em;
+}
+
+label,
+.form-label {
+    color: var(--mvcv-slate-700);
+    font-size: 0.88rem;
+    font-weight: 550;
+    margin-bottom: 0.4rem;
+}
+
+.form-control,
+.form-select,
+.input-group-text {
+    border-color: var(--mvcv-card-border, var(--mvcv-slate-200));
+    border-radius: 7px;
+    min-height: 42px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--mvcv-action-blue);
+    box-shadow: 0 0 0 3px rgba(49, 94, 173, 0.12);
+}
+
+.form-text,
+.text-muted,
+.text-body-secondary {
+    color: var(--mvcv-muted, var(--mvcv-slate-500)) !important;
+}
+
+.alert {
+    border-radius: 7px;
+    box-shadow: none;
+}
+
+.table > :not(caption) > * > * {
+    border-color: var(--mvcv-card-border, var(--mvcv-slate-200));
+    padding-block: 0.72rem;
+}
+
+.table thead th {
+    color: var(--mvcv-muted, var(--mvcv-slate-500));
+    font-size: 0.76rem;
+    font-weight: 550;
+    letter-spacing: 0.025em;
+    text-transform: uppercase;
+}
+
+@media (max-width: 575px) {
+    .card-body.p-4,
+    .card-body.p-md-5 {
+        padding: 1.15rem !important;
+    }
+}

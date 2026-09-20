@@ -2211,6 +2211,29 @@
             padding-inline: 0.7rem;
         }
     }
+
+    /* Final report hierarchy: use colour for meaning, not decoration. */
+    .report-kicker,
+    .truth-gate-kicker { font-weight: 600; letter-spacing: .075em; }
+    .report-hero h1,
+    .match-insight h2,
+    .section-header h2,
+    .truth-gate-title,
+    .requirement-title { font-weight: 600; }
+    .v2-panel,
+    .skill-box,
+    .evidence-item,
+    .truth-summary,
+    .readiness-card,
+    .letter-page { border-radius: 7px; box-shadow: none; }
+    .truth-gate-panel { background: var(--report-card); border-radius: 8px; box-shadow: 0 2px 9px rgba(15,23,42,.045); }
+    .truth-progress-track { border-radius: 3px; }
+    .truth-progress-fill { background: var(--report-navy); border-radius: 3px; }
+    .truth-status,
+    .requirement-meta span { border-radius: 5px; font-weight: 550; }
+    .interview-launch-card,
+    .interview-modal .modal-header { background: var(--report-navy); border-radius: 8px; }
+    .interview-modal .modal-content { border-radius: 8px; }
 </style>
 {% endblock %}
 

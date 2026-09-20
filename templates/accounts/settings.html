@@ -2,20 +2,32 @@
 
 {% block title %}Account - MyValidCV{% endblock %}
 {% block meta_description %}Manage your MyValidCV account details and review your current membership.{% endblock %}
+{% block extra_css %}
+<style>
+    .account-page { padding: clamp(1.75rem, 4vw, 3rem) 0 4rem; }
+    .account-header { margin-bottom: 1.35rem; }
+    .account-header h1 { font-size: clamp(1.75rem, 4vw, 2.35rem); font-weight: 600; letter-spacing: -.03em; margin: 0 0 .4rem; }
+    .account-header p { color: var(--mvcv-muted); font-size: .96rem; margin: 0; max-width: 650px; }
+    .account-panel { border: 1px solid var(--mvcv-card-border); border-radius: 8px; background: var(--mvcv-card-bg); box-shadow: 0 2px 9px rgba(15,23,42,.045); }
+    .account-panel .card-body { padding: clamp(1.2rem, 3vw, 1.75rem); }
+    .account-status { align-items: center; display: flex; justify-content: space-between; gap: 1rem; }
+    .account-section { border-top: 1px solid var(--mvcv-card-border); margin-top: 1.5rem; padding-top: 1.35rem; }
+    .account-section h2 { font-size: .98rem; font-weight: 600; margin-bottom: .35rem; }
+</style>
+{% endblock %}
 
 {% block content %}
-<section class="container py-5">
+<section class="container account-page">
     <div class="row justify-content-center">
         <div class="col-lg-7 col-xl-6">
-            <div class="mb-4">
-                <span class="text-uppercase small fw-bold text-muted">Account</span>
-                <h1 class="h2 fw-bold mt-1">Account</h1>
-                <p class="text-muted mb-0">Manage your personal details, membership and recruitment email signature.</p>
-            </div>
+            <header class="account-header">
+                <h1>Account settings</h1>
+                <p>Manage your personal details, membership and recruitment email signature.</p>
+            </header>
 
-            <div class="card border-0 shadow-sm">
+            <div class="card account-panel">
                 <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <div class="account-status border-bottom pb-3 mb-4">
                         <span class="text-muted">Current account</span>
                         <span class="badge bg-primary text-capitalize">{% if profile %}{{ profile.plan }}{% else %}Free{% endif %}</span>
                     </div>
@@ -32,17 +44,17 @@
                         {% endfor %}
                         <button class="btn btn-primary" type="submit">Save account</button>
                     </form>
-                    <div class="border-top mt-4 pt-4 d-flex gap-2 flex-wrap">
+                    <div class="account-section d-flex gap-2 flex-wrap">
                         <a class="btn btn-outline-primary btn-sm" href="{% url 'redeem_voucher' %}">Redeem partner access</a>
                         <a class="btn btn-outline-secondary btn-sm" href="{% url 'socialaccount_connections' %}">Manage connected social accounts</a>
                     </div>
-                    <div class="border-top mt-4 pt-4">
-                        <h2 class="h6">Analytics preference</h2>
+                    <div class="account-section">
+                        <h2>Analytics preference</h2>
                         <p class="small text-body-secondary">Current choice: {{ analytics_consent|default:"not selected"|capfirst }}. You can change or withdraw it at any time. <a href="{% url 'privacy_policy' %}">Read the Privacy Policy</a>.</p>
                         <div class="d-flex gap-2"><form method="post" action="{% url 'analytics_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="granted"><input type="hidden" name="next" value="{% url 'account_settings' %}"><button class="btn btn-primary btn-sm" type="submit">Allow analytics</button></form><form method="post" action="{% url 'analytics_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="declined"><input type="hidden" name="next" value="{% url 'account_settings' %}"><button class="btn btn-outline-secondary btn-sm" type="submit">Withdraw analytics consent</button></form></div>
                     </div>
-                    <div class="border-top mt-4 pt-4">
-                        <h2 class="h6">Affiliate referral preference</h2>
+                    <div class="account-section">
+                        <h2>Affiliate referral preference</h2>
                         <p class="small text-body-secondary">Current choice: {{ referral_consent|default:"not selected"|capfirst }}. This controls optional affiliate-link attribution only. You can always enter a referral code manually at checkout.</p>
                         <div class="d-flex gap-2"><form method="post" action="{% url 'referral_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="granted"><input type="hidden" name="next" value="{% url 'account_settings' %}"><button class="btn btn-primary btn-sm" type="submit">Allow referral tracking</button></form><form method="post" action="{% url 'referral_consent' %}">{% csrf_token %}<input type="hidden" name="choice" value="declined"><input type="hidden" name="next" value="{% url 'account_settings' %}"><button class="btn btn-outline-secondary btn-sm" type="submit">Withdraw referral consent</button></form></div>
                     </div>

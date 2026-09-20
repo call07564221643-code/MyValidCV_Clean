@@ -19,9 +19,7 @@
     .validate-engine {
         min-height: calc(100vh - 78px);
         padding: 3rem 1rem 4rem;
-        background:
-            radial-gradient(circle at 88% 8%, rgba(159, 184, 255, 0.22), transparent 26rem),
-            linear-gradient(180deg, #ffffff 0%, var(--validate-bg) 100%);
+        background: #f6f8fb;
     }
 
     .validate-wrap {
@@ -40,8 +38,8 @@
     .validate-kicker {
         color: var(--validate-navy);
         font-size: 0.76rem;
-        font-weight: 800;
-        letter-spacing: 0.1em;
+        font-weight: 600;
+        letter-spacing: 0.075em;
         text-transform: uppercase;
     }
 
@@ -49,11 +47,11 @@
         margin: 0.35rem 0 0.5rem;
         color: var(--validate-ink);
         font-size: clamp(2rem, 5vw, 3.15rem);
-        font-weight: 780;
-        letter-spacing: -0.05em;
+        font-weight: 600;
+        letter-spacing: -0.03em;
     }
 
-    .validate-heading h1 span { color: var(--validate-blue); }
+    .validate-heading h1 span { color: var(--validate-navy); }
 
     .validate-heading p {
         max-width: 650px;
@@ -66,19 +64,19 @@
         flex: 0 0 auto;
         padding: 0.65rem 0.85rem;
         border: 1px solid var(--validate-line);
-        border-radius: 999px;
+        border-radius: 6px;
         background: var(--validate-card);
         color: var(--validate-navy);
         font-size: 0.8rem;
-        font-weight: 750;
+        font-weight: 500;
         white-space: nowrap;
     }
 
     .validate-card {
         border: 1px solid var(--validate-line);
-        border-radius: 22px;
+        border-radius: 8px;
         background: var(--validate-card);
-        box-shadow: 0 22px 55px rgba(31, 51, 116, 0.09);
+        box-shadow: 0 2px 9px rgba(15, 23, 42, 0.045);
         overflow: hidden;
     }
 
@@ -102,11 +100,11 @@
         display: inline-grid;
         place-items: center;
         flex: 0 0 auto;
-        border-radius: 50%;
-        background: var(--validate-blue);
+        border-radius: 5px;
+        background: var(--validate-navy);
         color: #ffffff;
         font-size: 0.82rem;
-        font-weight: 850;
+        font-weight: 600;
     }
 
     .validate-section-head strong {
@@ -132,7 +130,7 @@
         align-self: center;
         color: var(--validate-muted);
         font-size: 0.76rem;
-        font-weight: 750;
+        font-weight: 500;
         text-transform: uppercase;
     }
 
@@ -141,14 +139,14 @@
         margin-bottom: 0.45rem;
         color: var(--validate-ink);
         font-size: 0.8rem;
-        font-weight: 750;
+        font-weight: 550;
     }
 
     .validate-card .form-control,
     .validate-card .form-select {
         min-height: 46px;
         border-color: var(--validate-line);
-        border-radius: 11px;
+        border-radius: 7px;
         background-color: #ffffff;
         color: var(--validate-ink);
     }
@@ -176,10 +174,10 @@
     .validate-source-tab {
         min-height: 46px;
         border: 1px solid var(--validate-line);
-        border-radius: 11px;
+        border-radius: 7px;
         background: #ffffff;
         color: var(--validate-muted);
-        font-weight: 750;
+        font-weight: 500;
     }
 
     .validate-source-tab:hover,
@@ -209,7 +207,7 @@
         color: var(--validate-navy);
         cursor: pointer;
         font-size: 0.84rem;
-        font-weight: 750;
+        font-weight: 550;
     }
 
     .validate-options-body {
@@ -234,10 +232,10 @@
         min-width: 190px;
         min-height: 48px;
         border: 1px solid var(--validate-navy);
-        border-radius: 11px;
+        border-radius: 7px;
         background: var(--validate-navy);
         color: #ffffff;
-        font-weight: 800;
+        font-weight: 600;
     }
 
     .validate-submit:hover { background: #17275f; }
@@ -252,7 +250,7 @@
     .validate-result-promise {
         padding: 0.9rem;
         border: 1px solid var(--validate-line);
-        border-radius: 13px;
+        border-radius: 7px;
         background: rgba(255, 255, 255, 0.75);
     }
 

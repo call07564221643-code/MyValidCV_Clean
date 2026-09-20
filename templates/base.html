@@ -65,8 +65,9 @@
         }
 
         .navbar .nav-link {
-            border-radius: 999px;
-            font-weight: 500;
+            border-radius: 5px;
+            font-size: 0.92rem;
+            font-weight: 450;
             padding-inline: 0.85rem !important;
             position: relative;
             color: var(--mvcv-nav-text) !important;
@@ -74,8 +75,8 @@
 
         .navbar .account-nav .nav-link,
         .navbar .account-nav .btn {
-            font-size: 1rem;
-            font-weight: 500;
+            font-size: 0.92rem;
+            font-weight: 450;
         }
 
         .navbar .nav-link:hover,
@@ -192,14 +193,14 @@
         .site-footer h2 {
             color: var(--mvcv-body-text);
             font-size: 0.9rem;
-            font-weight: 750;
+            font-weight: 600;
             margin-bottom: 0.65rem;
         }
 
         .site-footer-brand {
             color: var(--mvcv-brand-primary);
             font-size: 1.2rem;
-            font-weight: 720;
+            font-weight: 600;
             letter-spacing: -0.035em;
         }
 
@@ -215,7 +216,7 @@
         .site-footer-nav a {
             color: inherit;
             font-size: 0.8rem;
-            font-weight: 650;
+            font-weight: 450;
             text-decoration: none;
         }
 
@@ -238,7 +239,7 @@
             max-height: min(82vh, 760px);
             padding: 0;
             border: 1px solid var(--mvcv-card-border);
-            border-radius: 22px;
+            border-radius: 9px;
             background: var(--mvcv-card-bg);
             color: var(--mvcv-body-text);
             box-shadow: 0 30px 90px rgba(15, 23, 42, 0.3);
@@ -258,26 +259,26 @@
         .footer-info-shell { position: relative; overflow: auto; max-height: min(82vh, 760px); padding: clamp(1.35rem, 4vw, 2.25rem); }
         .footer-info-close { position: absolute; top: 0.85rem; right: 0.85rem; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 1px solid var(--mvcv-card-border); border-radius: 50%; background: var(--mvcv-input-bg); color: var(--mvcv-body-text); font-size: 1.45rem; line-height: 1; }
         .footer-info-panel { padding-right: 2.25rem; }
-        .footer-info-kicker { color: var(--mvcv-brand-primary); font-size: 0.74rem; font-weight: 850; letter-spacing: 0.1em; text-transform: uppercase; }
-        .footer-info-panel h2 { margin: 0.5rem 0 0.7rem; font-size: clamp(1.45rem, 4vw, 2.15rem); font-weight: 800; letter-spacing: -0.04em; }
+        .footer-info-kicker { color: var(--mvcv-brand-primary); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+        .footer-info-panel h2 { margin: 0.5rem 0 0.7rem; font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 600; letter-spacing: -0.03em; }
         .footer-info-panel > p { margin: 0; color: var(--mvcv-muted); line-height: 1.65; }
         .footer-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin: 1.25rem 0; }
-        .footer-info-grid article { padding: 1rem; border: 1px solid var(--mvcv-card-border); border-radius: 14px; background: var(--mvcv-input-bg); }
+        .footer-info-grid article { padding: 1rem; border: 1px solid var(--mvcv-card-border); border-radius: 7px; background: var(--mvcv-input-bg); }
         .footer-info-grid strong, .footer-info-grid span { display: block; }
         .footer-info-grid strong { margin-bottom: 0.35rem; color: var(--mvcv-body-text); font-size: 0.88rem; }
         .footer-info-grid span { color: var(--mvcv-muted); font-size: 0.78rem; line-height: 1.55; }
-        .footer-info-action { display: inline-flex; align-items: center; min-height: 42px; padding: 0.65rem 1rem; border-radius: 11px; background: var(--mvcv-brand-primary); color: var(--mvcv-brand-on-primary) !important; font-size: 0.85rem; font-weight: 750; text-decoration: none; }
+        .footer-info-action { display: inline-flex; align-items: center; min-height: 42px; padding: 0.65rem 1rem; border-radius: 7px; background: var(--mvcv-brand-primary); color: var(--mvcv-brand-on-primary) !important; font-size: 0.85rem; font-weight: 550; text-decoration: none; }
         .footer-info-action[type="button"] { border: 0; }
         .footer-contact-table { display: grid; gap: 0.65rem; margin: 1.25rem 0; }
-        .footer-contact-table article { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; padding: 0.9rem 1rem; border: 1px solid var(--mvcv-card-border); border-radius: 14px; background: var(--mvcv-input-bg); }
+        .footer-contact-table article { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; padding: 0.9rem 1rem; border: 1px solid var(--mvcv-card-border); border-radius: 7px; background: var(--mvcv-input-bg); }
         .footer-contact-table strong, .footer-contact-table span { display: block; }
         .footer-contact-table strong { color: var(--mvcv-body-text); font-size: 0.88rem; }
         .footer-contact-table span { margin-top: 0.2rem; color: var(--mvcv-muted); font-size: 0.76rem; }
-        .footer-contact-table a { font-size: 0.78rem; font-weight: 750; white-space: nowrap; }
+        .footer-contact-table a { font-size: 0.78rem; font-weight: 550; white-space: nowrap; }
         .footer-copy-status { margin-left: 0.65rem; color: var(--mvcv-muted); font-size: 0.78rem; }
         .footer-info-steps { display: grid; gap: 0.8rem; margin: 1.25rem 0; padding: 0; list-style: none; }
         .footer-info-steps li { display: grid; grid-template-columns: 42px 1fr; gap: 0.8rem; align-items: start; }
-        .footer-info-steps li > span { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--mvcv-nav-active-bg); color: var(--mvcv-brand-primary); font-weight: 850; }
+        .footer-info-steps li > span { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 7px; background: var(--mvcv-nav-active-bg); color: var(--mvcv-brand-primary); font-weight: 600; }
         .footer-info-steps strong { display: block; margin-top: 0.1rem; }
         .footer-info-steps p { margin: 0.15rem 0 0; color: var(--mvcv-muted); font-size: 0.82rem; line-height: 1.5; }
         @keyframes footer-panel-in { from { opacity: 0; transform: translateY(18px) scale(0.98); } }
