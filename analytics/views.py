@@ -12,8 +12,22 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from accounts.models import SocialAuthProvider, UserProfile
-from analytics.models import FinanceFeedConnection, FinancialAssumption, FinancialEntry
-from ats.models import ATSResult, CV, CVStorage, EnterpriseBatch, EnterpriseCandidateResult, GeneratedCV
+from analytics.models import (
+    FinanceFeedConnection,
+    FinancialAssumption,
+    FinancialEntry,
+    OperationalAlert,
+    PlatformOperationsSettings,
+)
+from ats.models import (
+    ATSResult,
+    CV,
+    CVStorage,
+    DataDeletionAudit,
+    EnterpriseBatch,
+    EnterpriseCandidateResult,
+    GeneratedCV,
+)
 from payments.models import Invoice, PaymentTransaction, PaymentWebhookLog, Refund
 from subscriptions.models import CustomerSubscription, SubscriptionPlan
 
@@ -73,7 +87,25 @@ def website_health(request):
     cvs_without_storage = production_cvs.filter(storage__isnull=True).count()
     production_storage = CVStorage.objects.exclude(user__profile__is_test_data=True)
     storage_total = production_storage.count()
-    storage_warning_count = production_storage.filter(used_storage__gte=0.8 * 10 * 1024 * 1024).count()
+    storage_rows = list(production_storage.values("used_storage", "storage_limit"))
+    operations_settings = PlatformOperationsSettings.current()
+    storage_warning_count = sum(
+        1 for row in storage_rows
+        if row["storage_limit"] and (row["used_storage"] / row["storage_limit"] * 100) >= operations_settings.warning_storage_percent
+    )
+    storage_critical_count = sum(
+        1 for row in storage_rows
+        if row["storage_limit"] and (row["used_storage"] / row["storage_limit"] * 100) >= operations_settings.critical_storage_percent
+    )
+    storage_used_bytes = sum(row["used_storage"] for row in storage_rows)
+    storage_limit_bytes = sum(row["storage_limit"] for row in storage_rows)
+    storage_percent = round((storage_used_bytes / storage_limit_bytes * 100), 1) if storage_limit_bytes else 0
+    open_alerts = OperationalAlert.objects.filter(status="open")
+    deletion_audits_30_days = DataDeletionAudit.objects.filter(deleted_at__gte=last_30_days)
+    deletion_failures_30_days = deletion_audits_30_days.filter(status="failed").count()
+    bytes_released_30_days = deletion_audits_30_days.filter(status="completed").aggregate(
+        total=Sum("bytes_released")
+    )["total"] or 0
 
     production_results = ATSResult.objects.exclude(user__profile__is_test_data=True)
     ats_total = production_results.count()
@@ -318,6 +350,13 @@ def website_health(request):
             "Data Quality",
         ),
         _check(
+            "Retention purge audit",
+            "ok" if deletion_failures_30_days == 0 else "critical",
+            f"{deletion_failures_30_days} purge failure(s) in the last 30 days; {bytes_released_30_days} bytes released.",
+            "Review deletion audit failures immediately." if deletion_failures_30_days else "Keep the dry-run and scheduled purge checks active.",
+            "Privacy",
+        ),
+        _check(
             "CV quality gate",
             "ok" if rejected_cvs == 0 else "warning",
             f"{rejected_cvs} uploaded document(s) were rejected or marked invalid.",
@@ -423,6 +462,12 @@ def website_health(request):
             "valid_cvs": valid_cvs,
             "storage_total": storage_total,
             "storage_warning_count": storage_warning_count,
+            "storage_critical_count": storage_critical_count,
+            "storage_used_bytes": storage_used_bytes,
+            "storage_limit_bytes": storage_limit_bytes,
+            "storage_percent": storage_percent,
+            "bytes_released_30_days": bytes_released_30_days,
+            "deletion_failures_30_days": deletion_failures_30_days,
             "ats_total": ats_total,
             "ats_last_7_days": ats_last_7_days,
             "ats_avg_score": round(ats_avg_score, 1),
@@ -431,6 +476,17 @@ def website_health(request):
             "enterprise_batches": enterprise_batches,
             "enterprise_candidates": enterprise_candidates,
             "enterprise_avg_score": round(enterprise_avg_score, 1),
+        },
+        "operations": {
+            "settings_id": operations_settings.pk,
+            "email_enabled": operations_settings.email_enabled,
+            "sms_enabled": operations_settings.sms_enabled,
+            "whatsapp_enabled": operations_settings.whatsapp_enabled,
+            "provider": operations_settings.get_messaging_provider_display(),
+            "warning_storage_percent": operations_settings.warning_storage_percent,
+            "critical_storage_percent": operations_settings.critical_storage_percent,
+            "open_alerts": open_alerts.count(),
+            "critical_alerts": open_alerts.filter(severity="critical").count(),
         },
         "financial": {
             "plan_count": plan_count,

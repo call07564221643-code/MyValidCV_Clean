@@ -19,20 +19,14 @@
     }
 
     .dash-shell {
-        background: linear-gradient(180deg, #ffffff 0%, var(--dash-bg) 100%);
+        background: #f6f8fb;
         min-height: calc(100vh - 84px);
         padding: 2.25rem 0 3rem;
     }
 
     .dash-shell.dash-enterprise {
-        --dash-navy: #0f766e;
-        --dash-navy-dark: #115e59;
-        --dash-soft: #e6fffb;
-        --dash-bg: #f0fdfa;
-        --dash-line: #b9e8e2;
-        background:
-            radial-gradient(circle at 88% 4%, rgba(15, 118, 110, 0.13), transparent 28%),
-            linear-gradient(180deg, #ffffff 0%, var(--dash-bg) 100%);
+        --dash-soft: #eef3ff;
+        background: #f6f8fb;
     }
 
     .dash-enterprise-mark {
@@ -41,8 +35,8 @@
         width: 24px;
         height: 24px;
         margin-right: 0.4rem;
-        border-radius: 8px;
-        background: #0f766e;
+        border-radius: 5px;
+        background: var(--dash-navy);
         color: #ffffff;
         font-size: 0.72rem;
         vertical-align: middle;
@@ -59,7 +53,7 @@
     .dash-kicker {
         color: var(--dash-navy);
         font-size: 0.78rem;
-        font-weight: 760;
+        font-weight: 600;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         margin-bottom: 0.45rem;
@@ -68,8 +62,8 @@
     .dash-hero h1 {
         color: var(--dash-ink);
         font-size: clamp(2rem, 4vw, 3.1rem);
-        font-weight: 680;
-        letter-spacing: -0.045em;
+        font-weight: 600;
+        letter-spacing: -0.03em;
         margin: 0;
     }
 
@@ -88,7 +82,7 @@
 
     .dash-usage-counter {
         align-items: center;
-        color: #9fb8ff;
+        color: var(--dash-muted);
         display: inline-flex;
         gap: 0.7rem;
         line-height: 1;
@@ -103,18 +97,18 @@
     }
 
     .dash-count strong {
-        color: #9fb8ff;
+        color: var(--dash-ink);
         display: block;
         font-size: 1.08rem;
-        font-weight: 760;
+        font-weight: 600;
         letter-spacing: -0.03em;
     }
 
     .dash-count span {
-        color: #9fb8ff;
+        color: var(--dash-muted);
         display: block;
         font-size: 0.72rem;
-        font-weight: 720;
+        font-weight: 450;
     }
 
     .dash-card,
@@ -122,8 +116,8 @@
     .dash-table-wrap {
         background: var(--dash-card);
         border: 1px solid var(--dash-line);
-        border-radius: 18px;
-        box-shadow: 0 18px 46px rgba(15, 23, 42, 0.07);
+        border-radius: 8px;
+        box-shadow: 0 2px 9px rgba(15, 23, 42, 0.045);
     }
 
     .dash-card {
@@ -135,7 +129,7 @@
         display: block;
         color: var(--dash-muted);
         font-size: 0.82rem;
-        font-weight: 650;
+        font-weight: 450;
         margin-bottom: 0.4rem;
     }
 
@@ -185,11 +179,11 @@
     .dash-service-list li {
         padding: 0.75rem;
         border: 1px solid var(--dash-line);
-        border-radius: 12px;
-        background: var(--dash-soft);
+        border-radius: 6px;
+        background: #ffffff;
         color: var(--dash-ink);
         font-size: 0.88rem;
-        font-weight: 650;
+        font-weight: 450;
     }
 
     .dash-service-list li::before {
@@ -211,16 +205,16 @@
 
     .dash-strip-item {
         align-items: center;
-        color: #9fb8ff;
+        color: var(--dash-muted);
         display: inline-flex;
         gap: 0.38rem;
         font-size: 0.9rem;
-        font-weight: 720;
+        font-weight: 450;
         white-space: nowrap;
     }
 
     .dash-strip-item:not(:last-of-type)::after {
-        background: rgba(159, 184, 255, 0.7);
+        background: var(--dash-line);
         content: "";
         display: inline-block;
         height: 1rem;
@@ -229,9 +223,9 @@
     }
 
     .dash-strip-item strong {
-        color: #9fb8ff;
+        color: var(--dash-ink);
         font-size: 0.9rem;
-        font-weight: 650;
+        font-weight: 600;
     }
 
     .dash-next {
@@ -249,7 +243,7 @@
     .dash-panel h2 {
         color: var(--dash-ink);
         font-size: 1.1rem;
-        font-weight: 720;
+        font-weight: 600;
         margin: 0 0 0.4rem;
     }
 
@@ -293,7 +287,7 @@
 
     .dash-section-head h2 {
         font-size: 1.1rem;
-        font-weight: 740;
+        font-weight: 600;
         margin: 0;
     }
 
@@ -308,7 +302,7 @@
         gap: 0.85rem;
         align-items: center;
         border: 1px solid var(--dash-line);
-        border-radius: 14px;
+        border-radius: 7px;
         padding: 0.85rem;
         background: #ffffff;
     }
@@ -333,7 +327,7 @@
         border-radius: 999px;
         padding: 0.35rem 0.6rem;
         font-size: 0.78rem;
-        font-weight: 760;
+        font-weight: 550;
         white-space: nowrap;
     }
 
@@ -354,7 +348,7 @@
 
     .dash-empty {
         border: 1px dashed #cbd5e1;
-        border-radius: 14px;
+        border-radius: 7px;
         background: #fbfdff;
         padding: 1rem;
         color: var(--dash-muted);
@@ -371,7 +365,7 @@
     .dash-table-wrap th {
         color: var(--dash-muted);
         font-size: 0.8rem;
-        font-weight: 700;
+        font-weight: 550;
     }
 
     html[data-bs-theme="dark"] {

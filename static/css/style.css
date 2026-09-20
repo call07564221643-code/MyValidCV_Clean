@@ -37,6 +37,45 @@ html {
     scroll-behavior: smooth;
 }
 
+/* Product design system: restrained, editorial and recruitment-focused. */
+:root {
+    --mvcv-brand-navy: #1f3374;
+    --mvcv-action-blue: #315ead;
+    --mvcv-slate-950: #172033;
+    --mvcv-slate-700: #46536a;
+    --mvcv-slate-500: #6b778c;
+    --mvcv-slate-200: #dfe5ed;
+    --mvcv-slate-100: #eef2f6;
+    --mvcv-canvas: #f6f8fb;
+    --mvcv-surface: #ffffff;
+    --border-radius: 8px;
+    --shadow: 0 2px 8px rgba(23, 32, 51, 0.05);
+    --shadow-lg: 0 6px 18px rgba(23, 32, 51, 0.08);
+}
+
+body {
+    background: var(--mvcv-canvas);
+    color: var(--mvcv-slate-950);
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.018em;
+}
+
+.btn {
+    border-radius: 7px;
+    font-weight: 550;
+    padding: 0.58rem 1rem;
+}
+
+.btn:hover {
+    box-shadow: none;
+    transform: none;
+}
+
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
     font-weight: 650;
@@ -3715,3 +3754,115 @@ html[data-bs-theme="dark"] .mvcv-ai-mode-menu {
 .mvcv-processing-steps li.complete::before { content: "\2713"; color: #15803d; font-weight: 800; }
 @keyframes mvcv-processing-pulse { 50% { transform: scale(1.07); box-shadow: 0 0 0 10px rgba(82, 105, 163, .10); } }
 @media (prefers-reduced-motion: reduce) { .mvcv-processing-shield { animation: none; } }
+
+/* Workspace and sidebar refinement. Keep navigation quiet; reserve colour for action/status. */
+.mvcv-entry-shell,
+.mvcv-workspace {
+    background: var(--mvcv-canvas);
+}
+
+.mvcv-entry-sidebar,
+.mvcv-sidebar {
+    background: #ffffff;
+    border-right: 1px solid var(--mvcv-slate-200);
+}
+
+.mvcv-entry-brand,
+.mvcv-brand-mark,
+.mvcv-entry-nav a,
+.mvcv-side-nav a,
+.mvcv-history-item,
+.mvcv-sidebar-footer a {
+    color: var(--mvcv-slate-700);
+}
+
+.mvcv-entry-brand span,
+.mvcv-brand-mark span,
+.mvcv-avatar {
+    background: var(--mvcv-brand-navy);
+    border-radius: 7px;
+    font-weight: 600;
+}
+
+.mvcv-entry-nav a,
+.mvcv-side-nav a {
+    border-left: 3px solid transparent;
+    border-radius: 4px;
+    font-size: 0.91rem;
+    font-weight: 450;
+    padding: 0.58rem 0.7rem;
+}
+
+.mvcv-entry-nav a:hover,
+.mvcv-side-nav a:hover {
+    background: var(--mvcv-slate-100);
+    color: var(--mvcv-slate-950);
+}
+
+.mvcv-entry-nav a.active,
+.mvcv-side-nav a.active {
+    background: #eef3ff;
+    border-left-color: var(--mvcv-brand-navy);
+    color: var(--mvcv-brand-navy);
+    font-weight: 600;
+}
+
+.mvcv-sidebar-heading {
+    color: var(--mvcv-slate-500);
+    font-size: 0.7rem;
+    font-weight: 550;
+    letter-spacing: 0.075em;
+}
+
+.mvcv-new-action {
+    background: var(--mvcv-brand-navy);
+    border-radius: 7px;
+    font-size: 0.9rem;
+    font-weight: 550;
+    padding: 0.65rem 0.75rem;
+}
+
+.mvcv-history-item {
+    border-radius: 5px;
+    font-size: 0.88rem;
+    font-weight: 450;
+    padding: 0.55rem 0.65rem;
+}
+
+.mvcv-history-item:hover {
+    background: var(--mvcv-slate-100);
+}
+
+.mvcv-entry-account,
+.mvcv-sidebar-footer {
+    background: #f8fafc;
+    border-color: var(--mvcv-slate-200);
+    border-radius: 7px;
+}
+
+.mvcv-mini-label,
+.mvcv-mobile-menu,
+.mvcv-account-select,
+.mvcv-mobile-collapse a {
+    font-weight: 550;
+}
+
+.mvcv-chat-topbar,
+.mvcv-mobile-collapse {
+    background: #ffffff;
+    border-color: var(--mvcv-slate-200);
+}
+
+.mvcv-account-select {
+    background-color: #ffffff;
+    border-color: var(--mvcv-slate-200);
+    border-radius: 7px;
+    color: var(--mvcv-slate-700);
+}
+
+.mvcv-bubble,
+.mvcv-home-composer {
+    border-color: var(--mvcv-slate-200);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}

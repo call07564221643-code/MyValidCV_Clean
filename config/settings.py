@@ -377,6 +377,8 @@ OLLAMA_BASE_URL = os.environ.get('OLLAMA_BASE_URL', '')
 OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'llama3.1')
 OLLAMA_API_KEY = os.environ.get('OLLAMA_API_KEY', '')
 OLLAMA_TIMEOUT_SECONDS = int(os.environ.get('OLLAMA_TIMEOUT_SECONDS', '8'))
+ATS_AI_ASSIST_ENABLED = env_bool('ATS_AI_ASSIST_ENABLED', False)
+ATS_AI_CONFIDENCE_THRESHOLD = int(os.environ.get('ATS_AI_CONFIDENCE_THRESHOLD', '60'))
 
 # Heroku/proxy security
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

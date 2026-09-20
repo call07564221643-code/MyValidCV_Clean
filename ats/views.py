@@ -42,6 +42,7 @@ from .models import (
     JobRole,
 )
 from .bullet_rewriting import apply_bullet_decisions, extract_experience_bullets
+from .ai_assistance import low_confidence_assistance
 from accounts.models import UserProfile
 from .engine import ats_engine
 from .cv_drafting import build_structured_cv_draft, cv_text_to_docx, is_legacy_generated_cv
@@ -1291,6 +1292,9 @@ def analyse_cv(request):
                 "confidence": details.get("confidence", {}),
                 "model_version": details.get("model_version", ATS_MODEL_VERSION),
             }
+            ai_assistance = low_confidence_assistance(details, cv_text, job_description, job_title)
+            if ai_assistance:
+                metrics["ai_assistance"] = ai_assistance
 
             result = ATSResult.objects.create(
                 user=request.user,

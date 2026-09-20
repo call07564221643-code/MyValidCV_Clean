@@ -23,7 +23,7 @@
 
     .report-shell {
         min-height: calc(100vh - 84px);
-        background: linear-gradient(180deg, #ffffff 0%, var(--report-bg) 100%);
+        background: #f6f8fb;
         padding: 1.8rem 0 3rem;
     }
 
@@ -45,9 +45,9 @@
     .summary-card {
         background: var(--report-card);
         border: 1px solid var(--report-line);
-        border-radius: 16px;
+        border-radius: 8px;
         padding: 1rem;
-        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.055);
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
     }
 
     .summary-card span {
@@ -101,9 +101,9 @@
     }
 
     .report-journey {
-        background: rgba(255, 255, 255, 0.92);
-        border: 1px solid #dbe7ff;
-        border-radius: 16px;
+        background: #ffffff;
+        border: 1px solid var(--report-line);
+        border-radius: 8px;
         display: flex;
         gap: 0.4rem;
         margin-bottom: 1rem;
@@ -114,7 +114,7 @@
 
     .report-journey a {
         align-items: center;
-        border-radius: 12px;
+        border-radius: 5px;
         color: #3c4043;
         display: inline-flex;
         flex: 1 0 max-content;
@@ -189,8 +189,8 @@
     .report-card {
         background: var(--report-card);
         border: 1px solid var(--report-line);
-        border-radius: 18px;
-        box-shadow: 0 18px 46px rgba(15, 23, 42, 0.07);
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.045);
     }
 
     .report-card-pad {
@@ -211,13 +211,13 @@
     }
 
     .match-donut {
-        width: 190px;
+        width: 172px;
         aspect-ratio: 1;
         border-radius: 50%;
         background:
             radial-gradient(circle at center, var(--report-card) 0 58%, transparent 59%),
             conic-gradient(var(--score-color, #1a73e8) 0 var(--score), #e2e8f0 var(--score) 100%);
-        box-shadow: inset 0 0 0 1px var(--report-line), 0 18px 38px rgba(15, 23, 42, 0.1);
+        box-shadow: inset 0 0 0 1px var(--report-line);
         display: grid;
         place-items: center;
     }
@@ -252,15 +252,15 @@
 
     .match-metrics {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 0.55rem;
         margin-top: 0.85rem;
     }
 
     .match-metric {
         border: 1px solid var(--report-line);
-        border-radius: 14px;
-        background: #fbfdff;
+        border-radius: 6px;
+        background: #ffffff;
         padding: 0.72rem;
     }
 
@@ -279,9 +279,9 @@
         border-color: color-mix(in srgb, var(--semantic-neutral) 68%, #ffffff);
     }
 
-    .match-metric.semantic-high { background: color-mix(in srgb, var(--semantic-high) 15%, #ffffff); }
-    .match-metric.semantic-low { background: color-mix(in srgb, var(--semantic-low) 12%, #ffffff); }
-    .match-metric.semantic-neutral { background: color-mix(in srgb, var(--semantic-neutral) 13%, #ffffff); }
+    .match-metric.semantic-high { border-top: 3px solid var(--semantic-high); }
+    .match-metric.semantic-low { border-top: 3px solid var(--semantic-low); }
+    .match-metric.semantic-neutral { border-top: 3px solid var(--semantic-neutral); }
     .match-metric.semantic-high strong,
     .match-metric.semantic-low strong,
     .match-metric.semantic-neutral strong {
@@ -2283,6 +2283,10 @@
                         <strong>{{ breakdown.format }}%</strong><span>Readability</span>
                         <small class="score-meaning">{% if breakdown.format > 50 %}Above minimum{% else %}Needs attention{% endif %}</small>
                     </div>
+                    <div class="match-metric {% if truth_gate_summary.complete and not truth_gate_summary.not_have %}semantic-high{% elif truth_gate_summary.answered %}semantic-low{% else %}semantic-neutral{% endif %}" data-overview-truth-gate>
+                        <strong data-overview-truth-value>{{ truth_gate_summary.answered }}/{{ truth_gate_summary.total }}</strong><span>Truth Gate</span>
+                        <small class="score-meaning" data-overview-truth-label>{% if truth_gate_summary.complete and not truth_gate_summary.not_have %}Evidence confirmed{% elif truth_gate_summary.complete %}Gaps identified{% elif truth_gate_summary.answered %}Review in progress{% else %}Not reviewed{% endif %}</small>
+                    </div>
                 </div>
                 <div class="row g-3 mt-2">
                     <div class="col-md-6">
@@ -2958,6 +2962,23 @@
                     confirmation.innerHTML = `<strong>Your response</strong>${labels[payload.action]}`;
                     panel.querySelector('[data-truth-progress-text]').textContent = `${payload.answered}/${payload.total}`;
                     panel.querySelector('[data-truth-progress]').style.width = `${payload.completion}%`;
+                    const overviewTruthGate = document.querySelector('[data-overview-truth-gate]');
+                    if (overviewTruthGate) {
+                        const overviewValue = overviewTruthGate.querySelector('[data-overview-truth-value]');
+                        const overviewLabel = overviewTruthGate.querySelector('[data-overview-truth-label]');
+                        overviewValue.textContent = `${payload.answered}/${payload.total}`;
+                        overviewTruthGate.classList.remove('semantic-high', 'semantic-low', 'semantic-neutral');
+                        if (payload.complete && payload.not_have === 0) {
+                            overviewTruthGate.classList.add('semantic-high');
+                            overviewLabel.textContent = 'Evidence confirmed';
+                        } else if (payload.answered > 0) {
+                            overviewTruthGate.classList.add('semantic-low');
+                            overviewLabel.textContent = payload.complete ? 'Gaps identified' : 'Review in progress';
+                        } else {
+                            overviewTruthGate.classList.add('semantic-neutral');
+                            overviewLabel.textContent = 'Not reviewed';
+                        }
+                    }
                     const statConfig = {
                         answered: {
                             value: payload.answered,

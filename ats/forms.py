@@ -203,7 +203,7 @@ class ATSAnalysisForm(forms.Form):
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["cv"].queryset = CV.objects.filter(user=user)
+        self.fields["cv"].queryset = CV.objects.filter(user=user, source_purged_at__isnull=True)
 
     def clean(self):
         cleaned_data = super().clean()

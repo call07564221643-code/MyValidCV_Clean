@@ -6,6 +6,7 @@ from .models import (
     CV,
     CVBulletSuggestion,
     CVStorage,
+    DataDeletionAudit,
     EnterpriseBatch,
     EnterpriseCandidateResult,
     GeneratedCoverLetter,
@@ -40,10 +41,10 @@ class CVStorageAdmin(admin.ModelAdmin):
 
 @admin.register(CV)
 class CVAdmin(admin.ModelAdmin):
-    list_display = ("title", "user", "file_size", "validation_status", "is_valid_cv", "uploaded_at")
+    list_display = ("title", "user", "file_size", "validation_status", "is_valid_cv", "source_purged_at", "uploaded_at")
     list_filter = ("validation_status", "is_valid_cv", "uploaded_at")
     search_fields = ("title", "original_filename", "user__username", "user__email")
-    readonly_fields = ("public_id", "file_size", "mime_type", "uploaded_at", "updated_at")
+    readonly_fields = ("public_id", "file_size", "mime_type", "source_purged_at", "uploaded_at", "updated_at")
 
 
 @admin.register(ATSResult)
@@ -145,3 +146,23 @@ class EnterpriseCandidateResultAdmin(admin.ModelAdmin):
     list_display = ("rank", "candidate_name", "batch", "score", "mandatory_pass", "review_status", "created_at")
     list_filter = ("mandatory_pass", "review_status", "score", "created_at")
     search_fields = ("candidate_name", "candidate_email", "batch__title", "matched_skills", "missing_skills")
+
+
+@admin.register(DataDeletionAudit)
+class DataDeletionAuditAdmin(admin.ModelAdmin):
+    list_display = ("record_type", "record_id", "policy", "bytes_released", "status", "deleted_at")
+    list_filter = ("record_type", "status", "file_deleted", "database_copy_deleted", "deleted_at")
+    search_fields = ("record_id", "policy", "error_code")
+    readonly_fields = (
+        "record_type", "record_id", "policy", "bytes_released", "file_deleted",
+        "database_copy_deleted", "status", "error_code", "deleted_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

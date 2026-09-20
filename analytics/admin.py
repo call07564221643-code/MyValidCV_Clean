@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import FinanceFeedConnection, FinancialAssumption, FinancialEntry
+from .models import (
+    FinanceFeedConnection,
+    FinancialAssumption,
+    FinancialEntry,
+    NotificationAttempt,
+    OperationalAlert,
+    PlatformOperationsSettings,
+)
 
 
 @admin.register(FinancialAssumption)
@@ -67,3 +74,58 @@ class FinanceFeedConnectionAdmin(admin.ModelAdmin):
     list_filter = ("provider", "status", "currency")
     search_fields = ("name", "account_reference", "last_sync_status")
     readonly_fields = ("last_synced_at", "last_sync_status", "created_at", "updated_at")
+
+
+@admin.register(PlatformOperationsSettings)
+class PlatformOperationsSettingsAdmin(admin.ModelAdmin):
+    fieldsets = (
+        ("Owner contact", {"fields": ("owner_name", "timezone_name", "alert_email", "mobile_number")}),
+        ("Alert channels", {"fields": (
+            "email_enabled", "sms_enabled", "whatsapp_enabled", "minimum_severity", "messaging_provider",
+        )}),
+        ("Capacity and cost thresholds", {"fields": (
+            "warning_storage_percent", "critical_storage_percent", "monthly_ai_budget",
+            "monthly_messaging_budget", "currency",
+        )}),
+        ("Delivery schedule", {"fields": (
+            "quiet_hours_start", "quiet_hours_end", "daily_digest_enabled", "daily_digest_time",
+        )}),
+        ("Verification", {"fields": (
+            "email_verified_at", "sms_verified_at", "whatsapp_verified_at", "updated_at",
+        )}),
+    )
+    readonly_fields = ("email_verified_at", "sms_verified_at", "whatsapp_verified_at", "updated_at")
+
+    def has_add_permission(self, request):
+        return not PlatformOperationsSettings.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(OperationalAlert)
+class OperationalAlertAdmin(admin.ModelAdmin):
+    list_display = ("severity", "title", "category", "status", "occurrence_count", "last_seen_at")
+    list_filter = ("severity", "status", "category")
+    search_fields = ("title", "message", "fingerprint")
+    readonly_fields = ("fingerprint", "first_seen_at", "last_seen_at", "occurrence_count")
+
+
+@admin.register(NotificationAttempt)
+class NotificationAttemptAdmin(admin.ModelAdmin):
+    list_display = ("alert", "channel", "status", "provider", "destination_hint", "attempted_at")
+    list_filter = ("channel", "status", "provider")
+    search_fields = ("alert__title", "provider_reference", "error_code")
+    readonly_fields = (
+        "alert", "channel", "destination_hint", "provider", "status", "provider_reference",
+        "error_code", "error_message", "attempted_at", "delivered_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

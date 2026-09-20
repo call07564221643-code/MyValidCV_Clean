@@ -104,6 +104,16 @@
     "OLLAMA_API_KEY": {
       "description": "Optional bearer token for a hosted Ollama-compatible endpoint.",
       "required": false
+    },
+    "ATS_AI_ASSIST_ENABLED": {
+      "description": "Use Ollama only for advisory explanations on low-confidence deterministic results.",
+      "value": "False",
+      "required": false
+    },
+    "ATS_AI_CONFIDENCE_THRESHOLD": {
+      "description": "Invoke optional advisory assistance only below this deterministic confidence score.",
+      "value": "60",
+      "required": false
     }
   },
   "formation": {

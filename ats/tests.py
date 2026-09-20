@@ -1,4 +1,4 @@
-from io import BytesIO
+from io import BytesIO, StringIO
 from types import SimpleNamespace
 from tempfile import TemporaryDirectory
 from datetime import timedelta
@@ -17,6 +17,7 @@ from django.utils import timezone
 from subscriptions.models import CustomerSubscription, SubscriptionPlan
 
 from .bullet_rewriting import apply_bullet_decisions, extract_experience_bullets, propose_safe_bullet
+from .ai_assistance import low_confidence_assistance, redact_personal_data
 from .cv_drafting import (
     build_structured_cv_draft,
     cv_text_to_docx,
@@ -30,12 +31,153 @@ from .models import (
     ATSResult,
     CV,
     CVBulletSuggestion,
+    CVStorage,
+    DataDeletionAudit,
     EnterpriseBatch,
     EnterpriseCandidateResult,
     EnterprisePilot,
     GeneratedCV,
     JobRole,
 )
+
+
+class CVRetentionTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("retention-user", password="password")
+        self.storage, _created = CVStorage.objects.get_or_create(user=self.user)
+
+    @override_settings(CV_RETENTION_DAYS=30)
+    def test_purge_removes_sources_but_preserves_individual_and_enterprise_reports(self):
+        old_time = timezone.now() - timedelta(days=31)
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            cv = CV.objects.create(
+                user=self.user,
+                storage=self.storage,
+                title="Retained report CV",
+                file=SimpleUploadedFile("retained.txt", b"private cv content"),
+                file_data=b"private cv content",
+                file_size=18,
+            )
+            CV.objects.filter(pk=cv.pk).update(uploaded_at=old_time)
+            result = ATSResult.objects.create(
+                user=self.user,
+                cv=cv,
+                job_title="Operations Manager",
+                job_description="Responsibilities and required operations management experience.",
+                score=72,
+            )
+            role = JobRole.objects.create(
+                user=self.user,
+                title="Operations Manager",
+                description="Responsibilities and required operations management experience.",
+            )
+            batch = EnterpriseBatch.objects.create(user=self.user, job_role=role, title="Old batch")
+            candidate = EnterpriseCandidateResult.objects.create(
+                batch=batch,
+                candidate_name="Candidate",
+                cv_file=SimpleUploadedFile("candidate.txt", b"private candidate content"),
+                score=70,
+            )
+            EnterpriseCandidateResult.objects.filter(pk=candidate.pk).update(created_at=old_time)
+
+            call_command("purge_expired_cvs")
+
+            cv.refresh_from_db()
+            candidate.refresh_from_db()
+            self.storage.refresh_from_db()
+            self.assertTrue(CV.objects.filter(pk=cv.pk).exists())
+            self.assertTrue(ATSResult.objects.filter(pk=result.pk).exists())
+            self.assertFalse(cv.file)
+            self.assertIsNone(cv.file_data)
+            self.assertEqual(cv.file_size, 0)
+            self.assertIsNotNone(cv.source_purged_at)
+            self.assertTrue(EnterpriseCandidateResult.objects.filter(pk=candidate.pk).exists())
+            self.assertFalse(candidate.cv_file)
+            self.assertIsNotNone(candidate.source_purged_at)
+            self.assertEqual(self.storage.used_storage, 0)
+            self.assertEqual(DataDeletionAudit.objects.filter(status="completed").count(), 2)
+
+    @override_settings(CV_RETENTION_DAYS=30)
+    def test_dry_run_changes_nothing(self):
+        cv = CV.objects.create(
+            user=self.user,
+            storage=self.storage,
+            title="Dry run CV",
+            file="cvs/dry-run.txt",
+            file_data=b"private",
+            file_size=7,
+        )
+        CV.objects.filter(pk=cv.pk).update(uploaded_at=timezone.now() - timedelta(days=31))
+        output = StringIO()
+
+        call_command("purge_expired_cvs", dry_run=True, stdout=output)
+
+        cv.refresh_from_db()
+        self.assertTrue(cv.file)
+        self.assertIsNotNone(cv.file_data)
+        self.assertIsNone(cv.source_purged_at)
+        self.assertFalse(DataDeletionAudit.objects.exists())
+        self.assertIn("validation reports would be preserved", output.getvalue())
+
+
+class OptionalValidationAssistanceTests(SimpleTestCase):
+    def test_redacts_direct_contact_details(self):
+        redacted = redact_personal_data(
+            "Contact alex@example.com, +44 7700 900123, https://linkedin.com/in/alex"
+        )
+        self.assertNotIn("alex@example.com", redacted)
+        self.assertNotIn("7700", redacted)
+        self.assertNotIn("linkedin.com/in/alex", redacted)
+
+    @override_settings(
+        ATS_AI_ASSIST_ENABLED=True,
+        ATS_AI_CONFIDENCE_THRESHOLD=60,
+        OLLAMA_BASE_URL="https://ollama.example",
+        OLLAMA_MODEL="llama-test",
+        OLLAMA_API_KEY="",
+        OLLAMA_TIMEOUT_SECONDS=2,
+    )
+    @patch("ats.ai_assistance.urllib.request.urlopen")
+    def test_low_confidence_help_is_advisory_and_personal_data_is_not_sent(self, urlopen):
+        response = MagicMock()
+        response.read.return_value = b'{"message":{"content":"{\\"explanation\\":\\"Evidence is unclear.\\",\\"ambiguous_terms\\":[\\"leadership\\"]}"}}'
+        urlopen.return_value.__enter__.return_value = response
+        details = {"score": 42, "confidence": {"score": 30}, "missing": ["leadership"]}
+
+        result = low_confidence_assistance(
+            details,
+            "Alex alex@example.com +44 7700 900123 managed a team.",
+            "Leadership experience is required.",
+            "Operations Manager",
+        )
+
+        self.assertTrue(result["advisory_only"])
+        self.assertFalse(result["changed_score"])
+        sent_body = urlopen.call_args.args[0].data.decode("utf-8")
+        self.assertNotIn("alex@example.com", sent_body)
+        self.assertNotIn("7700", sent_body)
+
+    @override_settings(ATS_AI_ASSIST_ENABLED=False, OLLAMA_BASE_URL="https://ollama.example")
+    @patch("ats.ai_assistance.urllib.request.urlopen")
+    def test_disabled_assistance_never_calls_model(self, urlopen):
+        result = low_confidence_assistance(
+            {"score": 20, "confidence": {"score": 10}, "missing": []},
+            "CV text",
+            "Job text",
+            "Role",
+        )
+        self.assertIsNone(result)
+        urlopen.assert_not_called()
+
+
+class CandidateAvatarTests(SimpleTestCase):
+    def test_uses_first_and_last_initials(self):
+        candidate = EnterpriseCandidateResult(candidate_name="Alex Jordan Morgan")
+        self.assertEqual(candidate.avatar_initials, "AM")
+
+    def test_has_neutral_fallback(self):
+        candidate = EnterpriseCandidateResult(candidate_name="")
+        self.assertEqual(candidate.avatar_initials, "CV")
 
 
 class EnterprisePilotFlowTests(TestCase):
@@ -844,6 +986,9 @@ class ATSV2Tests(TestCase):
         self.assertContains(rendered, 'aria-label="Your report journey"')
         self.assertContains(rendered, "requirement-title")
         self.assertContains(rendered, "truth-ring")
+        self.assertContains(rendered, "data-overview-truth-gate")
+        self.assertContains(rendered, "data-overview-truth-value")
+        self.assertContains(rendered, "Evidence confirmed")
         self.assertContains(rendered, 'class="truth-gate-title"')
         self.assertContains(rendered, "font-size: 1.65rem")
         self.assertContains(rendered, "font-size: 1.45rem")

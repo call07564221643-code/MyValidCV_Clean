@@ -9,6 +9,7 @@ import uuid
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 
 class CVStorage(models.Model):
@@ -232,7 +233,7 @@ class CV(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="cvs")
     storage = models.ForeignKey(CVStorage, on_delete=models.SET_NULL, null=True, blank=True, related_name="uploads")
     title = models.CharField(max_length=150)
-    file = models.FileField(upload_to="cvs/")
+    file = models.FileField(upload_to="cvs/", blank=True)
     original_filename = models.CharField(max_length=255, blank=True)
     mime_type = models.CharField(max_length=120, blank=True)
     file_size = models.PositiveBigIntegerField(default=0)
@@ -240,6 +241,7 @@ class CV(models.Model):
     validation_status = models.CharField(max_length=20, choices=VALIDATION_STATUS_CHOICES, default="valid")
     is_valid_cv = models.BooleanField(default=True)
     validation_notes = models.TextField(blank=True)
+    source_purged_at = models.DateTimeField(null=True, blank=True, editable=False)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -424,7 +426,7 @@ class EnterpriseCandidateResult(models.Model):
 
     batch = models.ForeignKey(EnterpriseBatch, on_delete=models.CASCADE, related_name="candidate_results")
     candidate_name = models.CharField(max_length=180)
-    cv_file = models.FileField(upload_to="enterprise_cvs/")
+    cv_file = models.FileField(upload_to="enterprise_cvs/", blank=True)
     score = models.IntegerField(default=0)
     matched_skills = models.TextField(blank=True)
     missing_skills = models.TextField(blank=True)
@@ -439,6 +441,7 @@ class EnterpriseCandidateResult(models.Model):
     email_subject = models.CharField(max_length=220, blank=True)
     email_body = models.TextField(blank=True)
     email_sent_at = models.DateTimeField(null=True, blank=True)
+    source_purged_at = models.DateTimeField(null=True, blank=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -446,6 +449,39 @@ class EnterpriseCandidateResult(models.Model):
 
     def __str__(self):
         return f"{self.candidate_name} - {self.score}%"
+
+    @property
+    def avatar_initials(self):
+        """Return a neutral, display-only monogram; never used by scoring."""
+        parts = [part for part in self.candidate_name.split() if part]
+        if not parts:
+            return "CV"
+        if len(parts) == 1:
+            return parts[0][:2].upper()
+        return f"{parts[0][0]}{parts[-1][0]}".upper()
+
+
+class DataDeletionAudit(models.Model):
+    """Metadata-only evidence of retention purges; never stores CV content."""
+
+    STATUS_CHOICES = [("completed", "Completed"), ("failed", "Failed")]
+
+    record_type = models.CharField(max_length=40, db_index=True)
+    record_id = models.CharField(max_length=64, db_index=True)
+    policy = models.CharField(max_length=80)
+    bytes_released = models.PositiveBigIntegerField(default=0)
+    file_deleted = models.BooleanField(default=False)
+    database_copy_deleted = models.BooleanField(default=False)
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="completed", db_index=True)
+    error_code = models.CharField(max_length=80, blank=True)
+    deleted_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        ordering = ["-deleted_at"]
+        indexes = [models.Index(fields=["record_type", "-deleted_at"], name="deletion_record_date_idx")]
+
+    def __str__(self):
+        return f"{self.record_type} {self.record_id}: {self.status}"
 
 
 class EnterprisePilot(models.Model):
