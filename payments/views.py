@@ -35,13 +35,40 @@ from .services import (
 
 
 logger = logging.getLogger(__name__)
+from growth.services import ReferralError, prepare_checkout_terms, attach_checkout_affiliate
+
+
+@login_required(login_url="login")
+def checkout_preview(request, plan_code):
+    plan = get_object_or_404(SubscriptionPlan, code=plan_code, is_active=True)
+    try:
+        discount, amount, partner = prepare_checkout_terms(plan=plan, user=request.user,
+            discount_code=request.GET.get("discount_code", ""), referral_code=request.GET.get("referral_code", ""))
+    except ReferralError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    return JsonResponse({"subtotal": str(plan.price), "discount": str(plan.price - amount),
+        "total": str(amount), "currency": plan.currency,
+        "valid_until": partner.valid_until.isoformat() if partner and partner.valid_until else "",
+        "commission_percent": str(partner.organisation.partner_profile.commission_value) if partner else "0"})
 
 
 def pricing(request):
     """Stage 1 of payment: read the seeded plan catalogue without mutating it."""
     plans = SubscriptionPlan.objects.filter(is_active=True, code__in=["free", "plus", "enterprise"])
+    referral_code = ""
+    from growth.models import ReferralPartner, ReferralAttribution
+    partner_id = request.session.get("mvcv_referral", {}).get("partner_id")
+    if not partner_id and request.user.is_authenticated:
+        attribution = ReferralAttribution.objects.filter(user=request.user, converted_at__isnull=True,
+            expires_at__gt=timezone.now()).first()
+        partner_id = attribution.partner_id if attribution else None
+    if partner_id:
+        partner = ReferralPartner.objects.select_related("organisation__partner_profile").filter(pk=partner_id).first()
+        if partner and partner.is_eligible():
+            referral_code = partner.referral_code
     return render(request, "payments/pricing.html", {
         "plans": plans,
+        "referral_code": referral_code,
         "payment_provider": settings.PAYMENT_PROVIDER,
         "sumup_sandbox": settings.PAYMENT_PROVIDER == "sumup" and settings.SUMUP_MODE == "sandbox",
         "sumup_test_available": bool(
@@ -64,29 +91,19 @@ def start_checkout(request, plan_code):
 def start_sumup_checkout(request, plan_code):
     """Create a local audit record and redirect to SumUp Hosted Checkout."""
     plan = get_object_or_404(SubscriptionPlan, code=plan_code, is_active=True)
-    discount = None
-    amount = plan.price
-    code = request.POST.get("discount_code", "").strip()
-    if code:
-        discount = DiscountCode.objects.filter(code__iexact=code).first()
-        if not discount or not discount.is_valid_now():
-            messages.error(request, "This discount code is not valid.")
-            return redirect("pricing")
-        amount = discount.apply_to(amount)
-    referral_code = request.POST.get("referral_code", "").strip()
-    if referral_code:
-        from growth.services import ReferralError, capture_referral_code
-        try:
-            capture_referral_code(code=referral_code, user=request.user)
-        except ReferralError as exc:
-            messages.error(request, str(exc))
-            return redirect("pricing")
+    try:
+        discount, amount, affiliate = prepare_checkout_terms(plan=plan, user=request.user,
+            discount_code=request.POST.get("discount_code", ""), referral_code=request.POST.get("referral_code", ""))
+    except ReferralError as exc:
+        messages.error(request, str(exc))
+        return redirect("pricing")
 
     payment = PaymentTransaction.objects.create(
         user=request.user, plan=plan, discount_code=discount, amount=amount,
         currency=plan.currency, provider="sumup", status="pending",
         raw_response={"requested_provider": "sumup", "mode": settings.SUMUP_MODE},
     )
+    attach_checkout_affiliate(payment, affiliate)
     Invoice.objects.create(
         user=request.user, transaction=payment,
         invoice_number=f"MVCV-{payment.id:06d}", amount=amount,
@@ -243,23 +260,12 @@ def start_stripe_checkout(request, plan_code):
     ``stripe_success`` or ``stripe_webhook`` calls ``activate_paid_transaction``.
     """
     plan = get_object_or_404(SubscriptionPlan, code=plan_code, is_active=True)
-    discount = None
-    amount = plan.price
-    code = request.POST.get("discount_code", "").strip()
-    if code:
-        discount = DiscountCode.objects.filter(code__iexact=code).first()
-        if not discount or not discount.is_valid_now():
-            messages.error(request, "This discount code is not valid.")
-            return redirect("pricing")
-        amount = discount.apply_to(amount)
-    referral_code = request.POST.get("referral_code", "").strip()
-    if referral_code:
-        from growth.services import ReferralError, capture_referral_code
-        try:
-            capture_referral_code(code=referral_code, user=request.user)
-        except ReferralError as exc:
-            messages.error(request, str(exc))
-            return redirect("pricing")
+    try:
+        discount, amount, affiliate = prepare_checkout_terms(plan=plan, user=request.user,
+            discount_code=request.POST.get("discount_code", ""), referral_code=request.POST.get("referral_code", ""))
+    except ReferralError as exc:
+        messages.error(request, str(exc))
+        return redirect("pricing")
 
     transaction = PaymentTransaction.objects.create(
         user=request.user,
@@ -271,6 +277,7 @@ def start_stripe_checkout(request, plan_code):
         status="pending",
         raw_response={"requested_provider": "stripe"},
     )
+    attach_checkout_affiliate(transaction, affiliate)
     Invoice.objects.create(
         user=request.user,
         transaction=transaction,
@@ -585,6 +592,8 @@ def activate_paid_transaction(
     """
     transaction = PaymentTransaction.objects.select_for_update().select_related("user", "plan").get(pk=transaction.pk)
     was_paid = transaction.status == "paid"
+    if was_paid or transaction.status == "refunded":
+        return transaction
     paid_at = timezone.now()
     transaction.status = "paid"
     if raw_response is not None:

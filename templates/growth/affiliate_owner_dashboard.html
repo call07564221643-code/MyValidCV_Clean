@@ -1,10 +1,33 @@
 {% extends "base.html" %}
 {% block title %}Affiliate Operations | MyValidCV{% endblock %}
 {% block content %}
-<main class="container-fluid px-3 px-lg-5 py-5">
-  <div class="d-flex justify-content-between flex-wrap gap-3 mb-4"><div><span class="small fw-bold text-primary">OWNER OPERATIONS</span><h1>Affiliate programme</h1><p>Scores support human review; they never automatically decline applicants.</p></div><a class="btn btn-outline-primary" href="{% url 'owner_console' %}">Owner console</a></div>
-  <form class="card card-body mb-4"><div class="row g-2 align-items-end"><div class="col-md-4"><label class="form-label">Application status</label><select class="form-select" name="status"><option value="">All statuses</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div><div class="col"><button class="btn btn-primary">Filter</button></div></div></form>
-  <section class="card shadow-sm mb-5"><div class="card-body"><h2 class="h4">Application queue</h2><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Applicant</th><th>Type / country</th><th>Channels</th><th>Audience</th><th>Score</th><th>Risks</th><th>Status</th></tr></thead><tbody>{% for app in applications %}<tr><td><strong>{{ app.legal_name }}</strong><br><small>{{ app.user.email }}</small></td><td>{{ app.get_applicant_type_display }}<br>{{ app.country }}</td><td>{{ app.proposed_channels|join:", " }}</td><td>{{ app.audience_size }}</td><td><span class="badge text-bg-primary">{{ app.suitability_score }}/100</span></td><td>{{ app.risk_flags|join:", "|default:"None flagged" }}</td><td>{{ app.get_status_display }}<br><small>{{ app.created_at|timesince }} ago</small></td></tr>{% empty %}<tr><td colspan="7">No matching applications.</td></tr>{% endfor %}</tbody></table></div></div></section>
-  <section class="card shadow-sm"><div class="card-body"><h2 class="h4">Affiliate performance</h2><div class="table-responsive"><table class="table"><thead><tr><th>Affiliate</th><th>Code</th><th>Uses</th><th>Conversions</th><th>Attributed revenue</th><th>Commission</th><th>Status</th></tr></thead><tbody>{% for partner in partners %}<tr><td>{{ partner.organisation.name }}</td><td><code>{{ partner.referral_code }}</code></td><td>{{ partner.uses }}</td><td>{{ partner.conversions }}</td><td>GBP {{ partner.gross_revenue|default:"0.00" }}</td><td>GBP {{ partner.commission_generated|default:"0.00" }}</td><td>{{ partner.is_active|yesno:"Active,Paused" }}</td></tr>{% empty %}<tr><td colspan="7">No activated affiliates yet.</td></tr>{% endfor %}</tbody></table></div></div></section>
+<main class="container py-5">
+  <h1>Affiliate programme</h1>
+  <p>Approve after a meeting, or record a meeting waiver. Approval creates the partner account and emails a one-year code: 20% customer discount and 20% affiliate commission.</p>
+  <form class="mb-4"><label>Status <select name="status"><option value="">All</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><button class="btn btn-outline-primary">Filter</button></form>
+  <h2 class="h4">Applications</h2>
+  {% for app in applications %}<article class="card card-body mb-3">
+    <h3 class="h5">{{ app.legal_name }}</h3><p>{{ app.user.email }} · {{ app.get_status_display }} · Meeting: {{ app.get_meeting_status_display }} · Score: {{ app.suitability_score }}/100</p>
+    <p>Channels: {{ app.proposed_channels|join:", " }}. Risks: {{ app.risk_flags|join:", "|default:"None flagged" }}.</p>
+    {% if not app.partner_id and app.status != "declined" and app.status != "withdrawn" %}
+    {% if app.status != "approved" and app.meeting_status != "completed" %}<form method="post" class="mb-3">{% csrf_token %}<input type="hidden" name="action" value="meeting_complete"><input type="hidden" name="application_id" value="{{ app.id }}"><label>Completed meeting notes<textarea name="meeting_notes" maxlength="4000" class="form-control" required></textarea></label><button class="btn btn-outline-primary mt-2">Record meeting as completed</button></form>{% endif %}
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="approve"><input type="hidden" name="application_id" value="{{ app.id }}">
+      <label class="d-block">Meeting waiver reason (required without a completed meeting)<input name="waiver_reason" class="form-control" maxlength="2000"></label>
+      <button class="btn btn-primary mt-2">{% if app.status == "approved" %}Complete setup and issue code{% else %}Approve and issue code{% endif %}</button>
+    </form>{% elif app.partner_id %}<p>Partner and code issued.</p>{% endif %}
+  </article>{% empty %}<p>No matching applications.</p>{% endfor %}
+  <h2 class="h4 mt-4">Referral codes</h2>
+  {% for partner in partners %}<article class="card card-body mb-3">
+    <h3 class="h5">{{ partner.organisation.name }}</h3>
+    <p><code>{{ partner.referral_code }}</code> · Expires {{ partner.valid_until|date:"d M Y H:i T" }} · {{ partner.customer_discount_percent }}% discount · {{ partner.organisation.partner_profile.commission_value }}% commission</p>
+    <p>{{ partner.uses }} uses · {{ partner.conversions }} conversions · Commission generated: {{ partner.commission_generated|default:"0.00" }} (inspect entries for payment currency).</p>
+    <p>{% if partner.cancelled_at %}Cancelled{% elif partner.is_eligible %}Active{% else %}Awaiting setup, expired or inactive{% endif %}. {% if partner.code_emailed_at %}Email sent {{ partner.code_emailed_at|date:"d M Y H:i" }}{% else %}Email not confirmed{% endif %} {{ partner.email_error }}</p>
+    {% if partner.warned_at %}<div class="alert alert-warning">Warning {{ partner.warned_at|date:"d M Y H:i" }}: {{ partner.warning_message }}</div>{% endif %}
+    {% if not partner.cancelled_at %}
+    <form method="post" class="mb-2">{% csrf_token %}<input name="partner_id" type="hidden" value="{{ partner.id }}"><input name="action" type="hidden" value="warn"><label class="d-block">Dashboard warning<textarea class="form-control" name="warning_message" maxlength="4000" required></textarea></label><button class="btn btn-warning mt-2">Publish warning to affiliate dashboard</button></form>
+    {% if partner.warned_at %}<form method="post" class="mb-2">{% csrf_token %}<input name="partner_id" type="hidden" value="{{ partner.id }}"><button name="action" value="cancel" class="btn btn-danger">Cancel warned code</button></form>{% endif %}
+    <form method="post">{% csrf_token %}<input name="partner_id" type="hidden" value="{{ partner.id }}"><button name="action" value="resend" class="btn btn-outline-primary">Resend code email</button></form>{% endif %}
+    {% if perms.growth.approve_commission or user.is_superuser %}<a href="{% url 'affiliate_payout_review' partner.id %}" class="mt-2">Review payout bank details</a>{% endif %}
+  </article>{% empty %}<p>No affiliate codes issued.</p>{% endfor %}
 </main>
 {% endblock %}

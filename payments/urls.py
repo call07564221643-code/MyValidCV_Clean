@@ -4,6 +4,7 @@ from . import views
 
 
 urlpatterns = [
+    path("checkout/preview/<slug:plan_code>/", views.checkout_preview, name="checkout_preview"),
     # Public catalogue. Checkout creation below is protected in the view.
     path("pricing/", views.pricing, name="pricing"),
     # Browser payment stages: authenticated POST -> provider -> verified return.

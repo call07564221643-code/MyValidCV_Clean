@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.db.models import Sum
 from django.utils import timezone
 from governance.forms import OptimisticLockAdminForm
+from .affiliate_workflow import approve_application, manage_code
 
 from .models import (
     AccessVoucher, AffiliateAgreementAcceptance, AffiliateApplication, AnalyticsEvent, BulkPurchase, CampaignApproval,
@@ -15,7 +16,7 @@ class AffiliateApplicationAdmin(admin.ModelAdmin):
     list_display = ("legal_name", "applicant_type", "country", "audience_size", "suitability_score", "status", "meeting_status", "created_at")
     list_filter = ("status", "meeting_status", "applicant_type", "country")
     search_fields = ("legal_name", "user__email", "website", "public_profiles")
-    readonly_fields = ("user", "suitability_score", "score_breakdown", "risk_flags", "created_at", "updated_at", "decided_at")
+    readonly_fields = ("user", "partner", "status", "reviewed_by", "suitability_score", "score_breakdown", "risk_flags", "created_at", "updated_at", "decided_at")
     actions = ("mark_under_review", "request_meeting", "approve_after_meeting", "decline")
 
     @admin.action(description="Mark selected applications as under review")
@@ -31,7 +32,10 @@ class AffiliateApplicationAdmin(admin.ModelAdmin):
     @admin.action(description="Approve selected applications after completed meeting")
     def approve_after_meeting(self, request, queryset):
         eligible = queryset.filter(meeting_status="completed").exclude(status__in={"declined", "withdrawn"})
-        updated = eligible.update(status="approved", reviewed_by=request.user, decided_at=timezone.now())
+        updated = 0
+        for application in eligible:
+            approve_application(application.pk, request.user)
+            updated += 1
         self.message_user(request, f"Approved {updated} application(s). Applications without a completed meeting were unchanged.")
 
     @admin.action(description="Decline selected applications")
@@ -89,6 +93,25 @@ class ReferralPartnerAdmin(admin.ModelAdmin):
     list_filter = ("is_active",)
     search_fields = ("referral_code", "organisation__name")
     autocomplete_fields = ("organisation",)
+    readonly_fields = ("referral_code", "valid_until", "customer_discount_percent", "is_active", "cancelled_at",
+                       "warning_message", "warned_at", "code_emailed_at", "email_error", "approved_at")
+    actions = ("cancel_warned_codes", "resend_codes")
+
+    def has_add_permission(self, request):
+        return False
+
+    @admin.action(description="Cancel selected codes after dashboard warning")
+    def cancel_warned_codes(self, request, queryset):
+        for partner in queryset:
+            try:
+                manage_code(partner.pk, request.user, "cancel")
+            except ValueError as exc:
+                self.message_user(request, str(exc), level="error")
+
+    @admin.action(description="Resend affiliate code email")
+    def resend_codes(self, request, queryset):
+        for partner in queryset:
+            manage_code(partner.pk, request.user, "resend")
 
 
 @admin.register(AffiliateAgreementAcceptance)

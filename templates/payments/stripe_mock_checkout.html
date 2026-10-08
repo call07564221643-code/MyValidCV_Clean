@@ -57,6 +57,7 @@
                     </p>
 
                     <div class="checkout-summary border rounded-3 p-3 mb-4">
+                        {% if transaction.affiliate_partner_id %}<p>Affiliate code {{ transaction.affiliate_partner.referral_code }}: {{ transaction.affiliate_discount_percent }}% off {{ transaction.currency }} {{ transaction.original_amount }}. Affiliate receives {{ transaction.affiliate_commission_rate }}% of the discounted payment.</p>{% endif %}
                         <div class="d-flex justify-content-between mb-2">
                             <span>Plan</span>
                             <strong>{{ transaction.plan.name }}</strong>

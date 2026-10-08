@@ -11,6 +11,22 @@
         <div class="row g-3 my-2"><div class="col-6 col-md-3"><strong class="d-block fs-3">{{ item.purchases|length }}</strong><small>Bulk purchases</small></div><div class="col-6 col-md-3"><strong class="d-block fs-3">{{ item.voucher_count }}</strong><small>Voucher campaigns</small></div><div class="col-6 col-md-3"><strong class="d-block fs-3">{{ item.redemptions }}</strong><small>Redemptions</small></div><div class="col-6 col-md-3"><strong class="d-block fs-3">{{ item.attribution_count }}</strong><small>Attributed users</small></div></div>
         {% if item.referral %}
         <section class="border rounded-3 p-3 my-3" aria-label="Affiliate programme">
+            {% if item.referral.warning_message %}<div class="alert alert-warning"><strong>Administrator warning — {{ item.referral.warned_at|date:"d M Y" }}</strong><p>{{ item.referral.warning_message }}</p></div>{% endif %}
+            {% if item.referral.cancelled_at %}<div class="alert alert-danger">Your referral code was cancelled on {{ item.referral.cancelled_at|date:"d M Y" }}.</div>{% endif %}
+            <p><strong>Code: {{ item.referral.referral_code }}</strong> · Customers save {{ item.referral.customer_discount_percent }}% · Commission: {{ item.organisation.partner_profile.commission_value }}% of discounted eligible payments · Valid until {{ item.referral.valid_until|date:"d M Y H:i T"|default:"See agreement" }}.</p>
+            <p>Status: {% if item.eligible %}Active{% elif item.referral.cancelled_at %}Cancelled{% elif item.referral.valid_until and item.referral.valid_until < now %}Expired{% else %}Awaiting setup, or inactive{% endif %}. {% if item.referral.code_emailed_at %}Code email sent {{ item.referral.code_emailed_at|date:"d M Y" }}.{% else %}Code email awaiting delivery.{% endif %}</p>
+            {% if item.membership.role == "owner" %}
+            <details class="my-3"><summary>Bank payout details {% if item.payout_saved %}(saved; account ending {{ item.referral.payout_details.account_last_four }}){% endif %}</summary>
+                <p>Enter the account holder and bank, then an IBAN or account number with a sort code or SWIFT / BIC. Details are encrypted and used for external commission payouts. Never enter a bank password or PIN.</p>
+                <form method="post" action="{% url 'save_affiliate_payout' item.referral.id %}" autocomplete="off">{% csrf_token %}{{ item.payout_form.as_p }}<button class="btn btn-outline-primary" type="submit">Save payout details</button></form>
+            </details>
+            {% endif %}
+            <div class="small my-3">
+                <h4 class="h6">Commercial agreement {{ item.referral.terms_version }}</h4>
+                <p>Customers using this code receive {{ item.referral.customer_discount_percent }}% off eligible paid plan checkouts, including Enterprise. Discounts do not stack. The affiliate earns {{ item.organisation.partner_profile.commission_value }}% of the discounted payment retained by MyValidCV for eligible checkout purchases. Automatic subscription renewal payments are excluded from commission. A recurring checkout retains the subscription price agreed at checkout.</p>
+                <p>Code redemption ends on {{ item.referral.valid_until|date:"d M Y H:i T" }} (one year from issue). Agreement acceptance and bank payout details are required before activation. Commission hold: {{ item.referral.commission_hold_days }} days; minimum payout: {{ item.referral.minimum_payout }} in the payment currency. Refunds, chargebacks and invalid or fraudulent transactions may reverse commission. No self-referrals.</p>
+                <p>Administrators may cancel the code after publishing a warning in this dashboard. Cancellation prevents new redemptions and unearned future commission; previously earned valid commission remains subject to review and payout terms. Bank details are encrypted, restricted to authorised payout staff, and retained for payout administration; contact support to correct or remove them.</p>
+            </div>
             <div class="d-flex justify-content-between gap-3 flex-wrap">
                 <div><h3 class="h5">Affiliate referral programme</h3><p class="mb-1">Referral link: <strong>https://www.myvalidcv.com/?ref={{ item.referral.referral_code }}</strong></p><small>Commission is held for {{ item.referral.commission_hold_days }} days. Minimum payout: GBP {{ item.referral.minimum_payout }}.</small></div>
                 <div><span class="badge {% if item.referral.is_active and item.agreement_current %}text-bg-success{% else %}text-bg-warning{% endif %}">{% if item.referral.is_active and item.agreement_current %}Agreement recorded{% else %}Setup incomplete{% endif %}</span><p class="mt-2 mb-0">Pending: GBP {{ item.commission_pending|default:0 }} · Paid: GBP {{ item.commission_total|default:0 }}</p></div>
@@ -19,7 +35,7 @@
             <details class="mt-3"><summary class="fw-bold">Review and accept Affiliate Programme Agreement {{ item.referral.terms_version }}</summary>
                 <div class="small text-body-secondary mt-3">
                     <p>The affiliate may promote MyValidCV only through declared channels and must clearly label compensated content as advertising or affiliate content. The affiliate must not make employment guarantees, use spam, impersonate MyValidCV, bid on protected brand terms, create false accounts, self-refer, or process personal data without a lawful basis.</p>
-                    <p>Commission applies only to eligible, verified and retained transactions. Refunds, chargebacks, fraud, taxes and invalid transactions do not earn commission. MyValidCV may suspend tracking, reverse commission or terminate participation for breach. Payouts are subject to the stated hold period and minimum threshold.</p>
+                    <p>Commission applies only to eligible, verified and retained checkout payments. Refunds, chargebacks, fraud and invalid transactions do not earn commission. MyValidCV may reverse invalid commission or terminate participation after a dashboard warning. Payouts are external and subject to the stated hold period and minimum threshold.</p>
                 </div>
                 <form method="post" action="{% url 'accept_affiliate_agreement' item.referral.id %}" class="row g-2">
                     {% csrf_token %}

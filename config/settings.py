@@ -9,6 +9,7 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from urllib.parse import urlparse
 
+
 # Build paths inside the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -27,6 +28,8 @@ def load_local_env():
 
 
 load_local_env()
+AFFILIATE_PAYOUT_ENCRYPTION_KEY = os.environ.get('AFFILIATE_PAYOUT_ENCRYPTION_KEY', '')
+PUBLIC_SITE_URL = os.environ.get('PUBLIC_SITE_URL', 'https://www.myvalidcv.com').rstrip('/')
 
 def env_bool(name, default=False):
     return os.environ.get(name, str(default)).lower() in {'1', 'true', 'yes', 'on'}
@@ -417,12 +420,21 @@ LOGGING = {
 # Optional production error monitoring. The application remains functional
 # without a DSN, while the owner health page reports monitoring as incomplete.
 SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
+def scrub_payout_event(event, hint):
+    request_data = event.get('request', {})
+    if '/payout/' in request_data.get('url', ''):
+        request_data['data'] = '[Bank payout form redacted]'
+        request_data['query_string'] = ''
+        event.pop('breadcrumbs', None)
+    return event
+
 if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration()],
         environment=os.environ.get('SENTRY_ENVIRONMENT', 'production' if IS_HEROKU else 'development'),
         send_default_pii=False,
+        before_send=scrub_payout_event,
         traces_sample_rate=float(os.environ.get('SENTRY_TRACES_SAMPLE_RATE', '0.05')),
         profiles_sample_rate=0.0,
     )

@@ -141,6 +141,13 @@ class ReferralPartner(models.Model):
     commission_hold_days = models.PositiveIntegerField(default=30)
     minimum_payout = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("25.00"))
     approved_at = models.DateTimeField(null=True, blank=True)
+    valid_until = models.DateTimeField(null=True, blank=True)
+    customer_discount_percent = models.PositiveSmallIntegerField(default=0)
+    code_emailed_at = models.DateTimeField(null=True, blank=True)
+    email_error = models.CharField(max_length=120, blank=True)
+    warning_message = models.TextField(blank=True)
+    warned_at = models.DateTimeField(null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -151,6 +158,8 @@ class ReferralPartner(models.Model):
         profile = getattr(self.organisation, "partner_profile", None)
         return bool(
             self.is_active and self.approved_at and self.organisation.status == "active"
+            and not self.cancelled_at and (not self.valid_until or at < self.valid_until)
+            and (self.terms_version != "affiliate-20-v2" or hasattr(self, "payout_details"))
             and profile and profile.stage == "active"
             and (not profile.agreement_starts_at or profile.agreement_starts_at <= at.date())
             and (not profile.agreement_ends_at or profile.agreement_ends_at >= at.date())
@@ -167,6 +176,7 @@ class AffiliateAgreementAcceptance(models.Model):
     approved_channels = models.JSONField(default=list, blank=True)
     acceptance_ip = models.GenericIPAddressField(null=True, blank=True)
     accepted_at = models.DateTimeField(auto_now_add=True)
+    commercial_terms = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["-accepted_at"]
@@ -196,6 +206,7 @@ class AffiliateApplication(models.Model):
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="affiliate_applications")
+    partner = models.OneToOneField(ReferralPartner, null=True, blank=True, on_delete=models.PROTECT, related_name="application")
     legal_name = models.CharField(max_length=180)
     applicant_type = models.CharField(max_length=30, choices=TYPE_CHOICES)
     country = models.CharField(max_length=2)
@@ -256,6 +267,13 @@ class AffiliateApplication(models.Model):
             self.risk_flags.append("Audience stated without engagement evidence")
         self.suitability_score = min(100, sum(self.score_breakdown.values()))
         return self.suitability_score
+
+
+class AffiliatePayoutDetails(models.Model):
+    partner = models.OneToOneField(ReferralPartner, on_delete=models.CASCADE, related_name="payout_details")
+    encrypted_details = models.TextField()
+    account_last_four = models.CharField(max_length=4)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class ReferralAttribution(models.Model):

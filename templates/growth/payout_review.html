@@ -1,0 +1,2 @@
+{% extends "base.html" %}
+{% block content %}<main class="container py-5"><h1>Payout details — {{ partner.organisation.name }}</h1><p>Access is audited. Use these details only to arrange the affiliate's external commission payout.</p>{% if details %}<dl>{% for key,value in details.items %}<dt>{{ key }}</dt><dd>{{ value|default:"Not supplied" }}</dd>{% endfor %}</dl>{% else %}<p>The affiliate has not supplied bank details.</p>{% endif %}<a href="{% url 'affiliate_owner_dashboard' %}">Back to affiliates</a></main>{% endblock %}

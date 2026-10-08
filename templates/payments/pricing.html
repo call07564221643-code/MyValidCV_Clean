@@ -297,11 +297,13 @@
 
                         <div class="plan-action">
                             {% if user.is_authenticated %}
-                                <form method="post" action="{% url 'start_checkout' plan.code %}">
+                                <form method="post" action="{% url 'start_checkout' plan.code %}" data-preview-url="{% url 'checkout_preview' plan.code %}">
                                     {% csrf_token %}
                                     {% if plan.price > 0 %}
                                         <input type="text" name="discount_code" class="form-control discount-slot" placeholder="Discount code, optional">
-                                        <input type="text" name="referral_code" class="form-control mt-2" placeholder="Referral code, optional" aria-label="Referral code">
+                                        <input type="text" name="referral_code" value="{{ referral_code }}" class="form-control mt-2" placeholder="Referral code, optional" aria-label="Referral code">
+                                        <p class="small mt-2" data-cart-summary aria-live="polite">Cart total: {{ plan.currency }} {{ plan.price }}. Valid affiliate codes save 20%, including Enterprise. Discounts cannot be combined.</p>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" data-preview-cart>Apply code / update cart</button>
                                     {% else %}
                                         <div class="discount-slot" aria-hidden="true"></div>
                                     {% endif %}
@@ -347,4 +349,19 @@
 
     </div>
 </section>
+<script>
+document.querySelectorAll('[data-preview-cart]').forEach(button => {
+  button.addEventListener('click', async () => {
+    const form = button.closest('form');
+    const summary = form.querySelector('[data-cart-summary]');
+    const params = new URLSearchParams({discount_code: form.elements.discount_code.value, referral_code: form.elements.referral_code.value});
+    summary.textContent = 'Updating cart…';
+    try {
+      const response = await fetch(form.dataset.previewUrl + '?' + params, {credentials: 'same-origin'});
+      const cart = await response.json();
+      summary.textContent = response.ok ? `Subtotal ${cart.currency} ${cart.subtotal} · Discount ${cart.currency} ${cart.discount} · Total ${cart.currency} ${cart.total}` + (cart.commission_percent !== '0' ? ` · Affiliate commission: ${cart.commission_percent}% of the discounted payment.` : '') + (cart.valid_until ? ` · Code valid until ${new Date(cart.valid_until).toLocaleDateString()}.` : '') : cart.error;
+    } catch (error) { summary.textContent = 'Cart preview unavailable. Checkout will validate your code before payment.'; }
+  });
+});
+</script>
 {% endblock %}

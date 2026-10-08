@@ -535,6 +535,7 @@
                                 <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Reports</a>
                             </li>
                             {% if has_partner_workspace %}<li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'partner_dashboard' %}active{% endif %}" href="{% url 'partner_dashboard' %}">Partner</a></li>{% endif %}
+                            {% if user.is_superuser or perms.growth.review_affiliate_application %}<li class="nav-item"><a class="nav-link" href="{% url 'affiliate_owner_dashboard' %}">Affiliate approvals</a></li>{% endif %}
                         {% endif %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'account_settings' %}active{% endif %}" href="{% url 'account_settings' %}">Account</a>

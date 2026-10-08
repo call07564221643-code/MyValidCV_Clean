@@ -13,6 +13,7 @@
                     <p class="text-muted">Your subscription is active and your payment has been recorded.</p>
 
                     <div class="border rounded-3 p-3 my-4">
+                        {% if transaction.affiliate_partner_id %}<p>Affiliate code: {{ transaction.affiliate_partner.referral_code }} · {{ transaction.affiliate_discount_percent }}% customer discount. Original price: {{ transaction.currency }} {{ transaction.original_amount }}. Affiliate commission: {{ transaction.affiliate_commission_rate }}% of the discounted payment.</p>{% endif %}
                         <div class="d-flex justify-content-between py-2 border-bottom">
                             <span>Receipt number</span>
                             <strong>{{ transaction.invoice.invoice_number }}</strong>

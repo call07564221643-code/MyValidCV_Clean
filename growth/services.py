@@ -31,7 +31,8 @@ def capture_referral_code(*, code, user, source="checkout_code"):
         and partner.organisation.memberships.filter(user=user, is_active=True).exists()
     ):
         raise ReferralError("A partner cannot use its own referral code.")
-    existing = ReferralAttribution.objects.filter(user=user, converted_at__isnull=True).first()
+    existing = ReferralAttribution.objects.filter(user=user, converted_at__isnull=True).filter(
+        Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())).first()
     if existing:
         return existing
     return ReferralAttribution.objects.create(
@@ -89,11 +90,18 @@ def redeem_access_voucher(*, code, user):
 def record_paid_referral_conversion(transaction):
     """Create one commission after verified payment; never infer consent or self-referrals."""
     now = timezone.now()
-    attribution = ReferralAttribution.objects.filter(
+    if transaction.status != "paid" or transaction.amount <= 0:
+        return None
+    attribution = ReferralAttribution.objects.select_for_update().filter(
         user=transaction.user, partner__is_active=True, converted_at__isnull=True,
     ).filter(Q(expires_at__isnull=True) | Q(expires_at__gte=now)).select_related(
         "partner__organisation__partner_profile"
     ).order_by("first_seen_at").first()
+    if transaction.affiliate_partner_id:
+        # Payment snapshots bind the discount and commission to the same affiliate.
+        attribution = ReferralAttribution.objects.select_for_update().filter(
+            user=transaction.user, partner_id=transaction.affiliate_partner_id, converted_at__isnull=True,
+        ).order_by("first_seen_at").first()
     if not attribution:
         return None
     partner = attribution.partner
@@ -110,7 +118,10 @@ def record_paid_referral_conversion(transaction):
     profile = getattr(partner.organisation, "partner_profile", None)
     if not profile or profile.commission_type == "none" or profile.commission_value <= 0:
         return None
-    if profile.commission_type == "fixed":
+    if transaction.affiliate_partner_id:
+        rate = transaction.affiliate_commission_rate
+        amount = (transaction.amount * rate / Decimal("100")).quantize(Decimal("0.01"))
+    elif profile.commission_type == "fixed":
         amount = min(profile.commission_value, transaction.amount)
         rate = Decimal("0.00")
     else:
@@ -126,6 +137,52 @@ def record_paid_referral_conversion(transaction):
         },
     )
     return commission
+
+
+def prepare_checkout_terms(*, plan, user, discount_code="", referral_code=""):
+    from subscriptions.models import DiscountCode
+    discount_code = discount_code.strip()
+    referral_code = referral_code.strip()
+    # Accept the affiliate code in either code box; never stack discounts.
+    if not referral_code and ReferralPartner.objects.filter(referral_code__iexact=discount_code).exists():
+        referral_code, discount_code = discount_code, ""
+    if referral_code and discount_code:
+        raise ReferralError("Use either an affiliate code or a discount code; discounts cannot be combined.")
+    if referral_code:
+        partner = ReferralPartner.objects.select_related("organisation__partner_profile").filter(
+            referral_code__iexact=referral_code).first()
+        if not partner or not partner.is_eligible():
+            raise ReferralError("This affiliate code is inactive, expired or awaiting agreement acceptance.")
+        if not partner.self_referrals_allowed and partner.organisation.memberships.filter(user=user, is_active=True).exists():
+            raise ReferralError("An affiliate cannot use its own code.")
+        percent = partner.customer_discount_percent
+        if percent < 0 or percent > 100:
+            raise ReferralError("This code has invalid discount terms.")
+        amount = (plan.price * (Decimal("100") - percent) / Decimal("100")).quantize(Decimal("0.01"))
+        return None, amount, partner
+    if discount_code:
+        discount = DiscountCode.objects.filter(code__iexact=discount_code).first()
+        if not discount or not discount.is_valid_now() or (discount.amount_off and discount.currency != plan.currency):
+            raise ReferralError("This discount code is not valid for this purchase.")
+        return discount, discount.apply_to(plan.price), None
+    return None, plan.price, None
+
+
+@transaction.atomic
+def attach_checkout_affiliate(payment, partner):
+    if not partner:
+        return
+    from django.contrib.auth import get_user_model
+    get_user_model().objects.select_for_update().get(pk=payment.user_id)
+    payment.affiliate_partner = partner
+    payment.affiliate_commission_rate = partner.organisation.partner_profile.commission_value
+    payment.affiliate_discount_percent = partner.customer_discount_percent
+    payment.original_amount = payment.plan.price
+    payment.save(update_fields=["affiliate_partner", "affiliate_commission_rate", "affiliate_discount_percent", "original_amount", "updated_at"])
+    if not ReferralAttribution.objects.filter(user=payment.user, partner=partner, converted_at__isnull=True).exists():
+        ReferralAttribution.objects.create(user=payment.user, partner=partner, source="checkout_code",
+            consent_source="customer_entered_code",
+            expires_at=partner.valid_until or timezone.now() + timedelta(days=partner.cookie_days))
 
 
 def reverse_referral_commission(transaction, reason="Customer payment refunded"):
