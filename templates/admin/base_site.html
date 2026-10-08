@@ -19,6 +19,7 @@
         --link-fg: #17233f;
         --link-selected-fg: #1f3374;
         --header-color: #101a33;
+        --header-link-color: var(--header-color);
         --header-branding-color: #101a33;
         --header-bg: rgba(255, 255, 255, 0.92);
         --breadcrumbs-bg: rgba(31, 51, 116, 0.10);
@@ -42,6 +43,7 @@
         --link-hover-color: #1f3374;
         --link-selected-fg: #17275f;
         --header-color: #0b1020;
+        --header-link-color: var(--header-color);
         --header-branding-color: #101a33;
         --header-bg: #ffffff;
         --breadcrumbs-bg: #e8edfb;
@@ -55,11 +57,12 @@
         border-bottom: 1px solid rgba(31, 51, 116, 0.12);
     }
 
-    #user-tools,
-    #user-tools a,
-    #logout-form button,
+    #header #user-tools,
+    #header #user-tools strong,
+    #header #user-tools a,
+    #header #logout-form button,
     .theme-toggle {
-        color: #0b1020;
+        color: var(--header-color);
         font-size: 0.96rem;
         font-weight: 750;
     }
@@ -118,6 +121,7 @@
         --link-fg: #dbe7ff;
         --link-selected-fg: #ffffff;
         --header-color: #f8fafc;
+        --header-link-color: var(--header-color);
         --header-branding-color: #f8fafc;
         --header-bg: #111c33;
         --breadcrumbs-bg: #172340;
