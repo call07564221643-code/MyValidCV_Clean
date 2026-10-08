@@ -92,14 +92,14 @@ def record_paid_referral_conversion(transaction):
     now = timezone.now()
     if transaction.status != "paid" or transaction.amount <= 0:
         return None
-    attribution = ReferralAttribution.objects.select_for_update().filter(
+    attribution = ReferralAttribution.objects.select_for_update(of=("self",)).filter(
         user=transaction.user, partner__is_active=True, converted_at__isnull=True,
     ).filter(Q(expires_at__isnull=True) | Q(expires_at__gte=now)).select_related(
         "partner__organisation__partner_profile"
     ).order_by("first_seen_at").first()
     if transaction.affiliate_partner_id:
         # Payment snapshots bind the discount and commission to the same affiliate.
-        attribution = ReferralAttribution.objects.select_for_update().filter(
+        attribution = ReferralAttribution.objects.select_for_update(of=("self",)).filter(
             user=transaction.user, partner_id=transaction.affiliate_partner_id, converted_at__isnull=True,
         ).order_by("first_seen_at").first()
     if not attribution:

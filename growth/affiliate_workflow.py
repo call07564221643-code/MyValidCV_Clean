@@ -58,7 +58,7 @@ def email_referral_code(partner_id, force=False):
 @transaction.atomic
 def approve_application(application_id, actor, waiver_reason=""):
     require_reviewer(actor)
-    app = AffiliateApplication.objects.select_for_update().select_related("user", "partner").get(pk=application_id)
+    app = AffiliateApplication.objects.select_for_update(of=("self",)).select_related("user", "partner").get(pk=application_id)
     if app.status in {"declined", "withdrawn"}:
         raise ValueError("Declined or withdrawn applications cannot be approved.")
     if app.partner_id:
