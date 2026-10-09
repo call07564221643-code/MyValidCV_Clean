@@ -1,0 +1,26 @@
+         368791 function calls (368041 primitive calls) in 2.265 seconds
+
+   Ordered by: cumulative time
+   List reduced from 584 to 18 due to restriction <18>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    2.265    2.265 stress_ats_scoring.py:50(run_pair)
+        1    0.001    0.001    2.252    2.252 scoring.py:108(calculate_score_details)
+    13803    0.088    0.000    1.142    0.000 scoring.py:454(_term_in_text)
+    21474    0.085    0.000    1.012    0.000 __init__.py:174(search)
+        1    0.001    0.001    0.933    0.933 scoring.py:286(load_taxonomy)
+        2    0.026    0.013    0.873    0.437 scoring.py:536(_classify_requirements)
+7608/7605    0.062    0.000    0.684    0.000 {built-in method builtins.any}
+        1    0.039    0.039    0.654    0.654 scoring.py:369(_detect_mandatory_qualifications)
+    21478    0.613    0.000    0.613    0.000 {method 'search' of 're.Pattern' objects}
+       44    0.052    0.001    0.572    0.013 scoring.py:528(_sentences)
+    36772    0.162    0.000    0.414    0.000 __init__.py:280(_compile)
+    15241    0.051    0.000    0.370    0.000 __init__.py:179(sub)
+        2    0.002    0.001    0.353    0.176 scoring.py:385(_extract_known_terms)
+     7965    0.019    0.000    0.327    0.000 scoring.py:377(<genexpr>)
+    15244    0.236    0.000    0.236    0.000 {method 'sub' of 're.Pattern' objects}
+        1    0.001    0.001    0.234    0.234 scoring.py:559(_build_evidence_map)
+    13803    0.046    0.000    0.209    0.000 __init__.py:255(escape)
+     9912    0.019    0.000    0.189    0.000 scoring.py:375(<genexpr>)
+
+

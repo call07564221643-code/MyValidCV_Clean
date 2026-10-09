@@ -11,3 +11,5 @@ test_ats.py
 test_ats_full.py
 **/__pycache__/
 **/*.pyc
+.tmp-demo-*/
+docs/ats_stress_benchmark.sqlite3

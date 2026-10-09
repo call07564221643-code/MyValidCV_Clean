@@ -1,0 +1,246 @@
+{
+  "scope": "Local extraction, validation and scoring; project-seeded taxonomy in an isolated SQLite database. No production data, HTTP, external API, malware scan, or production capacity measurement.",
+  "environment": {
+    "python": "3.12.10",
+    "django": "6.0.1",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "taxonomy": {
+    "skills": 48,
+    "qualifications": 14,
+    "roles": 17
+  },
+  "cases": {
+    "recruitment_match": {
+      "requests": 5,
+      "errors": [],
+      "p50_ms": 143.31,
+      "p95_ms": 214.02,
+      "max_ms": 214.02,
+      "throughput_per_second": 6.57,
+      "scores": [
+        81
+      ],
+      "cv_valid": true,
+      "job_valid": true
+    },
+    "software_match": {
+      "requests": 5,
+      "errors": [],
+      "p50_ms": 66.38,
+      "p95_ms": 71.94,
+      "max_ms": 71.94,
+      "throughput_per_second": 15.27,
+      "scores": [
+        70
+      ],
+      "cv_valid": true,
+      "job_valid": true
+    },
+    "dental_vs_software": {
+      "requests": 5,
+      "errors": [],
+      "p50_ms": 77.57,
+      "p95_ms": 110.01,
+      "max_ms": 110.01,
+      "throughput_per_second": 11.88,
+      "scores": [
+        25
+      ],
+      "cv_valid": true,
+      "job_valid": true
+    },
+    "keyword_stuffing": {
+      "requests": 5,
+      "errors": [],
+      "p50_ms": 69.94,
+      "p95_ms": 89.59,
+      "max_ms": 89.59,
+      "throughput_per_second": 13.27,
+      "scores": [
+        40
+      ],
+      "cv_valid": false,
+      "job_valid": true
+    },
+    "empty_cv": {
+      "requests": 5,
+      "errors": [],
+      "p50_ms": 106.77,
+      "p95_ms": 116.96,
+      "max_ms": 116.96,
+      "throughput_per_second": 9.58,
+      "scores": [
+        12
+      ],
+      "cv_valid": false,
+      "job_valid": true
+    },
+    "empty_job": {
+      "requests": 5,
+      "errors": [],
+      "p50_ms": 49.86,
+      "p95_ms": 80.07,
+      "max_ms": 80.07,
+      "throughput_per_second": 18.42,
+      "scores": [
+        83
+      ],
+      "cv_valid": true,
+      "job_valid": false
+    },
+    "unicode": {
+      "requests": 5,
+      "errors": [],
+      "p50_ms": 123.99,
+      "p95_ms": 327.33,
+      "max_ms": 327.33,
+      "throughput_per_second": 5.69,
+      "scores": [
+        81
+      ],
+      "cv_valid": true,
+      "job_valid": true
+    },
+    "long_token": {
+      "requests": 5,
+      "errors": [],
+      "p50_ms": 472.52,
+      "p95_ms": 792.36,
+      "max_ms": 792.36,
+      "throughput_per_second": 1.92,
+      "scores": [
+        81
+      ],
+      "cv_valid": true,
+      "job_valid": true
+    },
+    "long_cv": {
+      "requests": 5,
+      "errors": [],
+      "p50_ms": 968.82,
+      "p95_ms": 1133.19,
+      "max_ms": 1133.19,
+      "throughput_per_second": 1.03,
+      "scores": [
+        81
+      ],
+      "cv_valid": true,
+      "job_valid": true
+    },
+    "long_job": {
+      "requests": 5,
+      "errors": [],
+      "p50_ms": 11206.88,
+      "p95_ms": 11754.59,
+      "max_ms": 11754.59,
+      "throughput_per_second": 0.09,
+      "scores": [
+        81
+      ],
+      "cv_valid": true,
+      "job_valid": true
+    }
+  },
+  "concurrency": [
+    {
+      "workers": 1,
+      "requests": 96,
+      "errors": [],
+      "p50_ms": 73.41,
+      "p95_ms": 152.41,
+      "max_ms": 214.94,
+      "throughput_per_second": 11.12
+    },
+    {
+      "workers": 4,
+      "requests": 96,
+      "errors": [],
+      "p50_ms": 282.58,
+      "p95_ms": 387.81,
+      "max_ms": 426.28,
+      "throughput_per_second": 13.36
+    },
+    {
+      "workers": 8,
+      "requests": 96,
+      "errors": [],
+      "p50_ms": 618.36,
+      "p95_ms": 926.07,
+      "max_ms": 1334.64,
+      "throughput_per_second": 11.72
+    },
+    {
+      "workers": 16,
+      "requests": 96,
+      "errors": [],
+      "p50_ms": 1207.13,
+      "p95_ms": 1728.46,
+      "max_ms": 1918.64,
+      "throughput_per_second": 11.5
+    }
+  ],
+  "scaling": [
+    {
+      "chars_per_document": 2000,
+      "requests": 3,
+      "errors": [],
+      "p50_ms": 234.33,
+      "p95_ms": 272.63,
+      "max_ms": 272.63,
+      "throughput_per_second": 4.08,
+      "peak_traced_python_mib": 0.05,
+      "memory_run_error": null
+    },
+    {
+      "chars_per_document": 10000,
+      "requests": 3,
+      "errors": [],
+      "p50_ms": 1190.2,
+      "p95_ms": 1192.87,
+      "max_ms": 1192.87,
+      "throughput_per_second": 0.86,
+      "peak_traced_python_mib": 0.15,
+      "memory_run_error": null
+    },
+    {
+      "chars_per_document": 50000,
+      "requests": 3,
+      "errors": [],
+      "p50_ms": 6062.67,
+      "p95_ms": 9018.68,
+      "max_ms": 9018.68,
+      "throughput_per_second": 0.14,
+      "peak_traced_python_mib": 0.63,
+      "memory_run_error": null
+    },
+    {
+      "chars_per_document": 100000,
+      "requests": 3,
+      "errors": [],
+      "p50_ms": 11557.51,
+      "p95_ms": 16117.54,
+      "max_ms": 16117.54,
+      "throughput_per_second": 0.08,
+      "peak_traced_python_mib": 1.24,
+      "memory_run_error": null
+    }
+  ],
+  "extraction": {
+    "txt": {
+      "valid": true,
+      "chars": 1386,
+      "ms": 2.11
+    },
+    "docx": {
+      "valid": true,
+      "chars": 1385,
+      "ms": 64.27
+    },
+    "pdf": {
+      "rejected": "CVExtractionError",
+      "ms": 16.57
+    }
+  },
+  "total_scoring_calls": 450
+}

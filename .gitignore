@@ -12,3 +12,5 @@ desktop.ini
 structure.txt
 project_structure.txt
 tatus
+.tmp-demo-*/
+docs/ats_stress_benchmark.sqlite3
