@@ -1,0 +1,92 @@
+{
+  "scope": "Local SQLite scorer comparison; no external AI or production capacity measurement.",
+  "comparisons": [
+    {
+      "case": "recruitment_match",
+      "score": 81,
+      "identical_output": true,
+      "before_median_ms": 51.85,
+      "after_median_ms": 30.0
+    },
+    {
+      "case": "software_match",
+      "score": 70,
+      "identical_output": true,
+      "before_median_ms": 29.34,
+      "after_median_ms": 20.89
+    },
+    {
+      "case": "dental_vs_software",
+      "score": 25,
+      "identical_output": true,
+      "before_median_ms": 30.16,
+      "after_median_ms": 21.53
+    },
+    {
+      "case": "keyword_stuffing",
+      "score": 40,
+      "identical_output": true,
+      "before_median_ms": 28.54,
+      "after_median_ms": 20.92
+    },
+    {
+      "case": "unicode",
+      "score": 81,
+      "identical_output": true,
+      "before_median_ms": 54.18,
+      "after_median_ms": 32.38
+    },
+    {
+      "case": "large_valid",
+      "score": 81,
+      "identical_output": true,
+      "before_median_ms": 981.19,
+      "after_median_ms": 455.98
+    }
+  ],
+  "rejected_inputs": {
+    "empty_cv": {
+      "ms": 0.01300009898841381,
+      "error": "ValueError('A non-empty CV and job advert are required for scoring.')"
+    },
+    "empty_job": {
+      "ms": 0.02289994154125452,
+      "error": "ValueError('A non-empty CV and job advert are required for scoring.')"
+    },
+    "long_token": {
+      "ms": 0.005699926987290382,
+      "error": "ValueError('The CV exceeds 50,000 characters.')"
+    },
+    "long_cv": {
+      "ms": 0.003300025127828121,
+      "error": "ValueError('The CV exceeds 50,000 characters.')"
+    },
+    "long_job": {
+      "ms": 0.003200024366378784,
+      "error": "ValueError('The job advert exceeds 20,000 characters.')"
+    }
+  },
+  "concurrency": [
+    {
+      "workers": 1,
+      "requests": 32,
+      "errors": 0,
+      "elapsed_seconds": 1.21,
+      "max_ms": 44.66
+    },
+    {
+      "workers": 4,
+      "requests": 32,
+      "errors": 0,
+      "elapsed_seconds": 1.128,
+      "max_ms": 169.44
+    },
+    {
+      "workers": 16,
+      "requests": 32,
+      "errors": 0,
+      "elapsed_seconds": 1.257,
+      "max_ms": 779.77
+    }
+  ]
+}

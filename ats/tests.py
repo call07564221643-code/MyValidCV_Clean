@@ -13,6 +13,39 @@ from django.contrib.auth.models import User
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from accounts.models import UserProfile
+
+
+class ATSInputAndUsageRegressionTests(TestCase):
+    def test_oversized_documents_and_empty_inputs_are_rejected(self):
+        from .scoring import calculate_score_details, validate_job_description
+        self.assertFalse(validate_job_description("x" * 20001)[0])
+        self.assertFalse(ats_engine.validate_cv_text("x" * 50001)[0])
+        for cv, job in (("", "Responsibilities and requirements"), ("CV", " "),
+                        ("x" * 50001, "Job"), ("CV", "x" * 20001)):
+            with self.subTest(cv_length=len(cv), job_length=len(job)):
+                with self.assertRaises(ValueError):
+                    calculate_score_details(cv, job)
+
+    def test_stale_profile_instances_do_not_lose_usage_increments(self):
+        user = User.objects.create_user(username="quota-regression")
+        first, _ = UserProfile.objects.get_or_create(user=user)
+        second = UserProfile.objects.get(pk=first.pk)
+        first.record_analysis()
+        second.record_analysis()
+        first.refresh_from_db()
+        self.assertEqual(first.analyses_this_month, 2)
+
+    def test_stale_profile_does_not_reset_new_month_usage_twice(self):
+        user = User.objects.create_user(username="quota-reset-regression")
+        first, _ = UserProfile.objects.get_or_create(user=user)
+        UserProfile.objects.filter(pk=first.pk).update(last_reset=timezone.now() - timedelta(days=62), analyses_this_month=5)
+        first.refresh_from_db()
+        second = UserProfile.objects.get(pk=first.pk)
+        first.record_analysis()
+        second.record_analysis()
+        first.refresh_from_db()
+        self.assertEqual(first.analyses_this_month, 2)
 
 from subscriptions.models import CustomerSubscription, SubscriptionPlan
 

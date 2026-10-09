@@ -1,5 +1,6 @@
 import re
 import logging
+from functools import lru_cache
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -9,6 +10,8 @@ from .models import Qualification, RoleTemplate, Skill
 logger = logging.getLogger(__name__)
 
 ATS_MODEL_VERSION = "2.3"
+MAX_CV_TEXT_CHARS = 50_000
+MAX_JOB_TEXT_CHARS = 20_000
 
 
 BASE_SKILLS = [
@@ -86,6 +89,8 @@ JOB_ADVERT_SIGNALS = (
 
 def validate_job_description(job_description):
     """Return whether text is substantial enough to support a meaningful score."""
+    if len(job_description or "") > MAX_JOB_TEXT_CHARS:
+        return False, "The job advert exceeds 20,000 characters. Use a shorter complete advert."
     text = re.sub(r"\s+", " ", (job_description or "")).strip()
     if len(text) < 120:
         return False, "The job advert is too short to produce a reliable role-match assessment."
@@ -105,7 +110,22 @@ def calculate_score(cv_text, job_description, job_title=""):
     return details["score"], details["matched"], details["missing"], details["recommendation"]
 
 
+def scoring_inputs_usable(cv_text, job_description):
+    """Guard scoring and historical report refreshes without truncating documents."""
+    return bool(
+        (cv_text or "").strip() and (job_description or "").strip()
+        and len(cv_text) <= MAX_CV_TEXT_CHARS
+        and len(job_description) <= MAX_JOB_TEXT_CHARS
+    )
+
+
 def calculate_score_details(cv_text, job_description, job_title=""):
+    if len(cv_text or "") > MAX_CV_TEXT_CHARS:
+        raise ValueError("The CV exceeds 50,000 characters.")
+    if len(job_description or "") > MAX_JOB_TEXT_CHARS:
+        raise ValueError("The job advert exceeds 20,000 characters.")
+    if not (cv_text or "").strip() or not (job_description or "").strip():
+        raise ValueError("A non-empty CV and job advert are required for scoring.")
     cv_lower = (cv_text or "").lower()
     job_lower = (job_description or "").lower()
     taxonomy = load_taxonomy(job_lower, job_title)
@@ -368,14 +388,17 @@ def find_best_role_template(job_text, job_title=""):
 
 def _detect_mandatory_qualifications(job_text, qualifications):
     mandatory = []
-    sentences = re.split(r"[\n.;]+", job_text.lower())
+    sentences = [
+        (sentence, any(hint in sentence for hint in MANDATORY_HINTS))
+        for sentence in re.split(r"[\n.;]+", job_text.lower())
+        if not any(re.search(pattern, sentence) for pattern in NEGATED_MANDATORY_PATTERNS)
+        and not any(hint in sentence for hint in PREFERRED_HINTS)
+    ]
     for qualification in qualifications:
         terms = qualification.terms()
-        for sentence in sentences:
-            is_negated = any(re.search(pattern, sentence) for pattern in NEGATED_MANDATORY_PATTERNS)
-            is_preferred = any(hint in sentence for hint in PREFERRED_HINTS)
-            if any(_term_in_text(term, sentence) for term in terms) and not is_negated and not is_preferred and (
-                qualification.is_license or any(hint in sentence for hint in MANDATORY_HINTS)
+        for sentence, mandatory_hint in sentences:
+            if any(_term_in_text(term, sentence) for term in terms) and (
+                qualification.is_license or mandatory_hint
             ):
                 mandatory.append(qualification.normalized_name)
                 break
@@ -451,8 +474,13 @@ def _important_words(text):
     ]
 
 
+@lru_cache(maxsize=2048)
+def _term_pattern(term):
+    return re.compile(r"\b" + re.escape(term) + r"\b")
+
+
 def _term_in_text(term, text):
-    return re.search(r"\b" + re.escape(term.lower()) + r"\b", text) is not None
+    return _term_pattern(term.lower()).search(text) is not None
 
 
 def _qualification_evidence_state(term, cv_text):
@@ -536,9 +564,9 @@ def _sentences(text):
 def _classify_requirements(job_text, terms, mandatory_terms):
     groups = {"mandatory": [], "required": [], "preferred": [], "responsibilities": []}
     mandatory_set = set(mandatory_terms)
+    sentences = _sentences(job_text)
     for term in terms:
-        matching = [sentence for sentence in _sentences(job_text) if _term_in_text(term, sentence.lower())]
-        context = matching[0] if matching else ""
+        context = next((sentence for sentence in sentences if _term_in_text(term, sentence.lower())), "")
         lower = context.lower()
         if term in mandatory_set or (
             any(hint in lower for hint in MANDATORY_HINTS)

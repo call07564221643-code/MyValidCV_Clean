@@ -44,6 +44,8 @@ from .models import (
 from .bullet_rewriting import apply_bullet_decisions, extract_experience_bullets
 from .ai_assistance import low_confidence_assistance
 from accounts.models import UserProfile
+from django.db import transaction
+from .scoring import scoring_inputs_usable
 from .engine import ats_engine
 from .cv_drafting import build_structured_cv_draft, cv_text_to_docx, is_legacy_generated_cv
 from .scoring import ATS_MODEL_VERSION, calculate_score, calculate_score_details, validate_job_description
@@ -615,7 +617,7 @@ def build_match_intelligence(result, cv_text=None):
     metrics = result.metrics or {}
     taxonomy = metrics.get("taxonomy") or {}
     components = metrics.get("score_components") or {}
-    if (not taxonomy or not components) and cv_text is not None:
+    if (not taxonomy or not components) and scoring_inputs_usable(cv_text, result.job_description):
         details = calculate_score_details(cv_text, result.job_description, result.job_title)
         taxonomy = details.get("taxonomy", {})
         components = details.get("score_components", {})
@@ -1202,6 +1204,7 @@ def delete_cv(request, public_id):
 
 
 @login_required(login_url="login")
+@transaction.atomic
 def analyse_cv(request):
     """Run the authenticated individual CV-to-job workflow.
 
@@ -1235,6 +1238,8 @@ def analyse_cv(request):
         return render(request, "ats/analyse.html", workspace_context(form))
 
     if request.method == "POST":
+        profile = UserProfile.objects.select_for_update().get(pk=profile.pk)
+        profile.reset_daily_usage_if_needed()
         form = ATSAnalysisForm(request.user, request.POST, request.FILES)
         if profile.analyses_this_month >= entitlements.analysis_limit:
             messages.error(request, f"You have used this month's {entitlements.analysis_limit} analysis limit for your {entitlements.code} plan.")
@@ -1363,7 +1368,7 @@ def result_detail(request, result_id):
     matched = [item.strip() for item in result.matched_skills.split(",") if item.strip()]
     missing = [item.strip() for item in result.missing_skills.split(",") if item.strip()]
     ats_v2 = result.metrics or {}
-    if ats_v2.get("model_version") != ATS_MODEL_VERSION:
+    if ats_v2.get("model_version") != ATS_MODEL_VERSION and scoring_inputs_usable(cv_text, result.job_description):
         current_details = calculate_score_details(cv_text, result.job_description, result.job_title)
         ats_v2 = {
             **ats_v2,
@@ -1723,6 +1728,7 @@ def download_cover_letter(request, result_id):
 
 
 @login_required(login_url="login")
+@transaction.atomic
 def enterprise_bulk_upload(request):
     """Run Enterprise-only bulk ranking after subscription and quota checks."""
     if not user_can_use_enterprise(request.user):
@@ -1733,6 +1739,8 @@ def enterprise_bulk_upload(request):
         return redirect("enterprise_pilot")
 
     if request.method == "POST":
+        profile = get_user_profile(request.user)
+        UserProfile.objects.select_for_update().get(pk=profile.pk)
         form = EnterpriseBulkAnalysisForm(request.POST, request.FILES)
         if form.is_valid():
             cv_files = form.cleaned_data["cv_files"]

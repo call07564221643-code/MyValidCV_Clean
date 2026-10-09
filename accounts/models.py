@@ -4,7 +4,7 @@ Django's built-in User remains the authentication source of truth. UserProfile
 adds product plan/usage data through a one-to-one foreign-key relationship.
 """
 
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.models import User
 from django.utils import timezone
 
@@ -53,10 +53,15 @@ class UserProfile(models.Model):
         from subscriptions.services import get_entitlements
         return get_entitlements(self.user).cv_limit
 
+    @transaction.atomic
     def reset_daily_usage_if_needed(self) -> None:
         """Reset the legacy usage counter at the start of a new calendar month."""
+        current = type(self).objects.select_for_update().get(pk=self.pk)
+        self.analyses_this_month = current.analyses_this_month
+        self.last_reset = current.last_reset
         today = timezone.localdate()
-        if (self.last_reset.year, self.last_reset.month) != (today.year, today.month):
+        reset_date = timezone.localdate(self.last_reset)
+        if (reset_date.year, reset_date.month) != (today.year, today.month):
             self.analyses_this_month = 0
             self.last_reset = timezone.now()
             self.save(update_fields=['analyses_this_month', 'last_reset'])
@@ -65,10 +70,11 @@ class UserProfile(models.Model):
         self.reset_daily_usage_if_needed()
         return self.analyses_this_month < self.get_analysis_limit()
 
+    @transaction.atomic
     def record_analysis(self) -> None:
         self.reset_daily_usage_if_needed()
-        self.analyses_this_month += 1
-        self.save(update_fields=['analyses_this_month', 'last_reset'])
+        type(self).objects.filter(pk=self.pk).update(analyses_this_month=models.F('analyses_this_month') + 1)
+        self.refresh_from_db(fields=['analyses_this_month', 'last_reset'])
 
 
 class SocialAuthProvider(models.Model):

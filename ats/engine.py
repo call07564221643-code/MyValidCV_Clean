@@ -9,6 +9,7 @@ from typing import Tuple
 
 import pypdf
 from docx import Document
+from .scoring import MAX_CV_TEXT_CHARS
 
 
 class CVExtractionError(Exception):
@@ -45,6 +46,8 @@ class ATSEngine:
 
     def validate_cv_text(self, text: str) -> Tuple[bool, str]:
         """Return whether extracted text has the minimum structure of a usable CV."""
+        if len(text or "") > MAX_CV_TEXT_CHARS:
+            return False, "The CV exceeds 50,000 characters. Upload a shorter complete CV."
         text = (text or "").strip()
         text_lower = text.lower()
         text_lines = [line.strip() for line in text.splitlines() if line.strip()]
